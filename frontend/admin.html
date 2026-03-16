@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Capi Când-IA Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ===== ADMIN PASSWORD SCREEN ===== */
+    .admin-login-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .admin-login-container {
+      width: 100%;
+      max-width: 400px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .admin-login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .admin-login-logo .logo-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .admin-login-logo h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .admin-login-logo h1 span {
+      color: var(--green);
+    }
+
+    .admin-login-logo p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* ===== ADMIN LAYOUT ===== */
+    .admin-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+      width: 240px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+    }
+
+    .sidebar-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-header .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sidebar-header .brand .logo-icon {
+      font-size: 1.4rem;
+    }
+
+    .sidebar-header .brand h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .sidebar-header .brand h2 span {
+      color: var(--green);
+    }
+
+    .sidebar-header .admin-badge {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      background: var(--bg3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .sidebar-nav {
+      padding: 12px 0;
+      flex: 1;
+    }
+
+    .sidebar-nav button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: left;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar-nav button:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .sidebar-nav button.active {
+      background: rgba(76, 175, 80, 0.08);
+      color: var(--green);
+      border-left-color: var(--green);
+    }
+
+    .sidebar-nav button .nav-icon {
+      font-size: 1.1rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sidebar-footer button {
+      width: 100%;
+    }
+
+    /* Main content */
+    .admin-main {
+      flex: 1;
+      margin-left: 240px;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    .admin-main h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    /* Dashboard cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .stat-card .stat-icon {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-card .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .stat-card .stat-sub {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 6px;
+    }
+
+    /* Users section */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .section-header h1 {
+      margin-bottom: 0;
+    }
+
+    .actions-cell {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Add student form */
+    .form-container {
+      max-width: 520px;
+    }
+
+    .form-container .card {
+      padding: 32px;
+    }
+
+    #addStudentMsg {
+      display: none;
+    }
+
+    #addStudentMsg.visible {
+      display: block;
+    }
+
+    /* ===== Mobile sidebar ===== */
+    .mobile-toggle {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 200;
+      width: 40px;
+      height: 40px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-toggle {
+        display: flex;
+      }
+
+      .admin-sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .admin-sidebar.open {
+        transform: translateX(0);
+      }
+
+      .admin-main {
+        margin-left: 0;
+        padding: 24px 16px;
+        padding-top: 60px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .admin-main h1 {
+        font-size: 1.3rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ADMIN PASSWORD SCREEN ===== -->
+  <div id="adminLoginScreen" class="admin-login-wrapper">
+    <div class="admin-login-container">
+      <div class="admin-login-logo">
+        <span class="logo-icon">🦫</span>
+        <h1>Capi <span>Când-IA</span> Pro</h1>
+        <p>Painel Administrativo</p>
+      </div>
+
+      <div class="card">
+        <div id="adminLoginError" class="alert alert-error" style="display:none;"></div>
+        <form onsubmit="handleAdminLogin(event)">
+          <div class="input-group">
+            <label for="adminPassInput">Senha de administrador</label>
+            <input type="password" id="adminPassInput" class="input-field" placeholder="Digite a senha admin" required>
+          </div>
+          <button type="submit" id="adminLoginBtn" class="btn btn-primary btn-block">Entrar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADMIN PANEL ===== -->
+  <div id="adminPanel" class="admin-layout hidden">
+    <!-- Mobile toggle -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <span class="logo-icon">🦫</span>
+          <h2>Capi <span>Când-IA</span></h2>
+        </div>
+        <span class="admin-badge">Admin Panel</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="active" data-section="dashboard" onclick="showSection('dashboard')">
+          <span class="nav-icon">📊</span> Dashboard
+        </button>
+        <button data-section="users" onclick="showSection('users')">
+          <span class="nav-icon">👥</span> Usuários
+        </button>
+        <button data-section="addStudent" onclick="showSection('addStudent')">
+          <span class="nav-icon">➕</span> Adicionar Aluno
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-secondary btn-sm btn-block" onclick="adminLogout()">🚪 Sair</button>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="admin-main">
+      <!-- Dashboard Section -->
+      <section id="section-dashboard">
+        <h1>Dashboard</h1>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-value" id="statTotalUsers">—</div>
+            <div class="stat-label">Total de Alunos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="statActiveUsers">—</div>
+            <div class="stat-label">Alunos Ativos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-value" id="statTotalMessages">—</div>
+            <div class="stat-label">Mensagens Enviadas</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🪙</div>
+            <div class="stat-value" id="statTotalTokens">—</div>
+            <div class="stat-label">Tokens Usados</div>
+            <div class="stat-sub" id="statTokensCost"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Users Section -->
+      <section id="section-users" class="hidden">
+        <div class="section-header">
+          <h1>Usuários</h1>
+          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Atualizar</button>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Cadastro</th>
+                <th>Último acesso</th>
+                <th>Mensagens</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Add Student Section -->
+      <section id="section-addStudent" class="hidden">
+        <h1>Adicionar Aluno</h1>
+        <div class="form-container">
+          <div class="card">
+            <div id="addStudentMsg" class="alert"></div>
+            <form onsubmit="handleAddStudent(event)">
+              <div class="input-group">
+                <label for="newStudentName">Nome</label>
+                <input type="text" id="newStudentName" class="input-field" placeholder="Nome completo do aluno" required>
+              </div>
+              <div class="input-group">
+                <label for="newStudentEmail">Email</label>
+                <input type="email" id="newStudentEmail" class="input-field" placeholder="email@exemplo.com" required>
+              </div>
+              <div class="input-group">
+                <label for="newStudentPassword">Senha temporária</label>
+                <input type="password" id="newStudentPassword" class="input-field" placeholder="Senha inicial" required>
+              </div>
+              <button type="submit" id="addStudentBtn" class="btn btn-primary btn-block">Adicionar</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ===== RESET PASSWORD MODAL ===== -->
+  <div id="resetModal" class="modal-overlay" onclick="closeResetModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Resetar Senha</h3>
+      <p class="text-muted mb-2" id="resetModalUser" style="font-size:0.9rem;"></p>
+      <div class="input-group">
+        <label for="resetNewPassword">Nova senha</label>
+        <input type="password" id="resetNewPassword" class="input-field" placeholder="Nova senha" required>
+      </div>
+      <div class="input-group">
+        <label for="resetConfirmPassword">Confirmar senha</label>
+        <input type="password" id="resetConfirmPassword" class="input-field" placeholder="Confirmar nova senha" required>
+      </div>
+      <div id="resetError" class="alert alert-error" style="display:none;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeResetModalDirect()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmResetPassword()">Resetar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== STATE =====
+    let currentSection = 'dashboard';
+    let usersData = [];
+    let resetUserId = null;
+
+    // ===== ADMIN AUTH =====
+    function getAdminPass() {
+      return sessionStorage.getItem('capi_admin_pass') || '';
+    }
+
+    function adminHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPass(),
+      };
+    }
+
+    function initAdmin() {
+      const pass = sessionStorage.getItem('capi_admin_pass');
+      if (pass) {
+        showAdminPanel();
+      }
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const pass = document.getElementById('adminPassInput').value;
+      const errEl = document.getElementById('adminLoginError');
+      const btn = document.getElementById('adminLoginBtn');
+
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Verificando...';
+
+      try {
+        // Test the password by fetching stats
+        const res = await fetch('/api/admin/stats', {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': pass,
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error('Senha incorreta');
+        }
+
+        sessionStorage.setItem('capi_admin_pass', pass);
+        showAdminPanel();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    }
+
+    function showAdminPanel() {
+      document.getElementById('adminLoginScreen').classList.add('hidden');
+      document.getElementById('adminPanel').classList.remove('hidden');
+      loadDashboard();
+    }
+
+    function adminLogout() {
+      sessionStorage.removeItem('capi_admin_pass');
+      location.reload();
+    }
+
+    // ===== SIDEBAR =====
+    function showSection(section) {
+      currentSection = section;
+
+      // Update nav
+      document.querySelectorAll('.sidebar-nav button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.section === section);
+      });
+
+      // Show/hide sections
+      document.querySelectorAll('.admin-main > section').forEach(sec => {
+        sec.classList.add('hidden');
+      });
+      document.getElementById(`section-${section}`).classList.remove('hidden');
+
+      // Load data
+      if (section === 'dashboard') loadDashboard();
+      if (section === 'users') loadUsers();
+
+      // Close mobile sidebar
+      document.getElementById('adminSidebar').classList.remove('open');
+    }
+
+    function toggleSidebar() {
+      document.getElementById('adminSidebar').classList.toggle('open');
+    }
+
+    // ===== DASHBOARD =====
+    async function loadDashboard() {
+      try {
+        const res = await fetch('/api/admin/stats', { headers: adminHeaders() });
+        if (!res.ok) throw new Error('Falha ao carregar');
+        const data = await res.json();
+
+        document.getElementById('statTotalUsers').textContent = data.totalUsers ?? data.total_users ?? 0;
+        document.getElementById('statActiveUsers').textContent = data.activeUsers ?? data.active_users ?? 0;
+        document.getElementById('statTotalMessages').textContent = formatNumber(data.totalMessages ?? data.total_messages ?? 0);
+
+        const tokens = data.totalTokens ?? data.total_tokens ?? 0;
+        document.getElementById('statTotalTokens').textContent = formatNumber(tokens);
+
+        const cost = (tokens * 0.00006).toFixed(2);
+        document.getElementById('statTokensCost').textContent = `Custo estimado: R$ ${cost}`;
+      } catch (err) {
+        console.error('Dashboard error:', err);
+      }
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return String(num);
+    }
+
+    // ===== USERS =====
+    async function loadUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Carregando...</td></tr>';
+
+      try {
+        const res = await fetch('/api/admin/users', { headers: adminHeaders() });
+        if (!res.ok) throw new Error('Falha ao carregar');
+        const data = await res.json();
+        usersData = Array.isArray(data) ? data : data.users || [];
+
+        renderUsersTable();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--red);">Erro ao carregar usuários</td></tr>`;
+        console.error('Users error:', err);
+      }
+    }
+
+    function renderUsersTable() {
+      const tbody = document.getElementById('usersTableBody');
+
+      if (usersData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Nenhum usuário cadastrado</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = usersData.map(user => {
+        const isActive = user.active !== false && user.status !== 'inactive';
+        const statusBadge = isActive
+          ? '<span class="badge badge-active">Ativo</span>'
+          : '<span class="badge badge-inactive">Inativo</span>';
+
+        const createdAt = user.createdAt || user.created_at || '—';
+        const lastAccess = user.lastAccess || user.last_access || user.lastLogin || user.last_login || '—';
+        const messages = user.messageCount ?? user.message_count ?? user.messages ?? 0;
+        const userId = user.id || user._id;
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(user.name || '—')}</strong></td>
+            <td>${escapeHtml(user.email)}</td>
+            <td>${statusBadge}</td>
+            <td style="font-size:0.8rem;color:var(--text-muted);">${formatDate(createdAt)}</td>
+            <td style="font-size:0.8rem;color:var(--text-muted);">${formatDate(lastAccess)}</td>
+            <td>${messages}</td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserStatus('${userId}', ${isActive})">
+                  ${isActive ? 'Desativar' : 'Ativar'}
+                </button>
+                <button class="btn btn-sm btn-secondary" onclick="openResetModal('${userId}', '${escapeHtml(user.name || user.email)}')">
+                  Resetar senha
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteUser('${userId}', '${escapeHtml(user.name || user.email)}')">
+                  Excluir
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr || dateStr === '—') return '—';
+      try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      } catch {
+        return dateStr;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // ===== USER ACTIONS =====
+    async function toggleUserStatus(userId, currentlyActive) {
+      try {
+        const res = await fetch(`/api/admin/users/${userId}/toggle`, {
+          method: 'PATCH',
+          headers: adminHeaders(),
+          body: JSON.stringify({ active: !currentlyActive }),
+        });
+
+        if (!res.ok) throw new Error('Falha ao alterar status');
+        loadUsers();
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      }
+    }
+
+    async function deleteUser(userId, userName) {
+      if (!confirm(`Tem certeza que deseja excluir "${userName}"? Esta ação não pode ser desfeita.`)) return;
+
+      try {
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: adminHeaders(),
+        });
+
+        if (!res.ok) throw new Error('Falha ao excluir');
+        loadUsers();
+        loadDashboard();
+      } catch (err) {
+        alert('Erro: ' + err.message);
+      }
+    }
+
+    // ===== RESET PASSWORD MODAL =====
+    function openResetModal(userId, userName) {
+      resetUserId = userId;
+      document.getElementById('resetModalUser').textContent = `Usuário: ${userName}`;
+      document.getElementById('resetNewPassword').value = '';
+      document.getElementById('resetConfirmPassword').value = '';
+      document.getElementById('resetError').style.display = 'none';
+      document.getElementById('resetModal').classList.add('active');
+    }
+
+    function closeResetModal(e) {
+      if (e.target === document.getElementById('resetModal')) {
+        closeResetModalDirect();
+      }
+    }
+
+    function closeResetModalDirect() {
+      document.getElementById('resetModal').classList.remove('active');
+      resetUserId = null;
+    }
+
+    async function confirmResetPassword() {
+      const newPass = document.getElementById('resetNewPassword').value;
+      const confirmPass = document.getElementById('resetConfirmPassword').value;
+      const errEl = document.getElementById('resetError');
+
+      if (!newPass || newPass.length < 4) {
+        errEl.textContent = 'A senha deve ter pelo menos 4 caracteres.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      if (newPass !== confirmPass) {
+        errEl.textContent = 'As senhas não conferem.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/users/${resetUserId}/reset-password`, {
+          method: 'PATCH',
+          headers: adminHeaders(),
+          body: JSON.stringify({ password: newPass }),
+        });
+
+        if (!res.ok) throw new Error('Falha ao resetar senha');
+
+        closeResetModalDirect();
+        alert('Senha alterada com sucesso!');
+      } catch (err) {
+        errEl.textContent = 'Erro: ' + err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    // ===== ADD STUDENT =====
+    async function handleAddStudent(e) {
+      e.preventDefault();
+      const msgEl = document.getElementById('addStudentMsg');
+      const btn = document.getElementById('addStudentBtn');
+
+      msgEl.style.display = 'none';
+      msgEl.className = 'alert';
+      btn.disabled = true;
+      btn.textContent = 'Adicionando...';
+
+      const body = {
+        name: document.getElementById('newStudentName').value.trim(),
+        email: document.getElementById('newStudentEmail').value.trim(),
+        password: document.getElementById('newStudentPassword').value,
+      };
+
+      try {
+        const res = await fetch('/api/admin/users', {
+          method: 'POST',
+          headers: adminHeaders(),
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Erro ao criar aluno');
+        }
+
+        msgEl.textContent = `Aluno "${body.name}" adicionado com sucesso!`;
+        msgEl.classList.add('alert-success', 'visible');
+        msgEl.style.display = 'block';
+
+        // Clear form
+        document.getElementById('newStudentName').value = '';
+        document.getElementById('newStudentEmail').value = '';
+        document.getElementById('newStudentPassword').value = '';
+      } catch (err) {
+        msgEl.textContent = err.message;
+        msgEl.classList.add('alert-error', 'visible');
+        msgEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Adicionar';
+      }
+    }
+
+    // ===== INIT =====
+    initAdmin();
+  </script>
+</body>
+</html>
