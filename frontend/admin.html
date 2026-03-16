@@ -4,808 +4,389 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — Capi Când-IA Pro</title>
-  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    /* ===== ADMIN PASSWORD SCREEN ===== */
-    .admin-login-wrapper {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
+    :root {
+      --bg: #050a05; --bg2: #0a110a; --bg3: #0f180f; --bg4: #141f14;
+      --green: #00e676; --green2: #00c853; --green-dim: rgba(0,230,118,0.10);
+      --green-glow: rgba(0,230,118,0.22); --border: rgba(0,230,118,0.13);
+      --border2: rgba(0,230,118,0.28); --text: #e8f5e9; --text2: #a5d6a7;
+      --text-muted: #4caf50; --red: #ef5350; --red-dim: rgba(239,83,80,0.1);
+      --radius: 12px; --radius-sm: 8px;
     }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,230,118,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,230,118,0.02) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
 
-    .admin-login-container {
-      width: 100%;
-      max-width: 400px;
-      animation: fadeIn 0.4s ease;
-    }
+    /* Login */
+    .login-wrap{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    .login-box{width:100%;max-width:380px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:32px;position:relative;overflow:hidden}
+    .login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent)}
+    .login-title{font-family:'Rajdhani',sans-serif;font-size:1.5rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+    .login-title .hl{color:var(--green)}
+    .login-sub{color:var(--text-muted);font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
+    .input-field{width:100%;padding:11px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;outline:none;transition:all .2s;margin-bottom:14px}
+    .input-field:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
+    .input-field::placeholder{color:rgba(76,175,80,.35)}
+    .btn-primary{width:100%;padding:12px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .btn-primary:hover{box-shadow:0 0 20px rgba(0,230,118,.35)}
+    .login-error{background:var(--red-dim);border:1px solid rgba(239,83,80,.3);border-radius:var(--radius-sm);padding:10px 14px;color:#ef9a9a;font-size:.83rem;margin-bottom:14px;display:none}
+    .login-error.show{display:block}
 
-    .admin-login-logo {
-      text-align: center;
-      margin-bottom: 32px;
-    }
+    /* Dashboard */
+    .dashboard{position:relative;z-index:10;display:none;min-height:100vh;flex-direction:column}
+    .dashboard.show{display:flex}
+    .topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .topbar-left{display:flex;align-items:center;gap:12px}
+    .topbar-title{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .topbar-title .hl{color:var(--green)}
+    .badge-admin{background:var(--green-dim);border:1px solid var(--border2);color:var(--green);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+    .btn-sm{padding:6px 13px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:.76rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .2s;border:1px solid var(--border);background:var(--bg3);color:var(--text2)}
+    .btn-sm:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+    .btn-danger{border-color:rgba(239,83,80,.3);color:var(--red)}
+    .btn-danger:hover{border-color:var(--red);background:var(--red-dim);color:var(--red)}
 
-    .admin-login-logo .logo-icon {
-      font-size: 3rem;
-      display: block;
-      margin-bottom: 8px;
-    }
+    /* Tabs */
+    .tabs{display:flex;gap:0;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--border)}
+    .tab-btn{padding:12px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
+    .tab-btn:hover:not(.active){color:var(--text2)}
 
-    .admin-login-logo h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
+    /* Content */
+    .content{flex:1;padding:24px;overflow-y:auto;max-width:1200px;width:100%;margin:0 auto}
 
-    .admin-login-logo h1 span {
-      color: var(--green);
-    }
+    /* Stats grid */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+    .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:.6}
+    .stat-label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+    .stat-value{font-family:'Rajdhani',sans-serif;font-size:2.2rem;font-weight:700;color:var(--green);line-height:1;text-shadow:0 0 20px rgba(0,230,118,.3)}
+    .stat-sub{font-size:.75rem;color:var(--text-muted);margin-top:4px}
 
-    .admin-login-logo p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      margin-top: 4px;
-    }
+    /* Section */
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .section-title{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text)}
+    .section-title .hl{color:var(--green)}
 
-    /* ===== ADMIN LAYOUT ===== */
-    .admin-layout {
-      display: flex;
-      min-height: 100vh;
-    }
+    /* Table */
+    .table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto}
+    table{width:100%;border-collapse:collapse}
+    th{padding:12px 16px;text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border);background:var(--bg3)}
+    td{padding:12px 16px;font-size:.85rem;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:var(--bg3)}
+    .badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .badge-active{background:rgba(0,230,118,.12);color:var(--green);border:1px solid var(--border2)}
+    .badge-inactive{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,83,80,.3)}
+    .action-btns{display:flex;gap:6px;flex-wrap:wrap}
 
-    /* Sidebar */
-    .admin-sidebar {
-      width: 240px;
-      background: var(--bg2);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      position: fixed;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      z-index: 100;
-    }
+    /* User form */
+    .form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:24px}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group label{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
+    .btn-green{padding:10px 20px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .btn-green:hover{box-shadow:0 0 16px rgba(0,230,118,.35)}
 
-    .sidebar-header {
-      padding: 20px;
-      border-bottom: 1px solid var(--border);
-    }
+    /* Prompt editor */
+    .prompt-editor{width:100%;height:480px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);font-family:'Inter',sans-serif;font-size:.85rem;line-height:1.65;padding:16px;outline:none;resize:vertical;transition:all .2s}
+    .prompt-editor:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
 
-    .sidebar-header .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    /* Toast */
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px 20px;color:var(--green);font-size:.85rem;font-weight:600;z-index:1000;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.error{border-color:var(--red);color:var(--red)}
 
-    .sidebar-header .brand .logo-icon {
-      font-size: 1.4rem;
-    }
+    /* Panel hidden */
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
 
-    .sidebar-header .brand h2 {
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-
-    .sidebar-header .brand h2 span {
-      color: var(--green);
-    }
-
-    .sidebar-header .admin-badge {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      background: var(--bg3);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
-    .sidebar-nav {
-      padding: 12px 0;
-      flex: 1;
-    }
-
-    .sidebar-nav button {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      padding: 12px 20px;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-family: inherit;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: var(--transition);
-      text-align: left;
-      border-left: 3px solid transparent;
-    }
-
-    .sidebar-nav button:hover {
-      background: var(--bg3);
-      color: var(--text);
-    }
-
-    .sidebar-nav button.active {
-      background: rgba(76, 175, 80, 0.08);
-      color: var(--green);
-      border-left-color: var(--green);
-    }
-
-    .sidebar-nav button .nav-icon {
-      font-size: 1.1rem;
-      width: 24px;
-      text-align: center;
-    }
-
-    .sidebar-footer {
-      padding: 16px 20px;
-      border-top: 1px solid var(--border);
-    }
-
-    .sidebar-footer button {
-      width: 100%;
-    }
-
-    /* Main content */
-    .admin-main {
-      flex: 1;
-      margin-left: 240px;
-      padding: 32px;
-      min-height: 100vh;
-    }
-
-    .admin-main h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      margin-bottom: 24px;
-    }
-
-    /* Dashboard cards */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-
-    .stat-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      transition: var(--transition);
-    }
-
-    .stat-card:hover {
-      border-color: var(--green);
-      transform: translateY(-2px);
-    }
-
-    .stat-card .stat-icon {
-      font-size: 1.8rem;
-      margin-bottom: 12px;
-    }
-
-    .stat-card .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .stat-card .stat-label {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
-
-    .stat-card .stat-sub {
-      color: var(--text-muted);
-      font-size: 0.8rem;
-      margin-top: 6px;
-    }
-
-    /* Users section */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .section-header h1 {
-      margin-bottom: 0;
-    }
-
-    .actions-cell {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    /* Add student form */
-    .form-container {
-      max-width: 520px;
-    }
-
-    .form-container .card {
-      padding: 32px;
-    }
-
-    #addStudentMsg {
-      display: none;
-    }
-
-    #addStudentMsg.visible {
-      display: block;
-    }
-
-    /* ===== Mobile sidebar ===== */
-    .mobile-toggle {
-      display: none;
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 200;
-      width: 40px;
-      height: 40px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-size: 1.2rem;
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-    }
-
-    @media (max-width: 768px) {
-      .mobile-toggle {
-        display: flex;
-      }
-
-      .admin-sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-      }
-
-      .admin-sidebar.open {
-        transform: translateX(0);
-      }
-
-      .admin-main {
-        margin-left: 0;
-        padding: 24px 16px;
-        padding-top: 60px;
-      }
-
-      .stats-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .admin-main h1 {
-        font-size: 1.3rem;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+    /* Loading */
+    .loading-row td{text-align:center;padding:32px;color:var(--text-muted)}
   </style>
 </head>
 <body>
 
-  <!-- ===== ADMIN PASSWORD SCREEN ===== -->
-  <div id="adminLoginScreen" class="admin-login-wrapper">
-    <div class="admin-login-container">
-      <div class="admin-login-logo">
-        <span class="logo-icon">🦫</span>
-        <h1>Capi <span>Când-IA</span> Pro</h1>
-        <p>Painel Administrativo</p>
-      </div>
+<!-- LOGIN -->
+<div id="loginWrap" class="login-wrap">
+  <div class="login-box">
+    <div class="login-title">ADMIN <span class="hl">CAPI</span></div>
+    <div class="login-sub">Painel de controle</div>
+    <div id="loginError" class="login-error"></div>
+    <input type="password" id="adminPass" class="input-field" placeholder="Senha do admin" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-primary" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
 
-      <div class="card">
-        <div id="adminLoginError" class="alert alert-error" style="display:none;"></div>
-        <form onsubmit="handleAdminLogin(event)">
-          <div class="input-group">
-            <label for="adminPassInput">Senha de administrador</label>
-            <input type="password" id="adminPassInput" class="input-field" placeholder="Digite a senha admin" required>
-          </div>
-          <button type="submit" id="adminLoginBtn" class="btn btn-primary btn-block">Entrar</button>
-        </form>
-      </div>
+<!-- DASHBOARD -->
+<div id="dashboard" class="dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">CAPI <span class="hl">CÂND-IA</span> PRO</div>
+      <span class="badge-admin">Admin</span>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm" onclick="loadAll()">↻ Atualizar</button>
+      <button class="btn-sm btn-danger" onclick="doLogout()">Sair</button>
     </div>
   </div>
 
-  <!-- ===== ADMIN PANEL ===== -->
-  <div id="adminPanel" class="admin-layout hidden">
-    <!-- Mobile toggle -->
-    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-
-    <!-- Sidebar -->
-    <aside class="admin-sidebar" id="adminSidebar">
-      <div class="sidebar-header">
-        <div class="brand">
-          <span class="logo-icon">🦫</span>
-          <h2>Capi <span>Când-IA</span></h2>
-        </div>
-        <span class="admin-badge">Admin Panel</span>
-      </div>
-
-      <nav class="sidebar-nav">
-        <button class="active" data-section="dashboard" onclick="showSection('dashboard')">
-          <span class="nav-icon">📊</span> Dashboard
-        </button>
-        <button data-section="users" onclick="showSection('users')">
-          <span class="nav-icon">👥</span> Usuários
-        </button>
-        <button data-section="addStudent" onclick="showSection('addStudent')">
-          <span class="nav-icon">➕</span> Adicionar Aluno
-        </button>
-      </nav>
-
-      <div class="sidebar-footer">
-        <button class="btn btn-secondary btn-sm btn-block" onclick="adminLogout()">🚪 Sair</button>
-      </div>
-    </aside>
-
-    <!-- Main content -->
-    <main class="admin-main">
-      <!-- Dashboard Section -->
-      <section id="section-dashboard">
-        <h1>Dashboard</h1>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-value" id="statTotalUsers">—</div>
-            <div class="stat-label">Total de Alunos</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value" id="statActiveUsers">—</div>
-            <div class="stat-label">Alunos Ativos</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">💬</div>
-            <div class="stat-value" id="statTotalMessages">—</div>
-            <div class="stat-label">Mensagens Enviadas</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">🪙</div>
-            <div class="stat-value" id="statTotalTokens">—</div>
-            <div class="stat-label">Tokens Usados</div>
-            <div class="stat-sub" id="statTokensCost"></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Users Section -->
-      <section id="section-users" class="hidden">
-        <div class="section-header">
-          <h1>Usuários</h1>
-          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Atualizar</button>
-        </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Cadastro</th>
-                <th>Último acesso</th>
-                <th>Mensagens</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="usersTableBody">
-              <tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Carregando...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Add Student Section -->
-      <section id="section-addStudent" class="hidden">
-        <h1>Adicionar Aluno</h1>
-        <div class="form-container">
-          <div class="card">
-            <div id="addStudentMsg" class="alert"></div>
-            <form onsubmit="handleAddStudent(event)">
-              <div class="input-group">
-                <label for="newStudentName">Nome</label>
-                <input type="text" id="newStudentName" class="input-field" placeholder="Nome completo do aluno" required>
-              </div>
-              <div class="input-group">
-                <label for="newStudentEmail">Email</label>
-                <input type="email" id="newStudentEmail" class="input-field" placeholder="email@exemplo.com" required>
-              </div>
-              <div class="input-group">
-                <label for="newStudentPassword">Senha temporária</label>
-                <input type="password" id="newStudentPassword" class="input-field" placeholder="Senha inicial" required>
-              </div>
-              <button type="submit" id="addStudentBtn" class="btn btn-primary btn-block">Adicionar</button>
-            </form>
-          </div>
-        </div>
-      </section>
-    </main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">Visão geral</button>
+    <button class="tab-btn" onclick="switchTab('users')">Usuários</button>
+    <button class="tab-btn" onclick="switchTab('prompt')">Prompt do agente</button>
   </div>
 
-  <!-- ===== RESET PASSWORD MODAL ===== -->
-  <div id="resetModal" class="modal-overlay" onclick="closeResetModal(event)">
-    <div class="modal" onclick="event.stopPropagation()">
-      <h3>Resetar Senha</h3>
-      <p class="text-muted mb-2" id="resetModalUser" style="font-size:0.9rem;"></p>
-      <div class="input-group">
-        <label for="resetNewPassword">Nova senha</label>
-        <input type="password" id="resetNewPassword" class="input-field" placeholder="Nova senha" required>
-      </div>
-      <div class="input-group">
-        <label for="resetConfirmPassword">Confirmar senha</label>
-        <input type="password" id="resetConfirmPassword" class="input-field" placeholder="Confirmar nova senha" required>
-      </div>
-      <div id="resetError" class="alert alert-error" style="display:none;"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeResetModalDirect()">Cancelar</button>
-        <button class="btn btn-primary" onclick="confirmResetPassword()">Resetar</button>
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="s-users">—</div></div>
+        <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value" id="s-active">—</div></div>
+        <div class="stat-card"><div class="stat-label">Mensagens hoje</div><div class="stat-value" id="s-today">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total mensagens</div><div class="stat-value" id="s-msgs">—</div></div>
+        <div class="stat-card"><div class="stat-label">Conversas</div><div class="stat-value" id="s-convs">—</div></div>
+        <div class="stat-card"><div class="stat-label">Tokens usados</div><div class="stat-value" id="s-tokens">—</div><div class="stat-sub" id="s-cost">—</div></div>
       </div>
     </div>
+
+    <!-- USERS -->
+    <div id="tab-users" class="tab-panel">
+      <!-- Add user form -->
+      <div class="form-card">
+        <div class="section-header" style="margin-bottom:16px">
+          <div class="section-title">Adicionar <span class="hl">usuário</span></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" id="newName" class="input-field" placeholder="Nome completo" style="margin:0">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="newEmail" class="input-field" placeholder="email@exemplo.com" style="margin:0">
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="text" id="newPass" class="input-field" placeholder="Senha inicial" style="margin:0">
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <button class="btn-green" onclick="createUser()">Criar conta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users table -->
+      <div class="section-header">
+        <div class="section-title">Todos os <span class="hl">usuários</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Conversas</th>
+              <th>Mensagens</th>
+              <th>Último acesso</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable">
+            <tr class="loading-row"><td colspan="7">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PROMPT -->
+    <div id="tab-prompt" class="tab-panel">
+      <div class="section-header">
+        <div class="section-title">Prompt do <span class="hl">agente</span></div>
+        <button class="btn-green" onclick="savePrompt()">Salvar alterações</button>
+      </div>
+      <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:16px;line-height:1.6">
+        Aqui você controla toda a personalidade e conhecimento da Capi. Edite o texto abaixo e clique em "Salvar alterações". As mudanças entram em vigor imediatamente — sem precisar de novo deploy.
+      </p>
+      <textarea id="promptEditor" class="prompt-editor" placeholder="Carregando prompt..."></textarea>
+    </div>
+
   </div>
+</div>
 
-  <script>
-    // ===== STATE =====
-    let currentSection = 'dashboard';
-    let usersData = [];
-    let resetUserId = null;
+<div class="toast" id="toast"></div>
 
-    // ===== ADMIN AUTH =====
-    function getAdminPass() {
-      return sessionStorage.getItem('capi_admin_pass') || '';
-    }
+<script>
+let adminPassword = '';
 
-    function adminHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'x-admin-password': getAdminPass(),
-      };
-    }
-
-    function initAdmin() {
-      const pass = sessionStorage.getItem('capi_admin_pass');
-      if (pass) {
-        showAdminPanel();
+function doLogin() {
+  const pass = document.getElementById('adminPass').value;
+  if (!pass) return;
+  adminPassword = pass;
+  // Test with stats call
+  fetch('/api/admin/stats', { headers: { 'x-admin-password': pass } })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('loginWrap').style.display = 'none';
+        document.getElementById('dashboard').classList.add('show');
+        loadAll();
+      } else {
+        document.getElementById('loginError').textContent = 'Senha incorreta.';
+        document.getElementById('loginError').classList.add('show');
       }
-    }
+    });
+}
 
-    async function handleAdminLogin(e) {
-      e.preventDefault();
-      const pass = document.getElementById('adminPassInput').value;
-      const errEl = document.getElementById('adminLoginError');
-      const btn = document.getElementById('adminLoginBtn');
+function doLogout() {
+  adminPassword = '';
+  document.getElementById('loginWrap').style.display = '';
+  document.getElementById('dashboard').classList.remove('show');
+  document.getElementById('adminPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+}
 
-      errEl.style.display = 'none';
-      btn.disabled = true;
-      btn.textContent = 'Verificando...';
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const tabs = ['overview','users','prompt'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (tab === 'prompt') loadPrompt();
+  if (tab === 'users') loadUsers();
+  if (tab === 'overview') loadStats();
+}
 
-      try {
-        // Test the password by fetching stats
-        const res = await fetch('/api/admin/stats', {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-password': pass,
-          },
-        });
+function loadAll() { loadStats(); loadUsers(); }
 
-        if (!res.ok) {
-          throw new Error('Senha incorreta');
-        }
+async function loadStats() {
+  const r = await fetch('/api/admin/stats', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const d = await r.json();
+  document.getElementById('s-users').textContent = d.totalUsers;
+  document.getElementById('s-active').textContent = d.activeUsers;
+  document.getElementById('s-today').textContent = d.todayMessages;
+  document.getElementById('s-msgs').textContent = d.totalMessages;
+  document.getElementById('s-convs').textContent = d.totalConversations;
+  document.getElementById('s-tokens').textContent = fmtNum(d.totalTokens);
+  // Rough cost estimate: GPT-4o ~$0.0025/1k tokens average
+  const cost = ((d.totalTokens / 1000) * 0.0025).toFixed(2);
+  document.getElementById('s-cost').textContent = '~$' + cost + ' USD estimado';
+}
 
-        sessionStorage.setItem('capi_admin_pass', pass);
-        showAdminPanel();
-      } catch (err) {
-        errEl.textContent = err.message;
-        errEl.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Entrar';
-      }
-    }
+async function loadUsers() {
+  const r = await fetch('/api/admin/users', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const users = await r.json();
+  const tbody = document.getElementById('usersTable');
+  if (!users.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Nenhum usuário cadastrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => `
+    <tr>
+      <td><strong style="color:var(--text)">${esc(u.name)}</strong></td>
+      <td style="color:var(--text-muted)">${esc(u.email)}</td>
+      <td><span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="text-align:center">${u.total_conversations || 0}</td>
+      <td style="text-align:center">${u.total_messages || 0}</td>
+      <td style="color:var(--text-muted)">${u.last_login ? fmtDate(u.last_login) : 'Nunca'}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-sm" onclick="toggleUser(${u.id},${u.active})">${u.active ? 'Desativar' : 'Ativar'}</button>
+          <button class="btn-sm" onclick="resetPass(${u.id},'${esc(u.name)}')">Resetar senha</button>
+          <button class="btn-sm btn-danger" onclick="deleteUser(${u.id},'${esc(u.name)}')">Apagar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
 
-    function showAdminPanel() {
-      document.getElementById('adminLoginScreen').classList.add('hidden');
-      document.getElementById('adminPanel').classList.remove('hidden');
-      loadDashboard();
-    }
+async function createUser() {
+  const name = document.getElementById('newName').value.trim();
+  const email = document.getElementById('newEmail').value.trim();
+  const pass = document.getElementById('newPass').value.trim();
+  if (!name || !email || !pass) { showToast('Preencha todos os campos', true); return; }
+  const r = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ name, email, password: pass })
+  });
+  const d = await r.json();
+  if (!r.ok) { showToast(d.error || 'Erro', true); return; }
+  document.getElementById('newName').value = '';
+  document.getElementById('newEmail').value = '';
+  document.getElementById('newPass').value = '';
+  showToast('Usuário criado com sucesso!');
+  loadUsers(); loadStats();
+}
 
-    function adminLogout() {
-      sessionStorage.removeItem('capi_admin_pass');
-      location.reload();
-    }
+async function toggleUser(id, active) {
+  await fetch('/api/admin/users/'+id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ active: !active })
+  });
+  showToast(active ? 'Usuário desativado' : 'Usuário ativado');
+  loadUsers();
+}
 
-    // ===== SIDEBAR =====
-    function showSection(section) {
-      currentSection = section;
+async function resetPass(id, name) {
+  const newPass = prompt('Nova senha para ' + name + ':');
+  if (!newPass) return;
+  const r = await fetch('/api/admin/users/'+id+'/password', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ password: newPass })
+  });
+  if (r.ok) showToast('Senha alterada!');
+  else showToast('Erro ao alterar senha', true);
+}
 
-      // Update nav
-      document.querySelectorAll('.sidebar-nav button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.section === section);
-      });
+async function deleteUser(id, name) {
+  if (!confirm('Apagar usuário "' + name + '" e todo seu histórico? Isso não pode ser desfeito.')) return;
+  await fetch('/api/admin/users/'+id, { method: 'DELETE', headers: { 'x-admin-password': adminPassword } });
+  showToast('Usuário apagado');
+  loadUsers(); loadStats();
+}
 
-      // Show/hide sections
-      document.querySelectorAll('.admin-main > section').forEach(sec => {
-        sec.classList.add('hidden');
-      });
-      document.getElementById(`section-${section}`).classList.remove('hidden');
+async function loadPrompt() {
+  const r = await fetch('/api/admin/prompt', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const d = await r.json();
+  document.getElementById('promptEditor').value = d.prompt;
+}
 
-      // Load data
-      if (section === 'dashboard') loadDashboard();
-      if (section === 'users') loadUsers();
+async function savePrompt() {
+  const prompt = document.getElementById('promptEditor').value.trim();
+  if (!prompt) { showToast('Prompt não pode ser vazio', true); return; }
+  const r = await fetch('/api/admin/prompt', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ prompt })
+  });
+  if (r.ok) showToast('Prompt salvo! Mudanças em vigor imediatamente.');
+  else showToast('Erro ao salvar prompt', true);
+}
 
-      // Close mobile sidebar
-      document.getElementById('adminSidebar').classList.remove('open');
-    }
+function showToast(msg, err = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err ? ' error' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
 
-    function toggleSidebar() {
-      document.getElementById('adminSidebar').classList.toggle('open');
-    }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : n; }
+function fmtDate(dt) {
+  if (!dt) return '—';
+  const d = new Date(dt.replace(' ','T')+'Z');
+  return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+}
 
-    // ===== DASHBOARD =====
-    async function loadDashboard() {
-      try {
-        const res = await fetch('/api/admin/stats', { headers: adminHeaders() });
-        if (!res.ok) throw new Error('Falha ao carregar');
-        const data = await res.json();
-
-        document.getElementById('statTotalUsers').textContent = data.totalUsers ?? data.total_users ?? 0;
-        document.getElementById('statActiveUsers').textContent = data.activeUsers ?? data.active_users ?? 0;
-        document.getElementById('statTotalMessages').textContent = formatNumber(data.totalMessages ?? data.total_messages ?? 0);
-
-        const tokens = data.totalTokens ?? data.total_tokens ?? 0;
-        document.getElementById('statTotalTokens').textContent = formatNumber(tokens);
-
-        const cost = (tokens * 0.00006).toFixed(2);
-        document.getElementById('statTokensCost').textContent = `Custo estimado: R$ ${cost}`;
-      } catch (err) {
-        console.error('Dashboard error:', err);
-      }
-    }
-
-    function formatNumber(num) {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-      return String(num);
-    }
-
-    // ===== USERS =====
-    async function loadUsers() {
-      const tbody = document.getElementById('usersTableBody');
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Carregando...</td></tr>';
-
-      try {
-        const res = await fetch('/api/admin/users', { headers: adminHeaders() });
-        if (!res.ok) throw new Error('Falha ao carregar');
-        const data = await res.json();
-        usersData = Array.isArray(data) ? data : data.users || [];
-
-        renderUsersTable();
-      } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center" style="padding:40px;color:var(--red);">Erro ao carregar usuários</td></tr>`;
-        console.error('Users error:', err);
-      }
-    }
-
-    function renderUsersTable() {
-      const tbody = document.getElementById('usersTableBody');
-
-      if (usersData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Nenhum usuário cadastrado</td></tr>';
-        return;
-      }
-
-      tbody.innerHTML = usersData.map(user => {
-        const isActive = user.active !== false && user.status !== 'inactive';
-        const statusBadge = isActive
-          ? '<span class="badge badge-active">Ativo</span>'
-          : '<span class="badge badge-inactive">Inativo</span>';
-
-        const createdAt = user.createdAt || user.created_at || '—';
-        const lastAccess = user.lastAccess || user.last_access || user.lastLogin || user.last_login || '—';
-        const messages = user.messageCount ?? user.message_count ?? user.messages ?? 0;
-        const userId = user.id || user._id;
-
-        return `
-          <tr>
-            <td><strong>${escapeHtml(user.name || '—')}</strong></td>
-            <td>${escapeHtml(user.email)}</td>
-            <td>${statusBadge}</td>
-            <td style="font-size:0.8rem;color:var(--text-muted);">${formatDate(createdAt)}</td>
-            <td style="font-size:0.8rem;color:var(--text-muted);">${formatDate(lastAccess)}</td>
-            <td>${messages}</td>
-            <td>
-              <div class="actions-cell">
-                <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-primary'}" onclick="toggleUserStatus('${userId}', ${isActive})">
-                  ${isActive ? 'Desativar' : 'Ativar'}
-                </button>
-                <button class="btn btn-sm btn-secondary" onclick="openResetModal('${userId}', '${escapeHtml(user.name || user.email)}')">
-                  Resetar senha
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteUser('${userId}', '${escapeHtml(user.name || user.email)}')">
-                  Excluir
-                </button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr || dateStr === '—') return '—';
-      try {
-        const d = new Date(dateStr);
-        return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      } catch {
-        return dateStr;
-      }
-    }
-
-    function escapeHtml(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    // ===== USER ACTIONS =====
-    async function toggleUserStatus(userId, currentlyActive) {
-      try {
-        const res = await fetch(`/api/admin/users/${userId}/toggle`, {
-          method: 'PATCH',
-          headers: adminHeaders(),
-          body: JSON.stringify({ active: !currentlyActive }),
-        });
-
-        if (!res.ok) throw new Error('Falha ao alterar status');
-        loadUsers();
-      } catch (err) {
-        alert('Erro: ' + err.message);
-      }
-    }
-
-    async function deleteUser(userId, userName) {
-      if (!confirm(`Tem certeza que deseja excluir "${userName}"? Esta ação não pode ser desfeita.`)) return;
-
-      try {
-        const res = await fetch(`/api/admin/users/${userId}`, {
-          method: 'DELETE',
-          headers: adminHeaders(),
-        });
-
-        if (!res.ok) throw new Error('Falha ao excluir');
-        loadUsers();
-        loadDashboard();
-      } catch (err) {
-        alert('Erro: ' + err.message);
-      }
-    }
-
-    // ===== RESET PASSWORD MODAL =====
-    function openResetModal(userId, userName) {
-      resetUserId = userId;
-      document.getElementById('resetModalUser').textContent = `Usuário: ${userName}`;
-      document.getElementById('resetNewPassword').value = '';
-      document.getElementById('resetConfirmPassword').value = '';
-      document.getElementById('resetError').style.display = 'none';
-      document.getElementById('resetModal').classList.add('active');
-    }
-
-    function closeResetModal(e) {
-      if (e.target === document.getElementById('resetModal')) {
-        closeResetModalDirect();
-      }
-    }
-
-    function closeResetModalDirect() {
-      document.getElementById('resetModal').classList.remove('active');
-      resetUserId = null;
-    }
-
-    async function confirmResetPassword() {
-      const newPass = document.getElementById('resetNewPassword').value;
-      const confirmPass = document.getElementById('resetConfirmPassword').value;
-      const errEl = document.getElementById('resetError');
-
-      if (!newPass || newPass.length < 4) {
-        errEl.textContent = 'A senha deve ter pelo menos 4 caracteres.';
-        errEl.style.display = 'block';
-        return;
-      }
-
-      if (newPass !== confirmPass) {
-        errEl.textContent = 'As senhas não conferem.';
-        errEl.style.display = 'block';
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/admin/users/${resetUserId}/reset-password`, {
-          method: 'PATCH',
-          headers: adminHeaders(),
-          body: JSON.stringify({ password: newPass }),
-        });
-
-        if (!res.ok) throw new Error('Falha ao resetar senha');
-
-        closeResetModalDirect();
-        alert('Senha alterada com sucesso!');
-      } catch (err) {
-        errEl.textContent = 'Erro: ' + err.message;
-        errEl.style.display = 'block';
-      }
-    }
-
-    // ===== ADD STUDENT =====
-    async function handleAddStudent(e) {
-      e.preventDefault();
-      const msgEl = document.getElementById('addStudentMsg');
-      const btn = document.getElementById('addStudentBtn');
-
-      msgEl.style.display = 'none';
-      msgEl.className = 'alert';
-      btn.disabled = true;
-      btn.textContent = 'Adicionando...';
-
-      const body = {
-        name: document.getElementById('newStudentName').value.trim(),
-        email: document.getElementById('newStudentEmail').value.trim(),
-        password: document.getElementById('newStudentPassword').value,
-      };
-
-      try {
-        const res = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: adminHeaders(),
-          body: JSON.stringify(body),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || data.message || 'Erro ao criar aluno');
-        }
-
-        msgEl.textContent = `Aluno "${body.name}" adicionado com sucesso!`;
-        msgEl.classList.add('alert-success', 'visible');
-        msgEl.style.display = 'block';
-
-        // Clear form
-        document.getElementById('newStudentName').value = '';
-        document.getElementById('newStudentEmail').value = '';
-        document.getElementById('newStudentPassword').value = '';
-      } catch (err) {
-        msgEl.textContent = err.message;
-        msgEl.classList.add('alert-error', 'visible');
-        msgEl.style.display = 'block';
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Adicionar';
-      }
-    }
-
-    // ===== INIT =====
-    initAdmin();
-  </script>
+document.getElementById('adminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
 </body>
 </html>
