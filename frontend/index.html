@@ -823,7 +823,7 @@ async function sendMessage() {
     if (res.status === 401) { removeTypingIndicator(typingEl); isLoading = false; logout(); return; }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Erro ao obter resposta.');
-    const reply = data.response || data.message || data.content || '';
+    const reply = data.reply || data.response || data.message || data.content || '';
     conversationHistory.push({ role: 'assistant', content: reply });
     removeTypingIndicator(typingEl); appendMessage('assistant', reply);
   } catch (err) {
