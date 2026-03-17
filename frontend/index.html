@@ -362,11 +362,17 @@ const $ = id => document.getElementById(id);
 })();
 
 // ── INIT ──
-function init(){
+async function init(){
   const token=localStorage.getItem('capi_token');
   const user=JSON.parse(localStorage.getItem('capi_user')||'null');
-  if(token&&user){ showChat(user); loadConversations(); }
-  else showAuth();
+  if(token&&user){
+    // Valida o token antes de mostrar o chat
+    try{
+      const res=await fetch('/api/conversations',{headers:{'Authorization':'Bearer '+token}});
+      if(res.ok){ showChat(user); loadConversations(); }
+      else{ localStorage.removeItem('capi_token'); localStorage.removeItem('capi_user'); showAuth(); }
+    }catch(e){ showAuth(); }
+  } else showAuth();
   $('chatInput').addEventListener('input',()=>{
     $('sendBtn').disabled=$('chatInput').value.trim()===''||isLoading;
   });
