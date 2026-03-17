@@ -962,7 +962,46 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     }
   }
 
-  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx;
+  // Injeta tabela de honorários se o usuário perguntar sobre quanto cobrar
+  let honorariosCtx = '';
+  const lastMsg = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || '';
+  const isHonorarioQuery = lastMsg.includes('cobrar') || lastMsg.includes('honorar') || 
+    lastMsg.includes('quanto') && (lastMsg.includes('ação') || lastMsg.includes('acao') || lastMsg.includes('causa') || lastMsg.includes('processo') || lastMsg.includes('tabela') || lastMsg.includes('oab')) ||
+    lastMsg.includes('tabela oab') || lastMsg.includes('valor mínimo') || lastMsg.includes('valor minimo') ||
+    lastMsg.includes('precificar') || lastMsg.includes('preço') || lastMsg.includes('preco');
+  
+  if (isHonorarioQuery) {
+    // detecta estado mencionado na mensagem
+    const estadoMap = {
+      'acre': 'AC', 'alagoas': 'AL', 'amazonas': 'AM', 'amapá': 'AP', 'amapa': 'AP',
+      'bahia': 'BA', 'ceará': 'CE', 'ceara': 'CE', 'distrito federal': 'DF', ' df ': 'DF',
+      'espírito santo': 'ES', 'espirito santo': 'ES', 'goiás': 'GO', 'goias': 'GO',
+      'maranhão': 'MA', 'maranhao': 'MA', 'minas gerais': 'MG',
+      'mato grosso do sul': 'MS', ' ms ': 'MS', 'mato grosso': 'MT', ' mt ': 'MT',
+      'pará': 'PA', 'para': 'PA', 'paraíba': 'PB', 'paraiba': 'PB',
+      'pernambuco': 'PE', 'piauí': 'PI', 'piaui': 'PI', 'paraná': 'PR', 'parana': 'PR',
+      'rio de janeiro': 'RJ', ' rj ': 'RJ', 'rio grande do norte': 'RN',
+      'rondônia': 'RO', 'rondonia': 'RO', 'roraima': 'RR',
+      'rio grande do sul': 'RS', ' rs ': 'RS', 'santa catarina': 'SC', ' sc ': 'SC',
+      'sergipe': 'SE', 'são paulo': 'SP', 'sao paulo': 'SP', ' sp ': 'SP',
+      'tocantins': 'TO', ' to ': 'TO'
+    };
+    
+    let estadoSigla = null;
+    const msgComEspacos = ' ' + lastMsg + ' ';
+    for (const [nome, sigla] of Object.entries(estadoMap)) {
+      if (msgComEspacos.includes(nome)) { estadoSigla = sigla; break; }
+    }
+    
+    if (estadoSigla && HONORARIOS[estadoSigla]) {
+      const h = HONORARIOS[estadoSigla];
+      honorariosCtx = `\n\n💰 TABELA DE HONORÁRIOS OAB/${estadoSigla} (${h.ano}):\n- Cível: ${h.civel}\n- Trabalhista: ${h.trabalhista}\n- Família: ${h.familia}\n- Criminal: ${h.criminal}\n- Previdenciário/INSS: ${h.previdenciario}\n- Consulta: ${h.consulta}\n- Obs: ${h.obs}\n\nUSE ESTES DADOS para responder sobre honorários mínimos. Lembre sempre que são valores MÍNIMOS e que o advogado pode e deve cobrar mais conforme complexidade, urgência e condição do cliente.`;
+    } else {
+      honorariosCtx = `\n\n💰 CONTEXTO HONORÁRIOS: O usuário perguntou sobre quanto cobrar. Peça o estado onde será a ação e o tipo de caso. Você tem acesso à tabela OAB de todos os 27 estados — assim que souber o estado, poderá informar os valores mínimos exatos.`;
+    }
+  }
+
+  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

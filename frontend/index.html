@@ -487,7 +487,7 @@
         </button>
         <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">📱 Conteúdo</button>
         <button class="teses-btn" onclick="openPeticaoModal()" title="Revisor de Petição">📝 Petição</button>
-        <button class="teses-btn" onclick="openHonorariosModal()" title="Tabela de Honorários">💰 Honorários</button>
+        <button class="teses-btn" onclick="abrirChatHonorarios()" title="Tabela de Honorários">💰 Honorários</button>
         <button class="teses-btn" onclick="openGame()" title="Simulador de Atendimento" style="background:linear-gradient(135deg,rgba(255,215,64,.15),rgba(255,171,0,.1));border-color:rgba(255,215,64,.3);color:#ffd740">🎮 Jogo</button>
         <button class="btn-sm" onclick="openProfileModal()" title="Meu Perfil">👤 Perfil</button>
         <button class="btn-sm" onclick="newConversation()">Nova conversa</button>
@@ -1170,61 +1170,11 @@ async function deleteFavorite(e,id){
 }
 
 // ── HONORÁRIOS ──────────────────────────────────────────
-let honorariosData = {};
-
-async function openHonorariosModal() {
-  document.getElementById('honorariosModal').classList.remove('hidden');
-  const sel = document.getElementById('hon_estado');
-  if (sel.options.length <= 1) {
-    try {
-      const r = await fetch('/api/honorarios');
-      const lista = await r.json();
-      lista.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e.sigla;
-        opt.textContent = e.nome + ' (' + e.sigla + ') — ' + e.ano;
-        sel.appendChild(opt);
-      });
-    } catch(err) { console.error(err); }
-  }
-}
-
-function closeHonorariosModal() {
-  document.getElementById('honorariosModal').classList.add('hidden');
-  document.getElementById('hon_resultado').style.display = 'none';
-}
-
-async function consultarHonorarios() {
-  const sigla = document.getElementById('hon_estado').value;
-  const tipo = document.getElementById('hon_tipo').value;
-  if (!sigla) { showToast('Selecione o estado'); return; }
-
-  document.getElementById('hon_loading').style.display = 'block';
-  document.getElementById('hon_resultado').style.display = 'none';
-
-  try {
-    const r = await fetch('/api/honorarios/' + sigla);
-    const d = await r.json();
-
-    const tipoLabel = {
-      civel: 'Cível', trabalhista: 'Trabalhista', familia: 'Família',
-      criminal: 'Criminal', previdenciario: 'Previdenciário/INSS', consulta: 'Consulta Jurídica'
-    };
-
-    document.getElementById('hon_valor').textContent = '⚖️ ' + tipoLabel[tipo] + ': ' + (d[tipo] || 'Consulte a tabela oficial');
-    document.getElementById('hon_obs').textContent = d.obs || '';
-    document.getElementById('hon_ano').textContent = '📅 Tabela: ' + d.ano + ' • ' + d.nome;
-    const fLink = document.getElementById('hon_fonte');
-    if (d.fonte && d.fonte.startsWith('http')) { fLink.href = d.fonte; fLink.style.display = 'block'; }
-    else { fLink.style.display = 'none'; }
-
-    document.getElementById('hon_loading').style.display = 'none';
-    document.getElementById('hon_resultado').style.display = 'block';
-
-  } catch(err) {
-    document.getElementById('hon_loading').style.display = 'none';
-    showToast('Erro ao carregar tabela');
-  }
+function abrirChatHonorarios() {
+  const msg = 'Preciso saber quanto cobrar. Me diz o estado onde será a ação e descreve o caso que te oriento com os valores mínimos da tabela OAB.';
+  $('chatInput').value = msg;
+  $('sendBtn').disabled = false;
+  $('chatInput').focus();
 }
 
 // ── JOGO: SIMULADOR DE ATENDIMENTO ──────────────────────
@@ -1757,19 +1707,6 @@ init();
     </div>
   </div>
 </div>
-
-<!-- ── MODAL HONORÁRIOS ──────────────────────────────────── -->
-<div id="honorariosModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:520px">
-    <div class="modal-title">💰 Tabela de Honorários OAB</div>
-    <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">Valores mínimos segundo a tabela oficial de cada seccional.</p>
-
-    <div class="form-group">
-      <label class="form-label">Estado da ação</label>
-      <select id="hon_estado" class="form-select" onchange="loadHonorarios()">
-        <option value="">Selecione o estado...</option>
-      </select>
-    </div>
 
     <div class="form-group">
       <label class="form-label">Tipo de ação</label>
