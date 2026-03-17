@@ -746,9 +746,7 @@ function copyMessage(text, btn){
 }
 
 function shareWhatsApp(text){
-  const msg=encodeURIComponent('💬 Resposta do Capi Cândia:
-
-'+text.substring(0,500)+(text.length>500?'...':''));
+  const msg=encodeURIComponent('💬 Resposta do Capi Cândia:\n\n'+text.substring(0,500)+(text.length>500?'...':''));
   window.open('https://wa.me/?text='+msg,'_blank');
 }
 
