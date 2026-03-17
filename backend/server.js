@@ -664,6 +664,16 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 // NOTA: express.static movido para após as rotas de API (ver final do arquivo)
 
+// ─── FORÇA HTTPS ─────────────────────────────────────────────
+app.set('trust proxy', 1);
+app.use((req, res, next) => {
+  const proto = req.headers['x-forwarded-proto'];
+  if (proto && proto !== 'https') {
+    return res.redirect(301, 'https://' + req.headers.host + req.originalUrl);
+  }
+  next();
+});
+
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
