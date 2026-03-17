@@ -890,21 +890,26 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   const BASE_URL = process.env.BASE_URL || 'https://capi-candia-pro-production.up.railway.app';
   const resetLink = `${BASE_URL}/reset-password?token=${token}`;
 
-  try {
-    const nodemailer = require('nodemailer');
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com', pass: process.env.SMTP_PASS || 'ccgj kxys fsxm ugip' }
-    });
-    await transporter.sendMail({
-      from: '"Capi Când-IA Pro" <rafaelcandia.cj@gmail.com>',
-      to: email,
-      subject: 'Seu link de acesso — Capi Când-IA Pro',
-      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><h2 style="color:#ffd700;text-align:center">Capi Când-IA Pro</h2><p style="color:#ccc">Clique no botão abaixo para criar ou redefinir sua senha. Link válido por <strong>1 hora</strong>.</p><div style="text-align:center;margin:32px 0"><a href="${resetLink}" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Criar/Redefinir minha senha</a></div><p style="font-size:12px;color:#555">${resetLink}</p></div>`
-    });
-    console.log('✅ Email reset enviado para:', email);
-  } catch(e) { console.error('⚠️ Erro email reset:', e.message); }
+  // Responde imediatamente, envia email em background
   res.json({ ok: true });
+
+  // Envia email de forma assíncrona (não bloqueia a resposta)
+  setImmediate(async () => {
+    try {
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com', pass: process.env.SMTP_PASS || 'ccgj kxys fsxm ugip' }
+      });
+      await transporter.sendMail({
+        from: '"Capi Când-IA Pro" <rafaelcandia.cj@gmail.com>',
+        to: email,
+        subject: 'Seu link de acesso — Capi Când-IA Pro',
+        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><h2 style="color:#ffd700;text-align:center">Capi Când-IA Pro</h2><p style="color:#ccc">Clique no botão abaixo para criar ou redefinir sua senha. Link válido por <strong>1 hora</strong>.</p><div style="text-align:center;margin:32px 0"><a href="${resetLink}" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Criar/Redefinir minha senha</a></div><p style="font-size:12px;color:#555">${resetLink}</p></div>`
+      });
+      console.log('✅ Email reset enviado para:', email);
+    } catch(e) { console.error('⚠️ Erro email reset:', e.message); }
+  });
 });
 
 app.post('/api/auth/reset-password', async (req, res) => {
@@ -1766,8 +1771,8 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
 
           console.log(`✅ Plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
 
-          // Enviar email de boas-vindas
-          sendWelcomeEmail(email, user.name);
+          // Enviar email de boas-vindas em background
+          setImmediate(() => sendWelcomeEmail(email, user.name));
         }
       }
     }
