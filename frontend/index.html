@@ -20,7 +20,7 @@
       --border2:    rgba(0,230,118,0.28);
       --text:       #e8f5e9;
       --text2:      #a5d6a7;
-      --text-muted: #4caf50;
+      --text-muted: #81c784;
       --radius:     12px;
       --radius-sm:  8px;
       --sidebar-w:  280px;
@@ -53,7 +53,7 @@
     .input-group label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px}
     .input-field{width:100%;padding:11px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;outline:none;transition:var(--trans)}
     .input-field:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
-    .input-field::placeholder{color:rgba(76,175,80,.35)}
+    .input-field::placeholder{color:rgba(200,230,210,.65)}
     .btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--trans);margin-top:6px}
     .btn-primary:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
     .btn-primary:disabled{opacity:.5;cursor:not-allowed}
@@ -154,7 +154,7 @@
     .chat-input-container{display:flex;gap:10px;max-width:860px;margin:0 auto}
     .chat-input{flex:1;padding:11px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;outline:none;transition:var(--trans);resize:none;min-height:44px;max-height:120px}
     .chat-input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
-    .chat-input::placeholder{color:rgba(76,175,80,.35)}
+    .chat-input::placeholder{color:rgba(200,230,210,.65)}
     .btn-send{width:44px;height:44px;border-radius:var(--radius-sm);background:linear-gradient(135deg,#00c853,#00e676);border:none;color:#050a05;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--trans);flex-shrink:0}
     .btn-send:hover:not(:disabled){box-shadow:0 0 18px rgba(0,230,118,.38);transform:scale(1.05)}
     .btn-send:disabled{opacity:.35;cursor:not-allowed}
@@ -254,10 +254,10 @@
         <h3>AUUU! Sou a <span class="hl">CAPI</span></h3>
         <p>Sua assistente estratégica para advocacia. Histórico salvo automaticamente!</p>
         <div class="suggestion-chips">
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">🎯 Como prospectar no JusBrasil?</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">📢 Tese de Família para Meta Ads</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">💰 Como precificar honorários?</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">🚀 Como sair de escritório massificado?</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">📋 Preciso de uma tese para anunciar no Instagram</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">🔎 Como começo no JusBrasil do zero?</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">💰 Como cobrar mais sem perder cliente?</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">📱 Script para atender lead que veio do anúncio</button>
         </div>
       </div>
     </div>
@@ -434,10 +434,10 @@ function newConversationUI(){
     <h3>AUUU! Sou a <span class="hl">CAPI</span></h3>
     <p>Sua assistente estratégica para advocacia. Histórico salvo automaticamente!</p>
     <div class="suggestion-chips">
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">🎯 Como prospectar no JusBrasil?</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">📢 Tese de Família para Meta Ads</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">💰 Como precificar honorários?</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">🚀 Como sair de escritório massificado?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">📋 Preciso de uma tese para anunciar no Instagram</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">🔎 Como começo no JusBrasil do zero?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">💰 Como cobrar mais sem perder cliente?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">📱 Script para atender lead que veio do anúncio</button>
     </div>`;
   $('chatMessages').appendChild(div);
   $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;

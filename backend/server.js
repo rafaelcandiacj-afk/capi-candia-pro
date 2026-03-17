@@ -440,7 +440,17 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     }
   }
 
-  const fullSystemPrompt = systemPrompt + ragContext;
+  // Detecta se é a primeira mensagem da conversa (sem histórico de assistant)
+  const hasAssistantHistory = messages.some(m => m.role === 'assistant');
+  const isFirstMessage = !hasAssistantHistory;
+  
+  // Contexto de personalização: injeta instrução para perguntar nome/área APENAS na primeira mensagem
+  let personalizationCtx = '';
+  if (isFirstMessage) {
+    personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa. OBRIGATORIAMENTE, ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Isso é fundamental para você personalizar as próximas respostas. Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
+  }
+
+  const fullSystemPrompt = systemPrompt + ragContext + personalizationCtx;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
