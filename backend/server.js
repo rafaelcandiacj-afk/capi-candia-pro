@@ -1607,7 +1607,7 @@ async function sendWelcomeEmail(toEmail, toName) {
       service: 'gmail',
       auth: {
         user: process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com',
-        pass: process.env.SMTP_PASS || ''
+        pass: process.env.SMTP_PASS || 'ccgj kxys fsxm ugip'
       }
     });
     const firstName = (toName || toEmail.split('@')[0]).split(' ')[0];
