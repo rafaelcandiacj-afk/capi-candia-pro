@@ -658,7 +658,7 @@ Seu lema: "Capivara que anda em bando não vira comida de onça."`;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static(path.join(__dirname, '../frontend')));
+// NOTA: express.static movido para após as rotas de API (ver final do arquivo)
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -1523,6 +1523,9 @@ app.get('/api/honorarios/:sigla', (req, res) => {
   if (!d) return res.status(404).json({ error: 'Estado não encontrado' });
   res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
 });
+
+// Serve arquivos estáticos (CSS, JS, imagens) — após todas as rotas de API
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Catch-all SPA — deve ficar após todas as rotas de API
 app.get('/{*path}', (req, res) => {
