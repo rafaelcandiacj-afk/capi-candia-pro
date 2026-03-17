@@ -875,6 +875,50 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
 });
 
+// ─── FORGOT / RESET PASSWORD ────────────────────────────────
+const resetTokens = new Map();
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email obrigatório' });
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+  if (!user) return res.json({ ok: true }); // não revela se email existe
+
+  const token = require('crypto').randomBytes(32).toString('hex');
+  resetTokens.set(token, { email: email.toLowerCase(), expires: Date.now() + 3600000 });
+
+  const BASE_URL = process.env.BASE_URL || 'https://capi-candia-pro-production.up.railway.app';
+  const resetLink = `${BASE_URL}/reset-password?token=${token}`;
+
+  try {
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com', pass: process.env.SMTP_PASS || 'ccgj kxys fsxm ugip' }
+    });
+    await transporter.sendMail({
+      from: '"Capi Când-IA Pro" <rafaelcandia.cj@gmail.com>',
+      to: email,
+      subject: 'Seu link de acesso — Capi Când-IA Pro',
+      html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><h2 style="color:#ffd700;text-align:center">Capi Când-IA Pro</h2><p style="color:#ccc">Clique no botão abaixo para criar ou redefinir sua senha. Link válido por <strong>1 hora</strong>.</p><div style="text-align:center;margin:32px 0"><a href="${resetLink}" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Criar/Redefinir minha senha</a></div><p style="font-size:12px;color:#555">${resetLink}</p></div>`
+    });
+    console.log('✅ Email reset enviado para:', email);
+  } catch(e) { console.error('⚠️ Erro email reset:', e.message); }
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Dados inválidos' });
+  const data = resetTokens.get(token);
+  if (!data || data.expires < Date.now()) return res.status(400).json({ error: 'Link expirado ou inválido. Solicite um novo.' });
+  const hash = await bcrypt.hash(password, 10);
+  db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hash, data.email);
+  resetTokens.delete(token);
+  console.log('✅ Senha redefinida para:', data.email);
+  res.json({ ok: true });
+});
+
 // ─── CONVERSAS ────────────────────────────────────────────────
 app.get('/api/conversations', authMiddleware, (req, res) => {
   const convs = db.prepare(`

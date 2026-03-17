@@ -356,26 +356,41 @@
       <p class="tag">Assistente estratégico para advogados</p>
     </div>
     <div class="auth-card">
-      <div class="auth-tabs">
-        <button class="auth-tab active" data-tab="login" onclick="switchTab('login')">Entrar</button>
-        <button class="auth-tab" data-tab="register" onclick="switchTab('register')">Criar conta</button>
-      </div>
       <div id="authError" class="alert-error"></div>
-      <form id="authForm" onsubmit="handleAuth(event)">
-        <div id="nameGroup" class="input-group hidden">
-          <label>Nome</label>
-          <input type="text" id="nameInput" class="input-field" placeholder="Seu nome completo">
+      <div id="authSuccess" class="alert-error" style="background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.3);color:#a5d6a7;display:none"></div>
+
+      <!-- TELA DE LOGIN -->
+      <div id="loginForm">
+        <form onsubmit="handleAuth(event)">
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="emailInput" class="input-field" placeholder="seu@email.com" required>
+          </div>
+          <div class="input-group">
+            <label>Senha</label>
+            <input type="password" id="passwordInput" class="input-field" placeholder="••••••••" required>
+          </div>
+          <button type="submit" id="authBtn" class="btn-primary">Entrar</button>
+        </form>
+        <div style="text-align:center;margin-top:16px">
+          <button onclick="showForgotForm()" style="background:none;border:none;color:var(--text-muted);font-size:.82rem;cursor:pointer;text-decoration:underline">Primeiro acesso ou esqueci minha senha</button>
         </div>
-        <div class="input-group">
-          <label>Email</label>
-          <input type="email" id="emailInput" class="input-field" placeholder="seu@email.com" required>
+      </div>
+
+      <!-- TELA PRIMEIRO ACESSO / ESQUECI SENHA -->
+      <div id="forgotForm" style="display:none">
+        <p style="font-size:.85rem;color:var(--text2);margin-bottom:16px;line-height:1.6">Digite seu email e enviaremos um link para você criar ou redefinir sua senha.</p>
+        <form onsubmit="handleForgot(event)">
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="forgotEmail" class="input-field" placeholder="seu@email.com" required>
+          </div>
+          <button type="submit" id="forgotBtn" class="btn-primary">Enviar link de acesso</button>
+        </form>
+        <div style="text-align:center;margin-top:16px">
+          <button onclick="showLoginForm()" style="background:none;border:none;color:var(--text-muted);font-size:.82rem;cursor:pointer;text-decoration:underline">← Voltar para o login</button>
         </div>
-        <div class="input-group">
-          <label>Senha</label>
-          <input type="password" id="passwordInput" class="input-field" placeholder="••••••••" required>
-        </div>
-        <button type="submit" id="authBtn" class="btn-primary">Entrar</button>
-      </form>
+      </div>
     </div>
   </div>
 </div>
@@ -575,27 +590,30 @@ async function init(){
 }
 
 // ── AUTH ──
-function switchTab(tab){
-  currentTab=tab;
-  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
-  if(tab==='register'){$('nameGroup').classList.remove('hidden');$('nameInput').required=true;$('authBtn').textContent='Criar conta';}
-  else{$('nameGroup').classList.add('hidden');$('nameInput').required=false;$('authBtn').textContent='Entrar';}
-  hideErr();
+function showErr(msg){$('authError').textContent=msg;$('authError').style.display='block';}
+function hideErr(){$('authError').textContent='';$('authError').style.display='none';}
+function showSuccess(msg){$('authSuccess').textContent=msg;$('authSuccess').style.display='block';}
+function hideSuccess(){$('authSuccess').textContent='';$('authSuccess').style.display='none';}
+
+function showForgotForm(){
+  $('loginForm').style.display='none';
+  $('forgotForm').style.display='block';
+  hideErr(); hideSuccess();
 }
-function showErr(msg){$('authError').textContent=msg;$('authError').classList.add('visible');}
-function hideErr(){$('authError').textContent='';$('authError').classList.remove('visible');}
+function showLoginForm(){
+  $('forgotForm').style.display='none';
+  $('loginForm').style.display='block';
+  hideErr(); hideSuccess();
+}
 
 async function handleAuth(e){
   e.preventDefault(); hideErr();
   $('authBtn').disabled=true;
-  $('authBtn').textContent=currentTab==='login'?'Entrando...':'Criando conta...';
-  const endpoint=currentTab==='login'?'/api/login':'/api/register';
-  const body={email:$('emailInput').value.trim(),password:$('passwordInput').value};
-  if(currentTab==='register') body.name=$('nameInput').value.trim();
+  $('authBtn').textContent='Entrando...';
   try{
-    const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:$('emailInput').value.trim(),password:$('passwordInput').value})});
     const data=await res.json();
-    if(!res.ok) throw new Error(data.error||'Erro ao processar.');
+    if(!res.ok) throw new Error(data.error||'Email ou senha incorretos.');
     localStorage.setItem('capi_token',data.token);
     localStorage.setItem('capi_user',JSON.stringify(data.user));
     if(!localStorage.getItem('capi_onboarded')){
@@ -604,10 +622,21 @@ async function handleAuth(e){
       showChat(data.user); loadConversations();
     }
   }catch(err){showErr(err.message);}
-  finally{
-    $('authBtn').disabled=false;
-    $('authBtn').textContent=currentTab==='login'?'Entrar':'Criar conta';
-  }
+  finally{$('authBtn').disabled=false;$('authBtn').textContent='Entrar';}
+}
+
+async function handleForgot(e){
+  e.preventDefault(); hideErr(); hideSuccess();
+  $('forgotBtn').disabled=true;
+  $('forgotBtn').textContent='Enviando...';
+  try{
+    const email=$('forgotEmail').value.trim();
+    const res=await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Erro ao enviar email.');
+    showSuccess('Link enviado! Verifique sua caixa de entrada (e spam).');
+  }catch(err){showErr(err.message);}
+  finally{$('forgotBtn').disabled=false;$('forgotBtn').textContent='Enviar link de acesso';}
 }
 
 // ── SCREENS ──
