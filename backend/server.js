@@ -16,6 +16,334 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'capiAdmin2026';
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || 'sk_ef7c32daa249f0825ec017f69aa8721b2ca641739c552e8d';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '60fiathVaK4HCn08Syd6';
 
+// ─── HONORÁRIOS OAB — 27 SECCIONAIS ─────────────────────────────
+const HONORARIOS = {
+  "AC": {
+    nome: "Acre",
+    ano: "2024 (Resolução nº 07/2024)",
+    civel: "Até 20 SM: Demais ações petitórias: R$ 4.180 (20% proveito econ.); 20-100 SM: Antecedentes c/ pedido principal: R$ 1.430 (10%); Acima 100 SM: Mandado segurança c/ valor: R$ 8.580 (20%)",
+    trabalhista: "Reclamante: 30% valor c/ mín. R$ 1.800; Reclamada: 10% c/ mín. R$ 2.990",
+    familia: "Divórcio litigioso: R$ 6.570 (10%); Inventário s/ litígio judicial: R$ 6.940 (9%)",
+    criminal: "Rito ordinário: R$ 8.580; JECrim: R$ 4.900; Júri: R$ 21.000",
+    previdenciario: "Judicial concessão/revisão: 30% c/ mín. R$ 4.000",
+    consulta: "R$ 350 (escritório); R$ 620 (hora técnica)",
+    fonte: "https://oabac.org.br/wp-content/uploads/2024/08/TABELA-DE-HONORARIOS-2024.pdf",
+    obs: "Tabela mais recente (ago/2024). Usa % proveito econ. + mín. fixos."
+  },
+  "AL": {
+    nome: "Alagoas",
+    ano: "2025 (minuta/proposta)",
+    civel: "Até 20 SM: R$ 1.596,35 (7 URH) - Juizados Cíveis; 20-100 SM: Não especificado; Acima 100 SM: Não especificado",
+    trabalhista: "R$ 1.800 - R$ 2.300 (7-10 URH)",
+    familia: "Divórcio: R$ 8.000 (consensual c/bens) / R$ 15.000 (litigioso); Inventário: R$ 6.841,50 (30 URH)",
+    criminal: "R$ 5.701 (rito sumário, 25 URH); R$ 9.578 (ordinário)",
+    previdenciario: "R$ 5.701 (25 URH) ações concessão/revisão",
+    consulta: "R$ 228,05 /hora (1 URH)",
+    fonte: "https://www.oab-al.org.br/app/uploads/2025/12/TABELA-HONORARIOS-OAB-AL-VF12-1.pdf",
+    obs: "URH 2025: R$ 228,05. Minuta dez/2025 em consulta pública."
+  },
+  "AM": {
+    nome: "Amazonas",
+    ano: "2020 (mais recente oficial)",
+    civel: "Proposição/defesa avulsa: 4,7 SM",
+    trabalhista: "20-30% sobre valor econômico (ex: reclamante 1,2 SM fixo mín.)",
+    familia: "Divórcio Litigioso: 8,5 SM; Inventário s/ litígio: 4,1 SM / c/ litígio: 5,6 SM",
+    criminal: "Rito Ordinário: 8,9 SM; Júri até pronúncia: 12,7 SM",
+    previdenciario: "30% sobre 6 parcelas; Justificação judicial: 5 SM",
+    consulta: "R$ 998 (1 SM); Hora intelectual: 1 SM",
+    fonte: "https://www.oabam.org.br/diretorio/Tabela_2020.pdf",
+    obs: "Tabela 2020 (SM=R$998). SM 2026: R$1.621."
+  },
+  "AP": {
+    nome: "Amapá",
+    ano: "2025",
+    civel: "Procedimento comum: ~R$ 3.762,50",
+    trabalhista: "Consulte a tabela oficial",
+    familia: "Consulte a tabela oficial",
+    criminal: "Consulte a tabela oficial",
+    previdenciario: "Consulte a tabela oficial",
+    consulta: "Consulte a tabela oficial",
+    fonte: "https://www.oabap.org.br/noticias/advocacia-amapaense-ganha-reforco-na-valorizacao-profissional-com-atualizacao-da-tabela-de-honorarios-2025",
+    obs: "Tabela 2025 anunciada. Página de download em manutenção. Valores parciais disponíveis."
+  },
+  "BA": {
+    nome: "Bahia",
+    ano: "Fevereiro 2026 (URH R$ 268,07)",
+    civel: "Procedimento ordinário: R$ 8.042 + 20%",
+    trabalhista: "Reclamante: R$ 2.681 (10 URH) + 20%; Reclamado: R$ 6.702 (25 URH) + 20%",
+    familia: "Divórcio consensual: R$ 6.702; Litigioso: R$ 10.723; Inventário: R$ 9.383 + 8-10%",
+    criminal: "Sumário: R$ 18.765; Comum: R$ 25.467",
+    previdenciario: "20-30% de 13 parcelas vincendas + proveito econômico",
+    consulta: "R$ 536 (2 URH/hora)",
+    fonte: "https://adm.oab-ba.org.br/arquivos/oab_honorarios/26/ARQUIVO_HONORARIO.pdf",
+    obs: "URH + % sobre valor econômico. Tabelas mensais atualizadas por IPCA/IGPM."
+  },
+  "CE": {
+    nome: "Ceará",
+    ano: "2023 (UAD R$159,21 - Res. 01/2024)",
+    civel: "60 UAD (R$9.552,60) proc. ordinário",
+    trabalhista: "Reclamante: 15 UAD (R$2.388) +20%; Reclamado: 40 UAD (R$6.368) +20%",
+    familia: "Divórcio: 40-130 UAD +6-10%; Inventário: 40-60 UAD +6-10%",
+    criminal: "120-240 UAD (R$19.105-R$38.210) conforme procedimento",
+    previdenciario: "45-80 UAD (R$7.164-R$12.737) +30% parcelas",
+    consulta: "5 UAD/hora (R$796,05); excepcional 10 UAD",
+    fonte: "https://oabce.org.br/wp-content/uploads/2024/05/TABELA-DE-HONORARIOS-23032023.pdf",
+    obs: "UAD=R$159,21. Valores mínimos fixos em UAD + %."
+  },
+  "DF": {
+    nome: "Distrito Federal",
+    ano: "Vigente (Res. 04/2015, URH Mar/2026)",
+    civel: "VM 25 URH (R$ 9.395,75; geral cíveis)",
+    trabalhista: "VM 20 URH (R$ 7.516,60; reclamação reclamado)",
+    familia: "Inventário VM 25 URH (R$ 9.395,75); Divórcio litigioso VM 60 URH (R$ 22.549,80)",
+    criminal: "VM 50 URH (R$ 18.791,50; ação penal)",
+    previdenciario: "VM 30-40 URH (R$ 11.274,90 - R$ 15.033,20)",
+    consulta: "Verbal VM 3 URH (R$ 1.127,49); Hora VM 2 URH/h (R$ 751,66/h)",
+    fonte: "https://oabdf.org.br/urh/",
+    obs: "URH Mar/2026: R$ 375,83."
+  },
+  "ES": {
+    nome: "Espírito Santo",
+    ano: "2024",
+    civel: "Até 20 SM: 20 URH; 20-100 SM: 40-80 URH; Acima 100 SM: 10-20% valor da causa",
+    trabalhista: "20-30% sobre condenação/acordo",
+    familia: "Divórcio: 60-150 URH; Inventário judicial: 36.3 URH/quinhão",
+    criminal: "20-100 URH (contravenção a júri)",
+    previdenciario: "13-17 URH (concessão/revisão benefícios)",
+    consulta: "1.2 URH/hora verbal; 3 URH parecer",
+    fonte: "https://oabes.org.br/arquivos/TABELA_OAB_HONORARIOS_NOVO_2.pdf",
+    obs: "URH Mar/2026: R$204,45."
+  },
+  "GO": {
+    nome: "Goiás",
+    ano: "2025",
+    civel: "Execução R$ 2.991 (10%); Embargos R$ 2.242 (10%); geral 5-10% proveito",
+    trabalhista: "R$ 2.368 (10% acordo/condenação)",
+    familia: "Divórcio consensual: R$ 6.350; Inventário extrajudicial: R$ 6.223 (7%)",
+    criminal: "R$ 20.954 rito ordinário",
+    previdenciario: "R$ 4.191 judicial (30% benefício)",
+    consulta: "R$ 367 consulta; R$ 796 hora técnica",
+    fonte: "https://www.oabgo.org.br/wp-content/uploads/2025/04/17027-Tabela-de-Honorarios-Minimos-2025-1.pdf",
+    obs: "Valores mínimos fixos ou %. Fonte oficial PDF 2025."
+  },
+  "MA": {
+    nome: "Maranhão",
+    ano: "Vigente (minuta 2026 em aprovação)",
+    civel: "Procedimentos comuns 20% valor causa, mín. R$ 4.190 - R$ 4.830",
+    trabalhista: "Rito Ordinário: R$ 2.900 (reclamante) / R$ 3.680 (defesa), 20% benefício; Execução: R$ 2.790 +10%",
+    familia: "Divórcio consensual s/ bens: R$ 4.480; Litigioso: R$ 6.750; Inventário extrajud.: R$ 4.480 (8%)",
+    criminal: "Rito Sumário: R$ 8.380; Ordinário: R$ 9.660; Júri: R$ 25.140; HC: R$ 5.190",
+    previdenciario: "Admin: mín. R$ 5.500 (30% +12 meses); Judicial: R$ 4.400 - R$ 6.600",
+    consulta: "Verbal s/ litígio: R$ 400; c/ litígio: R$ 640; Hora intelectual: R$ 500",
+    fonte: "https://www.oabma.org.br/servicos/tabela-de-honorarios",
+    obs: "Valores fixos ou % de causa/proveito econômico."
+  },
+  "MG": {
+    nome: "Minas Gerais",
+    ano: "2023 (reajustável por IPCA)",
+    civel: "R$ 7.000 + 20% do valor da causa",
+    trabalhista: "R$ 2.000 (autor) / R$ 3.500 (réu) + 20-30%",
+    familia: "Divórcio consensual: R$ 7.000; Inventário consensual: R$ 7.000 + 8%",
+    criminal: "R$ 15.000 (defesa procedimento comum)",
+    previdenciario: "R$ 5.000 + até 30% do proveito econômico",
+    consulta: "R$ 300 (consulta); R$ 700 (hora intelectual)",
+    fonte: "https://www.oabmg.org.br/doc/Tabela_Honorarios_Advocaticios_2023.pdf",
+    obs: "Tabela homologada dez/2023. Valores mínimos 1ª instância."
+  },
+  "MS": {
+    nome: "Mato Grosso do Sul",
+    ano: "2025 (Res. 76/2025)",
+    civel: "10%-30% valor causa ou mín. R$ 10.109,09",
+    trabalhista: "R$ 2.978,38 a R$ 5.956,75 + 20%-30% proveito",
+    familia: "Divórcio: R$ 4.945,84 a R$ 8.657,94; Inventário: R$ 4.945,84 a R$ 7.663,34 + 6%-8%; Alimentos: R$ 3.228,39 a R$ 6.174,15",
+    criminal: "R$ 3.076,21 a R$ 37.082,96 (JECrim R$6.630; Júri até R$37k; HC R$4.739)",
+    previdenciario: "R$ 7.174,19 + 20%-30% (judicial); admin: 20%-40%",
+    consulta: "R$ 619,59 (verbal/hora); Parecer R$1.239-R$3.668",
+    fonte: "https://oabms.org.br/wp-content/uploads/2025/09/TABELA-HONORARIOS_2025.pdf",
+    obs: "Valores mínimos 2025, atualizáveis por INPC anual."
+  },
+  "MT": {
+    nome: "Mato Grosso",
+    ano: "2026 (atualizada 12/03/2026)",
+    civel: "20% valor causa + mín. R$ 5.356 (4 URH) ordinário",
+    trabalhista: "30% resultado + mín. R$ 2.678 (2 URH) sumaríssimo; R$ 5.356 (4 URH) ordinário",
+    familia: "Divórcio amigável: R$ 6.695 (5 URH); Litigioso: 5% + R$ 10.713 (8 URH); Inventário: 5% + R$ 5.356 (4 URH)",
+    criminal: "Inquérito: R$ 6.695 (5 URH); Júri completo: R$ 40.172 (30 URH); HC: R$ 8.034 (6 URH)",
+    previdenciario: "20% + mín. R$ 4.017 (3 URH) admin; R$ 6.695 (5 URH) judicial",
+    consulta: "R$ 669,53 por hora (0,5 URH)",
+    fonte: "https://www.oabmt.org.br/admin2/Arquivos/Documentos/202603/PDF70582.pdf",
+    obs: "URH = R$ 1.339,07. Valores mínimos."
+  },
+  "PA": {
+    nome: "Pará",
+    ano: "2022 (2026 em revisão)",
+    civel: "20% valor da causa, mín. R$ 3.211,80",
+    trabalhista: "20% condenação/pedido, mín. R$ 1.751,89",
+    familia: "Divórcio amigável: R$4.671,70; Inventário: 5% quinhão mín. R$2.846,82",
+    criminal: "Processo ordinário: R$10.073,38",
+    previdenciario: "Aposentadoria judicial: R$5.319,32",
+    consulta: "Hora técnica: R$401,47; Verbal s/ litígio: R$766,45",
+    fonte: "https://oabsantarem.org.br/honorarios/TABELA%20DE%20HONORARIOS%20OAB%20PA%202022.pdf",
+    obs: "Tabela 2022 (Santarém). Revisão 2025/2026 em andamento."
+  },
+  "PB": {
+    nome: "Paraíba",
+    ano: "Resolução 02/CP (circa 2020)",
+    civel: "Procedimento ordinário R$ 2.670 mín. + %",
+    trabalhista: "R$ 2.883 (reclamação trabalhista)",
+    familia: "Divórcio R$ 2.883 a R$ 5.338; Inventário R$ 5.872",
+    criminal: "R$ 4.057 a R$ 10.675 dependendo do procedimento",
+    previdenciario: "R$ 3.523 (benefícios); mín. R$ 2.456",
+    consulta: "R$ 320 (verbal/hora técnica)",
+    fonte: "https://portal.oabpb.org.br/wp-content/uploads/2020/06/Resolu%C3%A7%C3%A3o-02-CP-Tabela-de-honor%C3%A1rios_ALTERADO.pdf",
+    obs: "URH ~R$34,78. Sem tabela 2025/2026 localizada."
+  },
+  "PE": {
+    nome: "Pernambuco",
+    ano: "2025",
+    civel: "R$ 5.730,26 (procedimento ordinário, 20%)",
+    trabalhista: "R$ 4.160,83 (reclamante); R$ 5.200,72 (reclamado, 20%)",
+    familia: "Divórcio consensual: R$ 6.241,89; litigioso: R$ 9.361,55; Inventário: R$ 10.404,00 (5-10%)",
+    criminal: "R$ 9.361,55 (defesa procedimento comum)",
+    previdenciario: "R$ 5.682,93 (aposentadorias, 20-30%); R$ 4.300,25 (auxílio incapacidade)",
+    consulta: "R$ 415,70 (consulta); R$ 415,70/hora intelectual",
+    fonte: "https://www.oabpe.org.br/files/institutional/17359095871803-item5extraordinriatabeladehonorrios2025.pdf",
+    obs: "Valores mínimos 2025. Usa % sobre valor econômico."
+  },
+  "PI": {
+    nome: "Piauí",
+    ano: "2022 (Resolução 08/2022-CP)",
+    civel: "Civil ordinário: R$ 5.000 +20%",
+    trabalhista: "R$ 3.000 +20% benefício (rito ordinário)",
+    familia: "Divórcio s/ bens: R$ 6.500 (consensual)/R$ 8.000 (litigioso); Inventário: R$ 6.000 +5%",
+    criminal: "R$ 10.000 (procedimento comum); Júri: R$ 25.500",
+    previdenciario: "30% proveito + 6 parcelas (aposentadoria/pensão)",
+    consulta: "R$ 300 (verbal); R$ 1.500 (parecer escrito)",
+    fonte: "https://www.oabpi.org.br/wp-content/uploads/2024/02/Tabela-honora%CC%81rio-OAB-PI-2.pdf",
+    obs: "Valores absolutos em R$. Sem atualizações 2025/2026."
+  },
+  "PR": {
+    nome: "Paraná",
+    ano: "2025 (vigente desde 24/01/2025)",
+    civel: "10% do valor da causa, mín. R$ 3.073 (sumário) a R$ 3.537 (ordinário)",
+    trabalhista: "20% condenação/acordo, mín. R$ 2.305 (reclamado)",
+    familia: "Divórcio s/ bens: R$ 4.610; c/ bens: 10%/R$ 6.915; Inventário consensual: 5%/R$ 6.147",
+    criminal: "Defesa rito ordinário: R$ 3.113; Júri: R$ 5.074-R$ 7.995",
+    previdenciario: "Fase adm.: 20% 1 anuidade; Judicial: 25% condenação",
+    consulta: "R$ 456 (escritório); R$ 464 hora técnica",
+    fonte: "https://honorarios.oabpr.org.br/wp-content/uploads/2025/01/2025-08-resolucao-de-diretoria.pdf",
+    obs: "Reajustados INPC 4,77% 2024. Res. Diretoria 08/2025."
+  },
+  "RJ": {
+    nome: "Rio de Janeiro",
+    ano: "2025 (Tabela Indicativa)",
+    civel: "Contratos até 40 SM: R$ 1.500; 40-160 SM: R$ 2.500-R$ 3.500; Ordinário: R$ 6.000 mín.",
+    trabalhista: "R$ 3.000 (defesa início ação); % condenação mín. R$ 1.000",
+    familia: "Divórcio consensual R$ 7.000; litigioso R$ 12.000; Inventário s/ litígio R$ 3.000 + 8%",
+    criminal: "Defesa sumário R$ 7.000; comum R$ 10.000; Júri R$ 14.000 mín.",
+    previdenciario: "Concessão adm R$ 3.000; judicial R$ 5.000 (atualizado 20% em 2026)",
+    consulta: "R$ 300 (fixa); R$ 700/hora",
+    fonte: "https://www.oabrj.org.br/sites/default/files/nova_tabela_honorarios_oabrj.pdf",
+    obs: "Tabela orientativa. Valores 'Sugestão Média RJ'."
+  },
+  "RN": {
+    nome: "Rio Grande do Norte",
+    ano: "2026 (URH R$ 184,05)",
+    civel: "Juizado Especial: R$ 2.760,75 (15 URH); Ordinário: R$ 5.521,50 (30 URH); 10% valor causa (mín. R$ 4.601,25)",
+    trabalhista: "Reclamação: 10% (mín. R$ 4.601,25 / 25 URH)",
+    familia: "Divórcio/inventário: 5-10% (mín. R$ 5.521,50-11.043,00)",
+    criminal: "Proced. Ordinário até sentença: R$ 10.122,75 (55 URH)",
+    previdenciario: "Judicial: 15% (mín. R$ 11.043,00 / 60 URH)",
+    consulta: "R$ 368,10 (2 URH) escritório; R$ 644,18/h (3,5 URH) externa",
+    fonte: "https://www.oabrn.org.br/storage/dl3TNqkABmZ2EDc9jodNdvEhSLb9ZwMwPTjEomjC.pdf",
+    obs: "URH R$ 184,05. Mais recente (fev/2026)."
+  },
+  "RO": {
+    nome: "Rondônia",
+    ano: "2024 (atualiza anualmente por IPCA-E)",
+    civel: "Até 20 SM: R$ 4.197,60; 20-50 SM: R$ 5.247,00; 50-100 SM: R$ 8.919,90; Acima: 10%",
+    trabalhista: "R$ 1.552,24 ou 20% (reclamante)",
+    familia: "Divórcio litigioso: R$ 8.395,20 (s/ bens); Inventário: ver cível",
+    criminal: "R$ 13.580,60 (procedimento comum)",
+    previdenciario: "R$ 5.247,00 ou 20% (admin aposentadoria)",
+    consulta: "R$ 413,02 (hora intelectual ou consulta)",
+    fonte: "https://www.oab-ro.org.br/gerenciador/data/uploads/2024/01/NOVA-TABELA-DE-HONORARIOS-OAB-RO-2024.pdf",
+    obs: "Tabela 2024. Sem 2025/2026 encontrada."
+  },
+  "RR": {
+    nome: "Roraima",
+    ano: "2020 (site oficial sem tabela atualizada)",
+    civel: "Consulte a tabela oficial",
+    trabalhista: "20% do acordo/condenação",
+    familia: "Divórcio: 5-7 URH; Inventário até 20 SM: 2 URH",
+    criminal: "Processo sumário: 5 URH; Júri defesa: 28 URH",
+    previdenciario: "3 URH + 20-30% vencidas",
+    consulta: "Verbal: R$250; Escrita: R$1.500",
+    fonte: "https://oabrr.org.br/links-uteis-oab/tabela-de-honorarios/",
+    obs: "Valores parciais 2020. Sem tabela 2025/2026."
+  },
+  "RS": {
+    nome: "Rio Grande do Sul",
+    ano: "Resolução 02/2015 (reajuste anual IGP-M)",
+    civel: "Proc. ordinário mín. R$ 3.000 + 20% valor causa; sumário mín. R$ 1.800",
+    trabalhista: "Reclamante R$ 600 (20% condenação); Reclamado R$ 2.000 (20% pedido)",
+    familia: "Divórcio consensual R$ 4.000 (+8%); Litigioso R$ 6.000 (+10%); Inventário R$ 3.000 (+8%)",
+    criminal: "Defesa sumário R$ 6.000; comum R$ 8.000",
+    previdenciario: "Admin R$ 600 (20% 12 parcelas); Judicial R$ 1.600 (+20%)",
+    consulta: "R$ 200; hora intelectual R$ 400",
+    fonte: "https://admsite.oabrs.org.br/arquivos/2_42_578678616f201.pdf",
+    obs: "Res. 02/2015 vigente c/ reajuste IGP-M anual."
+  },
+  "SC": {
+    nome: "Santa Catarina",
+    ano: "2025 (Res. CP 04/2025, IPCA dez/2024)",
+    civel: "Pisos ~R$3.000 + 10-20% valor causa",
+    trabalhista: "20% condenação/acordo, piso R$1.953-R$3.255",
+    familia: "Divórcio: R$5.000-8.000 +3-15%; Inventário: 5-20% piso R$5.000-6.000",
+    criminal: "R$7.000 (sumário) a R$33.000 (júri plenário)",
+    previdenciario: "20-30% ou 1-2 SM/benefício, piso R$3.000",
+    consulta: "R$455/h (normal); R$781 (excepcional); R$520 (domicílio)",
+    fonte: "https://www.oab-sc.org.br/honorarios",
+    obs: "Pisos fixos + % proveito econômico."
+  },
+  "SE": {
+    nome: "Sergipe",
+    ano: "2024",
+    civel: "Proc. ordinário R$ 3.858,39 mín. ou 10% valor; 20-100 SM: R$ 4.822,98 mín.",
+    trabalhista: "Empregado: 20% mín. R$ 3.488,80; Empregador: R$ 1.412 a R$ 7.995,08",
+    familia: "Divórcio litigioso: 10% mín. R$ 7.787,59; Inventário: 5% mín. R$ 5.787,59; Alimentos: 20% mín. R$ 3.472,54",
+    criminal: "Defesa rito ordinário: R$ 12.602,14; Júri completa: R$ 29.505,33",
+    previdenciario: "Concessão judicial: 20% mín. R$ 3.852,17",
+    consulta: "R$ 425/hora ou R$ 300 verbal",
+    fonte: "https://oabsergipe.org.br/wp-content/uploads/2024/02/Tabela-de-Honorarios-OAB-2024.pdf",
+    obs: "Tabela 2024 (pub. 09/02/2024)."
+  },
+  "SP": {
+    nome: "São Paulo",
+    ano: "2025",
+    civel: "Procedimento ordinário R$ 5.992,22 (20% valor questão)",
+    trabalhista: "R$ 1.664,49 (reclamante, 20-30%) / R$ 4.161,27 (reclamado, 20-30%)",
+    familia: "Divórcio consensual R$ 7.490,28 / litigioso R$ 11.651,53; Inventário R$ 5.825,77 (+8-10%)",
+    criminal: "R$ 15.812,79 (procedimento comum)",
+    previdenciario: "R$ 3.355,18 (20-30% proveito econômico)",
+    consulta: "Consulta R$ 516,47; Hora R$ 832,25",
+    fonte: "https://www.oabsp.org.br/upload/3864390579.pdf",
+    obs: "Valores mínimos + % sobre valor econômico. Atualizada anualmente em jan."
+  },
+  "TO": {
+    nome: "Tocantins",
+    ano: "2024 (Resolução 05/2024)",
+    civel: "Cíveis gerais ~R$ 5.750 (50 URH); 80-100 URH para maiores; Acima: R$ 11.500 +20%",
+    trabalhista: "R$ 3.450 até 10 SM; R$ 5.750 (10-30 SM); R$ 9.200 (>30 SM) [30% êxito]",
+    familia: "Divórcio: R$ 9.200 (80 URH); Inventário: R$ 11.500 (100 URH) [+20% êxito]",
+    criminal: "Habeas Corpus 1ª inst: R$ 2.000-8.000",
+    previdenciario: "Defesa administrativa: R$ 5.750 (50 URH)",
+    consulta: "Consulte a tabela oficial",
+    fonte: "https://diario.oab.org.br/pages/materia/828228",
+    obs: "URH = R$ 124,04 (2024). Reajuste anual março/INPC."
+  },
+};
+
 // ─── UPLOAD CONFIG ────────────────────────────────────────────
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -1223,6 +1551,22 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
     console.error('TTS erro:', e.message);
     res.status(500).json({ error: 'Erro interno TTS' });
   }
+});
+
+// ─── HONORÁRIOS API ──────────────────────────────────────────
+// GET /api/honorarios — lista todos os estados
+app.get('/api/honorarios', (req, res) => {
+  const lista = Object.entries(HONORARIOS).map(([sigla, d]) => ({
+    sigla, nome: d.nome, ano: d.ano
+  }));
+  res.json(lista.sort((a, b) => a.nome.localeCompare(b.nome)));
+});
+
+// GET /api/honorarios/:sigla — retorna tabela de um estado
+app.get('/api/honorarios/:sigla', (req, res) => {
+  const d = HONORARIOS[req.params.sigla.toUpperCase()];
+  if (!d) return res.status(404).json({ error: 'Estado não encontrado' });
+  res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
 });
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));

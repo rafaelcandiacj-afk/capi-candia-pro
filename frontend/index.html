@@ -487,6 +487,7 @@
         </button>
         <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">📱 Conteúdo</button>
         <button class="teses-btn" onclick="openPeticaoModal()" title="Revisor de Petição">📝 Petição</button>
+        <button class="teses-btn" onclick="openHonorariosModal()" title="Tabela de Honorários">💰 Honorários</button>
         <button class="teses-btn" onclick="openGame()" title="Simulador de Atendimento" style="background:linear-gradient(135deg,rgba(255,215,64,.15),rgba(255,171,0,.1));border-color:rgba(255,215,64,.3);color:#ffd740">🎮 Jogo</button>
         <button class="btn-sm" onclick="openProfileModal()" title="Meu Perfil">👤 Perfil</button>
         <button class="btn-sm" onclick="newConversation()">Nova conversa</button>
@@ -1168,6 +1169,64 @@ async function deleteFavorite(e,id){
   }catch(e){}
 }
 
+// ── HONORÁRIOS ──────────────────────────────────────────
+let honorariosData = {};
+
+async function openHonorariosModal() {
+  document.getElementById('honorariosModal').classList.remove('hidden');
+  const sel = document.getElementById('hon_estado');
+  if (sel.options.length <= 1) {
+    try {
+      const r = await fetch('/api/honorarios');
+      const lista = await r.json();
+      lista.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.sigla;
+        opt.textContent = e.nome + ' (' + e.sigla + ') — ' + e.ano;
+        sel.appendChild(opt);
+      });
+    } catch(err) { console.error(err); }
+  }
+}
+
+function closeHonorariosModal() {
+  document.getElementById('honorariosModal').classList.add('hidden');
+  document.getElementById('hon_resultado').style.display = 'none';
+}
+
+async function consultarHonorarios() {
+  const sigla = document.getElementById('hon_estado').value;
+  const tipo = document.getElementById('hon_tipo').value;
+  if (!sigla) { showToast('Selecione o estado'); return; }
+
+  document.getElementById('hon_loading').style.display = 'block';
+  document.getElementById('hon_resultado').style.display = 'none';
+
+  try {
+    const r = await fetch('/api/honorarios/' + sigla);
+    const d = await r.json();
+
+    const tipoLabel = {
+      civel: 'Cível', trabalhista: 'Trabalhista', familia: 'Família',
+      criminal: 'Criminal', previdenciario: 'Previdenciário/INSS', consulta: 'Consulta Jurídica'
+    };
+
+    document.getElementById('hon_valor').textContent = '⚖️ ' + tipoLabel[tipo] + ': ' + (d[tipo] || 'Consulte a tabela oficial');
+    document.getElementById('hon_obs').textContent = d.obs || '';
+    document.getElementById('hon_ano').textContent = '📅 Tabela: ' + d.ano + ' • ' + d.nome;
+    const fLink = document.getElementById('hon_fonte');
+    if (d.fonte && d.fonte.startsWith('http')) { fLink.href = d.fonte; fLink.style.display = 'block'; }
+    else { fLink.style.display = 'none'; }
+
+    document.getElementById('hon_loading').style.display = 'none';
+    document.getElementById('hon_resultado').style.display = 'block';
+
+  } catch(err) {
+    document.getElementById('hon_loading').style.display = 'none';
+    showToast('Erro ao carregar tabela');
+  }
+}
+
 // ── JOGO: SIMULADOR DE ATENDIMENTO ──────────────────────
 let gameState = { active: false, level: '', area: '', temp: 50, messages: [], msgCount: 0, loading: false, maxMsgs: 15 };
 
@@ -1695,6 +1754,47 @@ init();
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closePeticaoModal()">Cancelar</button>
       <button class="btn-modal-ok" onclick="enviarPeticao()">🔍 Revisar Petição</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL HONORÁRIOS ──────────────────────────────────── -->
+<div id="honorariosModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">💰 Tabela de Honorários OAB</div>
+    <p style="color:var(--text2);font-size:.85rem;margin-bottom:16px">Valores mínimos segundo a tabela oficial de cada seccional.</p>
+
+    <div class="form-group">
+      <label class="form-label">Estado da ação</label>
+      <select id="hon_estado" class="form-select" onchange="loadHonorarios()">
+        <option value="">Selecione o estado...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Tipo de ação</label>
+      <select id="hon_tipo" class="form-select">
+        <option value="civel">⚖️ Cível</option>
+        <option value="trabalhista">👷 Trabalhista</option>
+        <option value="familia">👨‍👩‍👧 Família (Divórcio/Inventário/Alimentos)</option>
+        <option value="criminal">🔒 Criminal</option>
+        <option value="previdenciario">🏛️ Previdenciário/INSS</option>
+        <option value="consulta">💬 Consulta Jurídica</option>
+      </select>
+    </div>
+
+    <div id="hon_resultado" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:12px">
+      <div id="hon_valor" style="font-size:1.1rem;font-weight:700;color:var(--primary);margin-bottom:8px"></div>
+      <div id="hon_obs" style="font-size:.8rem;color:var(--text2);margin-bottom:8px"></div>
+      <div id="hon_ano" style="font-size:.75rem;color:var(--text-muted)"></div>
+      <a id="hon_fonte" href="#" target="_blank" style="font-size:.75rem;color:var(--primary);display:block;margin-top:4px">📄 Ver tabela oficial</a>
+    </div>
+
+    <div id="hon_loading" style="display:none;text-align:center;padding:20px;color:var(--text2)">Carregando...</div>
+
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-secondary" onclick="closeHonorariosModal()">Fechar</button>
+      <button class="btn-primary" onclick="consultarHonorarios()">Ver valor mínimo</button>
     </div>
   </div>
 </div>
