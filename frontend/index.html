@@ -207,6 +207,10 @@
     .msg-action-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text-muted);font-size:.7rem;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:4px}
     .msg-action-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .msg-action-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+    .msg-action-btn.tts-loading{opacity:.6;pointer-events:none}
+    .msg-action-btn.tts-playing{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+    audio::-webkit-media-controls-panel{background:var(--bg3);}
+    audio{filter:invert(0) hue-rotate(90deg) brightness(0.9);}
 
     /* ── NOTIFICAÇÃO BANNER ── */
     .notif-banner{position:fixed;top:16px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px;max-width:360px}
@@ -590,11 +594,19 @@ function appendMessage(role,content){
     const actions=document.createElement('div');
     actions.className='msg-actions';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
+    const audioId='audio-'+Date.now();
     actions.innerHTML=`
       <button class="msg-action-btn" onclick="copyMessage(${JSON.stringify(plainText)},this)">📋 Copiar</button>
       <button class="msg-action-btn" onclick="shareWhatsApp(${JSON.stringify(plainText)})">📲 WhatsApp</button>
+      <button class="msg-action-btn tts-btn" id="tts-btn-${audioId}" onclick="playTTS(${JSON.stringify(plainText)},'${audioId}')">🔊 Ouvir</button>
     `;
+    // Container do player de áudio (oculto inicialmente)
+    const audioContainer=document.createElement('div');
+    audioContainer.id='audio-container-'+audioId;
+    audioContainer.style.cssText='display:none;margin-top:8px;';
+    audioContainer.innerHTML=`<audio id="${audioId}" controls style="width:100%;max-width:380px;height:36px;border-radius:20px;outline:none;" src=""></audio>`;
     msgContent.appendChild(actions);
+    msgContent.appendChild(audioContainer);
   }
   wrapper.appendChild(msgContent);
   $('chatMessages').appendChild(wrapper);
@@ -743,6 +755,48 @@ function copyMessage(text, btn){
     btn.innerHTML='✅ Copiado';
     setTimeout(()=>{btn.classList.remove('copied');btn.innerHTML='📋 Copiar';},2000);
   });
+}
+
+async function playTTS(text, audioId){
+  const btn=document.getElementById('tts-btn-'+audioId);
+  const container=document.getElementById('audio-container-'+audioId);
+  const audio=document.getElementById(audioId);
+  if(!btn||!audio) return;
+
+  // Se já tem áudio carregado, só toca/pausa
+  if(audio.src && audio.src !== window.location.href){
+    if(audio.paused){ audio.play(); btn.textContent='⏸ Pausar'; btn.classList.add('tts-playing'); }
+    else { audio.pause(); btn.textContent='🔊 Ouvir'; btn.classList.remove('tts-playing'); }
+    return;
+  }
+
+  // Gera o áudio
+  btn.textContent='⏳ Gerando...';
+  btn.classList.add('tts-loading');
+  try{
+    const token=localStorage.getItem('capi_token');
+    const res=await fetch('/api/tts',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({text})
+    });
+    if(!res.ok) throw new Error('Erro ao gerar áudio');
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    audio.src=url;
+    container.style.display='block';
+    audio.play();
+    btn.textContent='⏸ Pausar';
+    btn.classList.remove('tts-loading');
+    btn.classList.add('tts-playing');
+    audio.onended=()=>{ btn.textContent='🔊 Ouvir'; btn.classList.remove('tts-playing'); };
+    audio.onpause=()=>{ if(!audio.ended){ btn.textContent='🔊 Ouvir'; btn.classList.remove('tts-playing'); } };
+    audio.onplay=()=>{ btn.textContent='⏸ Pausar'; btn.classList.add('tts-playing'); };
+  }catch(e){
+    btn.textContent='🔊 Ouvir';
+    btn.classList.remove('tts-loading');
+    showToast('❌ Erro ao gerar áudio. Tente novamente.');
+  }
 }
 
 function shareWhatsApp(text){

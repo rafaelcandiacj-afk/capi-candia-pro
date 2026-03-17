@@ -13,6 +13,8 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'capi-candia-secret-2026';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'capiAdmin2026';
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '60fiathVaK4HCn08Syd6';
+const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '60fiathVaK4HCn08Syd6';
 
 // ─── UPLOAD CONFIG ────────────────────────────────────────────
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -914,6 +916,46 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
 // Catch-all SPA
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// ─── TEXT-TO-SPEECH (ElevenLabs) ─────────────────────────────
+app.post('/api/tts', authMiddleware, async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Texto ausente' });
+  if (!ELEVENLABS_API_KEY) return res.status(500).json({ error: 'ElevenLabs não configurado' });
+
+  // Limita a 1000 chars para não gastar créditos demais
+  const cleanText = text.replace(/[*_~`#>]/g, '').substring(0, 1000);
+
+  try {
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': ELEVENLABS_API_KEY
+      },
+      body: JSON.stringify({
+        text: cleanText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.85, style: 0.3, use_speaker_boost: true }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('ElevenLabs erro:', err);
+      return res.status(502).json({ error: 'Erro ao gerar áudio' });
+    }
+
+    const audioBuffer = await response.arrayBuffer();
+    res.set('Content-Type', 'audio/mpeg');
+    res.set('Content-Length', audioBuffer.byteLength);
+    res.send(Buffer.from(audioBuffer));
+  } catch (e) {
+    console.error('TTS erro:', e.message);
+    res.status(500).json({ error: 'Erro interno TTS' });
+  }
 });
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
