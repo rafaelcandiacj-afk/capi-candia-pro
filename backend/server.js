@@ -1746,8 +1746,8 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
 app.get('/checkout', (req, res) => {
   const plan = req.query.plan || 'monthly';
   // URLs do PagarMe serão configuradas via env vars
-  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://link.pagar.me/capi-candia-mensal';
-  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://link.pagar.me/capi-candia-anual';
+  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
+  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
   const url = plan === 'annual' ? PAGARME_ANNUAL_URL : PAGARME_MONTHLY_URL;
   res.redirect(302, url);
 });
