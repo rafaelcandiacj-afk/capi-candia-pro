@@ -380,6 +380,10 @@ db.exec(`
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     active INTEGER DEFAULT 1,
+    plan_type TEXT DEFAULT 'free',
+    plan_expires_at TEXT,
+    plan_activated_at TEXT,
+    pagarme_subscription_id TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     last_login TEXT
   );
@@ -1104,6 +1108,7 @@ app.get('/api/admin/stats', adminMiddleware, (req, res) => {
 app.get('/api/admin/users', adminMiddleware, (req, res) => {
   const users = db.prepare(`
     SELECT u.id, u.name, u.email, u.active, u.created_at, u.last_login,
+           u.plan_type, u.plan_expires_at, u.plan_activated_at, u.pagarme_subscription_id,
            COUNT(DISTINCT c.id) as total_conversations,
            COUNT(m.id) as total_messages
     FROM users u
@@ -1545,6 +1550,206 @@ Regras:
     console.error('Game error:', e);
     res.status(500).json({ error: 'Erro ao processar jogo' });
   }
+});
+
+// ─── MIGRATION: garantir colunas de plano para DBs antigos ─────
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN plan_type TEXT DEFAULT 'free'`);
+} catch(e) { /* coluna já existe */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN plan_expires_at TEXT`);
+} catch(e) { /* coluna já existe */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN plan_activated_at TEXT`);
+} catch(e) { /* coluna já existe */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN pagarme_subscription_id TEXT`);
+} catch(e) { /* coluna já existe */ }
+
+// ─── HELPER: verificar se usuário tem acesso ativo ─────────────
+function hasActiveAccess(user) {
+  // Rafael e admin sempre têm acesso
+  if (user.email === 'rafaelcandia.cj@gmail.com') return true;
+  // Plano gift sem expiração
+  if (user.plan_type === 'gift' && !user.plan_expires_at) return true;
+  // Plano pago ou gift com data — verificar expiração
+  if ((user.plan_type === 'paid' || user.plan_type === 'gift') && user.plan_expires_at) {
+    return new Date(user.plan_expires_at) > new Date();
+  }
+  // Gratuito = sem acesso às features premium
+  return user.plan_type === 'free' ? 'free' : false;
+}
+
+// Middleware que verifica plano — bloqueia se free e sem trial
+function planMiddleware(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.id);
+    if (!user) return res.status(401).json({ error: 'Usuário não encontrado' });
+    const access = hasActiveAccess(user);
+    if (access === false) {
+      return res.status(402).json({ error: 'Assinatura necessária', code: 'SUBSCRIPTION_REQUIRED', redirectTo: 'https://capicand-ia.com#planos' });
+    }
+    req.user = { ...decoded, plan_type: user.plan_type, plan_expires_at: user.plan_expires_at };
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido ou expirado' });
+  }
+}
+
+// ─── WEBHOOK PAGARME ─────────────────────────────────────────
+const PAGARME_WEBHOOK_SECRET = process.env.PAGARME_WEBHOOK_SECRET || 'capi-pagarme-webhook-secret-2026';
+
+app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req, res) => {
+  try {
+    // Verificar assinatura (se configurada)
+    const sig = req.headers['x-hub-signature'] || req.headers['x-pagarme-signature'];
+    let body;
+    try { body = JSON.parse(req.body); } catch { body = req.body; }
+
+    const { type, data } = body;
+    console.log('📨 Webhook PagarMe:', type, JSON.stringify(data).substring(0, 200));
+
+    if (!type || !data) return res.status(200).json({ ok: true });
+
+    // Eventos que confirmam pagamento
+    const PAID_EVENTS = [
+      'subscription.created', 'subscription.activated',
+      'charge.paid', 'order.paid',
+      'payment.paid'
+    ];
+
+    if (PAID_EVENTS.includes(type)) {
+      // Extrair email do customer
+      const email = data?.customer?.email ||
+                    data?.charges?.[0]?.customer?.email ||
+                    data?.metadata?.email ||
+                    data?.customer?.email_address;
+
+      // Detectar plano: mensal ou anual
+      const itemName = (data?.items?.[0]?.description || data?.plan?.name || '').toLowerCase();
+      const isAnnual = itemName.includes('anual') || itemName.includes('annual') || itemName.includes('ano');
+      const subscriptionId = data?.id || data?.subscription?.id || data?.charge?.id;
+
+      if (email) {
+        let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+
+        // Se usuário não existe ainda, criar automaticamente
+        if (!user) {
+          const tempPass = require('crypto').randomBytes(8).toString('hex');
+          const hash = require('bcryptjs').hashSync(tempPass, 10);
+          const customerName = data?.customer?.name || email.split('@')[0];
+          try {
+            db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(customerName, email.toLowerCase(), hash);
+            user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+            console.log('✅ Usuário criado via webhook:', email);
+          } catch(e) {
+            console.error('Erro ao criar usuário via webhook:', e.message);
+          }
+        }
+
+        if (user) {
+          const now = new Date();
+          const expiresAt = new Date(now);
+          if (isAnnual) {
+            expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+          } else {
+            expiresAt.setMonth(expiresAt.getMonth() + 1);
+          }
+
+          db.prepare(`
+            UPDATE users SET
+              plan_type = 'paid',
+              plan_expires_at = ?,
+              plan_activated_at = datetime('now'),
+              pagarme_subscription_id = ?,
+              active = 1
+            WHERE id = ?
+          `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
+
+          console.log(`✅ Plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
+        }
+      }
+    }
+
+    // Eventos de cancelamento/inadimplência
+    const CANCEL_EVENTS = ['subscription.canceled', 'subscription.deactivated', 'charge.refunded'];
+    if (CANCEL_EVENTS.includes(type)) {
+      const email = data?.customer?.email || data?.customer?.email_address;
+      if (email) {
+        db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE email = ?`).run(email.toLowerCase());
+        console.log(`⚠️ Plano cancelado para ${email}`);
+      }
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('Webhook erro:', e.message);
+    res.status(200).json({ ok: true }); // sempre retorna 200 para PagarMe não retentar
+  }
+});
+
+// ─── ROTA: Status do plano do usuário ───────────────────────
+app.get('/api/subscription/status', authMiddleware, (req, res) => {
+  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at FROM users WHERE id = ?').get(req.user.id);
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+  const access = hasActiveAccess({ ...user, email: req.user.email });
+  res.json({
+    plan_type: user.plan_type || 'free',
+    plan_expires_at: user.plan_expires_at,
+    plan_activated_at: user.plan_activated_at,
+    has_access: access !== false,
+    is_active: access === true || access === 'free',
+    redirect_url: access === false ? 'https://capicand-ia.com#planos' : null
+  });
+});
+
+// ─── ADMIN: dar/revogar acesso manual ────────────────────────
+app.post('/api/admin/grant-access', adminMiddleware, (req, res) => {
+  const { user_id, plan_type, months } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id obrigatório' });
+
+  const type = plan_type || 'gift';
+  let expiresAt = null;
+
+  if (months) {
+    const d = new Date();
+    d.setMonth(d.getMonth() + parseInt(months));
+    expiresAt = d.toISOString();
+  }
+
+  db.prepare(`
+    UPDATE users SET
+      plan_type = ?,
+      plan_expires_at = ?,
+      plan_activated_at = datetime('now'),
+      active = 1
+    WHERE id = ?
+  `).run(type, expiresAt, user_id);
+
+  const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at FROM users WHERE id = ?').get(user_id);
+  console.log(`🎁 Acesso manual concedido para ${user?.email}: ${type}${expiresAt ? ', expira ' + expiresAt : ' (permanente)'}`);
+  res.json({ ok: true, user });
+});
+
+app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id obrigatório' });
+  db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE id = ?`).run(user_id);
+  res.json({ ok: true });
+});
+
+// ─── CHECKOUT REDIRECT ──────────────────────────────────────
+// Redireciona para PagarMe quando tiver a integração configurada
+app.get('/checkout', (req, res) => {
+  const plan = req.query.plan || 'monthly';
+  // URLs do PagarMe serão configuradas via env vars
+  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://link.pagar.me/capi-candia-mensal';
+  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://link.pagar.me/capi-candia-anual';
+  const url = plan === 'annual' ? PAGARME_ANNUAL_URL : PAGARME_MONTHLY_URL;
+  res.redirect(302, url);
 });
 
 // ─── HONORÁRIOS API ──────────────────────────────────────────

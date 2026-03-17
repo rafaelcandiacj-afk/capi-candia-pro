@@ -268,6 +268,8 @@
               <th>Nome</th>
               <th>Email</th>
               <th>Status</th>
+              <th>Plano</th>
+              <th>Expira</th>
               <th>Conversas</th>
               <th>Mensagens</th>
               <th>Último acesso</th>
@@ -717,27 +719,35 @@ async function loadUsers() {
   const users = await r.json();
   const tbody = document.getElementById('usersTable');
   if (!users.length) {
-    tbody.innerHTML = '<tr class="loading-row"><td colspan="7">Nenhum usuário cadastrado.</td></tr>';
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="9">Nenhum usuário cadastrado.</td></tr>';
     return;
   }
-  tbody.innerHTML = users.map(u => `
+  tbody.innerHTML = users.map(u => {
+    const planLabel = { free: '🔓 Free', paid: '💰 Pago', gift: '🎁 Gift' }[u.plan_type] || '🔓 Free';
+    const planColor = { free: 'var(--text-muted)', paid: '#6daa45', gift: '#c9a227' }[u.plan_type] || 'var(--text-muted)';
+    const expiresStr = u.plan_expires_at ? new Date(u.plan_expires_at).toLocaleDateString('pt-BR') : (u.plan_type === 'gift' ? 'Permanente' : '—');
+    return `
     <tr>
       <td><strong style="color:var(--text)">${esc(u.name)}</strong></td>
       <td style="color:var(--text-muted)">${esc(u.email)}</td>
       <td><span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Ativo' : 'Inativo'}</span></td>
+      <td style="color:${planColor};font-weight:600">${planLabel}</td>
+      <td style="color:var(--text-muted);font-size:.8rem">${expiresStr}</td>
       <td style="text-align:center">${u.total_conversations || 0}</td>
       <td style="text-align:center">${u.total_messages || 0}</td>
       <td style="color:var(--text-muted)">${u.last_login ? fmtDate(u.last_login) : 'Nunca'}</td>
       <td>
         <div class="action-btns">
           <button class="btn-sm" onclick="viewUserConvs(${u.id},'${esc(u.name)}')">💬 Conversas</button>
+          <button class="btn-sm" style="background:rgba(109,170,69,0.15);color:#6daa45" onclick="grantAccess(${u.id},'${esc(u.name)}')">🎁 Dar acesso</button>
+          ${(u.plan_type === 'paid' || u.plan_type === 'gift') ? `<button class="btn-sm btn-danger" onclick="revokeAccess(${u.id},'${esc(u.name)}')">Revogar</button>` : ''}
           <button class="btn-sm" onclick="toggleUser(${u.id},${u.active})">${u.active ? 'Desativar' : 'Ativar'}</button>
           <button class="btn-sm" onclick="resetPass(${u.id},'${esc(u.name)}')">Resetar senha</button>
           <button class="btn-sm btn-danger" onclick="deleteUser(${u.id},'${esc(u.name)}')">Apagar</button>
         </div>
       </td>
     </tr>
-  `).join('');
+  `}).join('');
 }
 
 async function createUser() {
@@ -786,6 +796,33 @@ async function deleteUser(id, name) {
   await fetch('/api/admin/users/'+id, { method: 'DELETE', headers: { 'x-admin-password': adminPassword } });
   showToast('Usuário apagado');
   loadUsers(); loadStats();
+}
+
+async function grantAccess(id, name) {
+  const months = prompt(`Dar acesso para "${name}".\nPor quantos meses? (deixe vazio para acesso permanente)`);
+  if (months === null) return; // cancelou
+  const r = await fetch('/api/admin/grant-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ user_id: id, plan_type: 'gift', months: months ? parseInt(months) : null })
+  });
+  const d = await r.json();
+  if (!r.ok) { showToast(d.error || 'Erro', true); return; }
+  const msg = months ? `Acesso de ${months} meses dado para ${name}!` : `Acesso permanente dado para ${name}!`;
+  showToast(msg);
+  loadUsers();
+}
+
+async function revokeAccess(id, name) {
+  if (!confirm(`Revogar acesso de "${name}"? O plano será revertido para Free.`)) return;
+  const r = await fetch('/api/admin/revoke-access', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ user_id: id })
+  });
+  if (r.ok) showToast('Acesso revogado para ' + name);
+  else showToast('Erro ao revogar acesso', true);
+  loadUsers();
 }
 
 async function loadPrompt() {
