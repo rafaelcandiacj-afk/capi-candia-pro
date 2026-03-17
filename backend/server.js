@@ -221,6 +221,39 @@ Lema: "Capivara que anda em bando não fica comida de onça."`;
   db.prepare("INSERT INTO settings (key, value) VALUES ('system_prompt', ?)").run(DEFAULT_PROMPT);
 }
 
+// ─── AUTO-SEED: restaura dados essenciais se o banco estiver vazio ──
+(async () => {
+  try {
+    const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+    if (userCount === 0) {
+      console.log('📦 Banco vazio detectado — rodando seed automático...');
+      const hashRafael = await bcrypt.hash('capi2026', 10);
+      const hashMarcos = await bcrypt.hash('teste2026', 10);
+      db.prepare('INSERT OR IGNORE INTO users (name, email, password, active) VALUES (?, ?, ?, 1)')
+        .run('Rafael Cândia', 'rafaelcandia.cj@gmail.com', hashRafael);
+      db.prepare('INSERT OR IGNORE INTO users (name, email, password, active) VALUES (?, ?, ?, 1)')
+        .run('Dr. Marcos Henrique Souza', 'marcos.souza.adv@gmail.com', hashMarcos);
+      console.log('✅ Usuários seed criados (Rafael + Dr. Marcos)');
+    }
+    // Garante system prompt mesmo se já existiam usuários
+    const sp = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get();
+    if (!sp || !sp.value || sp.value.length < 100) {
+      const SEED_PROMPT = 'Você é o Capi Când-IA Pro, um agente de inteligência artificial avançado, criado por Rafael Cândia, advogado, mentor e fundador da Comunidade Capi Cândia.\n\nSua missão é ser o braço estratégico do Rafael, ajudando advogados da comunidade ou convidados pessoais dele a se posicionarem, prospectarem clientes e aplicarem teses jurídicas lucrativas com ética e consistência.\n\n📚 BASE DE CONHECIMENTO: As +300 teses jurídicas escaláveis, O Método Capi Cândia (6 pilares), materiais da Comunidade, Código de Ética da OAB, experiências reais do Rafael, FAQ dos alunos.\n\n🧩 FORMATO DAS TESES (quando solicitado):\n📚 Categoria | 🏷️ Subcategoria | ⚖️ Tese Jurídica | 👥 Público-alvo | 🎯 Criativo sugerido | 📢 Copy Meta Ads | 🔍 Palavras-chave Google Ads | 💬 Script WhatsApp | 🏷️ Tags | 🔄 Status\n\n🎙️ TOM DE VOZ:\n- Fala como o Rafael falaria\n- Usa: papi, meu patrão, capivarístico, AUUUU! (com moderação)\n- Modo PapiCrítico™\n- Máximo 4-5 parágrafos. Termine SEMPRE com pergunta de acompanhamento.\n\n📌 FRASES-CHAVE: AUUUU! Isso aqui é papo reto de capivara raiz. | Você não é preguiçoso não, né papi? | Vergonha não paga boleto. | Vai reclamar ou vai virar referência na sua cidade?\n\n🧠 MÉTODO CAPI CÂNDIA: 1.Advocacia Raiz 2.Sites de Prospecção 3.Marketing Jurídico 4.Tráfego Pago 5.Atendimento e Precificação 6.Inteligência Emocional\n\n⚠️ LIMITES: Nunca prometer resultados financeiros. Nunca sugerir práticas fora do Código de Ética. Nunca inventar teses ou materiais.\n\nSeu lema: Capivara que anda em bando não vira comida de onça.';
+      db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('system_prompt', ?)").run(SEED_PROMPT);
+      console.log('✅ System prompt restaurado via seed');
+    }
+    // Garante notificação de boas-vindas
+    const notif = db.prepare("SELECT id FROM notifications WHERE active = 1").get();
+    if (!notif) {
+      db.prepare("INSERT INTO notifications (title, body, active) VALUES (?, ?, 1)")
+        .run('👋 Bem-vindo ao Capi Când-IA Pro!', 'Seu assistente jurídico com IA está pronto. Use os botões no topo para Teses, Conteúdo, Petição e o Jogo!');
+      console.log('✅ Notificação de boas-vindas criada via seed');
+    }
+  } catch(e) {
+    console.error('⚠️ Erro no seed automático:', e.message);
+  }
+})();
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../frontend')));
