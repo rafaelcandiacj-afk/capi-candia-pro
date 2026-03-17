@@ -97,6 +97,43 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (file_id) REFERENCES knowledge_files(id)
   );
+
+  CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id INTEGER PRIMARY KEY,
+    nome TEXT,
+    area TEXT,
+    cidade TEXT,
+    anos_experiencia TEXT,
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS message_analytics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    message_type TEXT DEFAULT 'text',
+    chip_used TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS conversation_uploads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER,
+    user_id INTEGER NOT NULL,
+    filename TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    extracted_text TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 `);
 
 // Inserir prompt padrão se não existir
@@ -414,11 +451,23 @@ app.delete('/api/conversations/:id', authMiddleware, (req, res) => {
 
 // ─── CHAT COM RAG ─────────────────────────────────────────────
 app.post('/api/chat', authMiddleware, async (req, res) => {
-  const { messages, conversation_id } = req.body;
+  const { messages, conversation_id, upload_id } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
   const systemPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get()?.value || '';
+  
+  // Injeta memória do usuário (nome, área, cidade)
+  const userProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
+  let profileCtx = '';
+  if (userProfile && (userProfile.nome || userProfile.area)) {
+    profileCtx = '\n\nPERFIL DO USUÁRIO ATUAL:\n';
+    if (userProfile.nome) profileCtx += `- Nome: ${userProfile.nome}\n`;
+    if (userProfile.area) profileCtx += `- Área de atuação: ${userProfile.area}\n`;
+    if (userProfile.cidade) profileCtx += `- Cidade: ${userProfile.cidade}\n`;
+    if (userProfile.anos_experiencia) profileCtx += `- Anos de experiência: ${userProfile.anos_experiencia}\n`;
+    profileCtx += 'Use essas informações para personalizar suas respostas. Chame o usuário pelo nome quando natural.';
+  }
   
   // Pega a última mensagem do usuário para busca semântica
   const lastUserMsg = messages.filter(m => m.role === 'user').pop();
@@ -450,7 +499,16 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa. OBRIGATORIAMENTE, ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Isso é fundamental para você personalizar as próximas respostas. Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
   }
 
-  const fullSystemPrompt = systemPrompt + ragContext + personalizationCtx;
+  // Injeta documento enviado na conversa
+  let docCtx = '';
+  if (upload_id) {
+    const upload = db.prepare('SELECT original_name, extracted_text FROM conversation_uploads WHERE id = ? AND user_id = ?').get(upload_id, req.user.id);
+    if (upload && upload.extracted_text) {
+      docCtx = `\n\n━━━ DOCUMENTO ENVIADO PELO USUÁRIO ━━━\nArquivo: ${upload.original_name}\n\n${upload.extracted_text}\n━━━ FIM DO DOCUMENTO ━━━\nAnalise e responda com base neste documento quando relevante.`;
+    }
+  }
+
+  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx;
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -484,6 +542,13 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     const lastMsg = messages[messages.length - 1];
     db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'user', lastMsg.content, 0);
     db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'assistant', reply, tokens);
+
+    // Auto-detectar e salvar perfil se usuário informou nome/área
+    if (isFirstMessage) {
+      const userMsgContent = messages.find(m => m.role === 'user')?.content || '';
+      // Salva evento de analytics
+      db.prepare("INSERT INTO message_analytics (user_id, message_type) VALUES (?, 'first_message')").run(userId);
+    }
 
     res.json({ reply, tokens, conversation_id: convId });
   } catch (e) {
@@ -662,6 +727,157 @@ app.post('/api/admin/knowledge/ingest-server-files', adminMiddleware, async (req
   
   res.json({ message: `${results.length} arquivos enfileirados para processamento`, results });
 });
+
+
+// ─── PERFIL DO USUÁRIO (MEMÓRIA) ─────────────────────────────
+
+// Salvar/atualizar perfil
+app.put('/api/profile', authMiddleware, (req, res) => {
+  const { nome, area, cidade, anos_experiencia } = req.body;
+  const userId = req.user.id;
+  db.prepare(`
+    INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, anos_experiencia, updated_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now'))
+  `).run(userId, nome || null, area || null, cidade || null, anos_experiencia || null);
+  res.json({ success: true });
+});
+
+// Ler perfil
+app.get('/api/profile', authMiddleware, (req, res) => {
+  const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
+  res.json(profile || {});
+});
+
+// ─── ANALYTICS ────────────────────────────────────────────────
+
+// Registrar evento de chip clicado
+app.post('/api/analytics/chip', authMiddleware, (req, res) => {
+  const { chip_text } = req.body;
+  db.prepare('INSERT INTO message_analytics (user_id, message_type, chip_used) VALUES (?, ?, ?)')
+    .run(req.user.id, 'chip', chip_text || '');
+  res.json({ success: true });
+});
+
+// Stats de analytics para admin
+app.get('/api/admin/analytics', adminMiddleware, (req, res) => {
+  const topChips = db.prepare(`
+    SELECT chip_used, COUNT(*) as count 
+    FROM message_analytics 
+    WHERE message_type = 'chip' AND chip_used != ''
+    GROUP BY chip_used ORDER BY count DESC LIMIT 10
+  `).all();
+
+  const topQuestions = db.prepare(`
+    SELECT content, COUNT(*) as count
+    FROM messages 
+    WHERE role = 'user'
+    GROUP BY content 
+    HAVING LENGTH(content) < 120
+    ORDER BY count DESC LIMIT 10
+  `).all();
+
+  const msgPerDay = db.prepare(`
+    SELECT date(created_at) as day, COUNT(*) as count
+    FROM messages WHERE role = 'user'
+    GROUP BY day ORDER BY day DESC LIMIT 30
+  `).all();
+
+  const topAreas = db.prepare(`
+    SELECT area, COUNT(*) as count 
+    FROM user_profiles 
+    WHERE area IS NOT NULL AND area != ''
+    GROUP BY area ORDER BY count DESC LIMIT 10
+  `).all();
+
+  res.json({ topChips, topQuestions, msgPerDay, topAreas });
+});
+
+// ─── NOTIFICAÇÕES ─────────────────────────────────────────────
+
+// Listar notificações ativas (usuário)
+app.get('/api/notifications', authMiddleware, (req, res) => {
+  const notifs = db.prepare('SELECT id, title, body, created_at FROM notifications WHERE active = 1 ORDER BY created_at DESC LIMIT 5').all();
+  res.json(notifs);
+});
+
+// Criar notificação (admin)
+app.post('/api/admin/notifications', adminMiddleware, (req, res) => {
+  const { title, body } = req.body;
+  if (!title || !body) return res.status(400).json({ error: 'Título e corpo obrigatórios' });
+  const result = db.prepare('INSERT INTO notifications (title, body) VALUES (?, ?)').run(title, body);
+  res.json({ id: result.lastInsertRowid, title, body, active: 1 });
+});
+
+// Desativar notificação (admin)
+app.delete('/api/admin/notifications/:id', adminMiddleware, (req, res) => {
+  db.prepare('UPDATE notifications SET active = 0 WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Listar notificações (admin)
+app.get('/api/admin/notifications', adminMiddleware, (req, res) => {
+  const notifs = db.prepare('SELECT * FROM notifications ORDER BY created_at DESC').all();
+  res.json(notifs);
+});
+
+// ─── UPLOAD NA CONVERSA ───────────────────────────────────────
+
+const uploadConv = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, UPLOADS_DIR),
+    filename: (req, file, cb) => {
+      const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, 'conv_' + Date.now() + '_' + safe);
+    }
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.txt', '.pdf', '.md', '.docx'];
+    const ext = require('path').extname(file.originalname).toLowerCase();
+    allowed.includes(ext) ? cb(null, true) : cb(new Error('Formato não suportado'));
+  }
+});
+
+app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
+  
+  let extractedText = '';
+  const ext = require('path').extname(req.file.originalname).toLowerCase();
+  
+  try {
+    if (ext === '.txt' || ext === '.md') {
+      extractedText = fs.readFileSync(req.file.path, 'utf8');
+    } else if (ext === '.pdf') {
+      const pdfParse = require('pdf-parse');
+      const buf = fs.readFileSync(req.file.path);
+      const data = await pdfParse(buf);
+      extractedText = data.text;
+    } else if (ext === '.docx') {
+      // Tenta ler como texto (fallback simples)
+      extractedText = fs.readFileSync(req.file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+    }
+    
+    // Limita a 8000 chars para não explodir o contexto
+    extractedText = extractedText.substring(0, 8000);
+    
+    const result = db.prepare(
+      'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, extracted_text) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(req.body.conversation_id || null, req.user.id, req.file.filename, req.file.originalname, req.file.path, extractedText);
+    
+    res.json({
+      id: result.lastInsertRowid,
+      original_name: req.file.originalname,
+      extracted_length: extractedText.length,
+      preview: extractedText.substring(0, 200) + '...'
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao processar arquivo: ' + e.message });
+  }
+});
+
+// ─── CHAT COM SUPORTE A DOCUMENTO ─────────────────────────────
+// Extensão do /api/chat para aceitar upload_id
+// (o upload_id é injetado no contexto como documento adicional)
 
 // Catch-all SPA
 app.get('/{*path}', (req, res) => {

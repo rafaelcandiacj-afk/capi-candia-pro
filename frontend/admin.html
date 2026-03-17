@@ -157,6 +157,8 @@
     <button class="tab-btn" onclick="switchTab('knowledge')">📚 Conhecimento</button>
     <button class="tab-btn" onclick="switchTab('users')">Usuários</button>
     <button class="tab-btn" onclick="switchTab('prompt')">Prompt do agente</button>
+    <button class="tab-btn" onclick="switchTab('analytics')">📊 Analytics</button>
+    <button class="tab-btn" onclick="switchTab('notifications')">🔔 Notificações</button>
   </div>
 
   <div class="content">
@@ -341,7 +343,7 @@ function doLogout() {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    const tabs = ['overview', 'knowledge', 'users', 'prompt'];
+    const tabs = ['overview', 'knowledge', 'users', 'prompt', 'analytics', 'notifications'];
     b.classList.toggle('active', tabs[i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -350,6 +352,103 @@ function switchTab(tab) {
   if (tab === 'users') loadUsers();
   if (tab === 'overview') loadStats();
   if (tab === 'knowledge') loadKnowledge();
+  if (tab === 'analytics') loadAnalytics();
+  if (tab === 'notifications') loadNotifications();
+}
+
+
+async function loadAnalytics() {
+  const r = await fetch('/api/admin/analytics', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const d = await r.json();
+  
+  // Chips
+  const chipsEl = document.getElementById('topChipsList');
+  if (d.topChips.length === 0) chipsEl.innerHTML = '<span style="color:var(--text-muted)">Nenhum dado ainda</span>';
+  else chipsEl.innerHTML = d.topChips.map((c,i) => 
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span>${i+1}. ${c.chip_used.substring(0,50)}</span>
+      <span style="color:var(--green);font-weight:700">${c.count}x</span>
+    </div>`
+  ).join('');
+
+  // Áreas
+  const areasEl = document.getElementById('topAreasList');
+  if (d.topAreas.length === 0) areasEl.innerHTML = '<span style="color:var(--text-muted)">Nenhum dado ainda</span>';
+  else areasEl.innerHTML = d.topAreas.map((a,i) =>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span>${i+1}. ${a.area}</span>
+      <span style="color:var(--green);font-weight:700">${a.count}</span>
+    </div>`
+  ).join('');
+
+  // Perguntas
+  const qEl = document.getElementById('topQuestionsList');
+  const multiQ = d.topQuestions.filter(q => q.count > 1);
+  if (multiQ.length === 0) qEl.innerHTML = '<span style="color:var(--text-muted)">Nenhuma pergunta repetida ainda</span>';
+  else qEl.innerHTML = multiQ.map((q,i) =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="color:var(--green);font-weight:700;margin-right:8px">${q.count}x</span>${q.content}
+    </div>`
+  ).join('');
+
+  // Msgs por dia
+  const dayEl = document.getElementById('msgPerDayList');
+  if (d.msgPerDay.length === 0) dayEl.innerHTML = '<span style="color:var(--text-muted)">Nenhum dado ainda</span>';
+  else {
+    const max = Math.max(...d.msgPerDay.map(m => m.count));
+    dayEl.innerHTML = d.msgPerDay.slice(0,14).reverse().map(m => 
+      `<div style="text-align:center">
+        <div style="width:32px;background:var(--green-dim);border:1px solid var(--border2);border-radius:4px;height:${Math.max(4,Math.round(m.count/max*60))}px;margin-bottom:4px"></div>
+        <div style="font-size:.65rem;color:var(--text-muted)">${m.day.slice(5)}</div>
+        <div style="font-size:.7rem;color:var(--green);font-weight:700">${m.count}</div>
+      </div>`
+    ).join('');
+  }
+}
+
+async function loadNotifications() {
+  const r = await fetch('/api/admin/notifications', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const notifs = await r.json();
+  const el = document.getElementById('notifList');
+  if (notifs.length === 0) {
+    el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:40px">Nenhuma notificação criada ainda</div>';
+    return;
+  }
+  el.innerHTML = notifs.map(n => `
+    <div style="background:var(--bg2);border:1px solid var(--border${n.active?'2':''});border-radius:12px;padding:16px;margin-bottom:12px;opacity:${n.active?'1':'0.5'}">
+      <div style="display:flex;justify-content:space-between;align-items:start">
+        <div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:${n.active?'var(--green)':'var(--text-muted)'};margin-bottom:4px">${n.active?'🟢':'🔴'} ${n.title}</div>
+          <div style="font-size:.83rem;color:var(--text2)">${n.body}</div>
+          <div style="font-size:.7rem;color:var(--text-muted);margin-top:6px">${n.created_at}</div>
+        </div>
+        ${n.active ? `<button onclick="deleteNotif(${n.id})" style="background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);border-radius:6px;color:#ef9a9a;padding:6px 12px;cursor:pointer;font-size:.75rem;white-space:nowrap;margin-left:12px">Desativar</button>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function createNotification() {
+  const title = document.getElementById('notif_title').value.trim();
+  const body = document.getElementById('notif_body').value.trim();
+  if (!title || !body) { alert('Preencha título e mensagem'); return; }
+  const r = await fetch('/api/admin/notifications', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+    body: JSON.stringify({ title, body })
+  });
+  if (r.ok) {
+    document.getElementById('notif_title').value = '';
+    document.getElementById('notif_body').value = '';
+    loadNotifications();
+  }
+}
+
+async function deleteNotif(id) {
+  await fetch('/api/admin/notifications/'+id, { method: 'DELETE', headers: { 'x-admin-password': adminPassword } });
+  loadNotifications();
 }
 
 function loadAll() { loadStats(); loadUsers(); loadKnowledge(); }
