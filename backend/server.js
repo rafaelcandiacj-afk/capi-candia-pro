@@ -264,19 +264,27 @@ async function extractText(filePath, originalName) {
       const pdfParse = require('pdf-parse');
       const buffer = fs.readFileSync(filePath);
       const data = await pdfParse(buffer);
-      return data.text;
+      if (data.text && data.text.trim().length > 50) return data.text;
+      throw new Error('Texto vazio');
     } catch (e) {
       console.error('Erro ao parsear PDF:', e.message);
-      return '';
+      // Fallback: tenta ler como buffer e extrair texto bruto
+      try {
+        const raw = fs.readFileSync(filePath, 'latin1');
+        const extracted = raw.match(/[\x20-\x7E\xC0-\xFF\n\r\t]{4,}/g);
+        return extracted ? extracted.join(' ').substring(0, 500000) : '';
+      } catch { return ''; }
     }
   }
   
-  // .docx — extrai texto básico
+  // .docx — usa mammoth para extração correta
   if (ext === '.docx') {
     try {
-      const content = fs.readFileSync(filePath, 'utf8');
-      return content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    } catch {
+      const mammoth = require('mammoth');
+      const result = await mammoth.extractRawText({ path: filePath });
+      return result.value || '';
+    } catch (e) {
+      console.error('Erro ao parsear DOCX:', e.message);
       return '';
     }
   }
@@ -678,6 +686,27 @@ app.get('/api/admin/knowledge/:id/status', adminMiddleware, (req, res) => {
 });
 
 // Deletar arquivo de conhecimento
+// Reprocessar arquivo com erro
+app.post('/api/admin/knowledge/:id/reprocess', adminMiddleware, (req, res) => {
+  const file = db.prepare('SELECT * FROM knowledge_files WHERE id = ?').get(req.params.id);
+  if (!file) return res.status(404).json({ error: 'Arquivo não encontrado' });
+  db.prepare("UPDATE knowledge_files SET status = 'processing', chunk_count = 0 WHERE id = ?").run(file.id);
+  db.prepare('DELETE FROM knowledge_chunks WHERE file_id = ?').run(file.id);
+  processFile(file.id).catch(e => console.error('Erro reprocess:', e.message));
+  res.json({ success: true, message: 'Reprocessando...' });
+});
+
+// Reprocessar TODOS os arquivos com erro
+app.post('/api/admin/knowledge/reprocess-errors', adminMiddleware, (req, res) => {
+  const errorFiles = db.prepare("SELECT * FROM knowledge_files WHERE status = 'error'").all();
+  errorFiles.forEach((file, i) => {
+    db.prepare("UPDATE knowledge_files SET status = 'processing', chunk_count = 0 WHERE id = ?").run(file.id);
+    db.prepare('DELETE FROM knowledge_chunks WHERE file_id = ?').run(file.id);
+    setTimeout(() => processFile(file.id).catch(e => console.error('Erro reprocess:', e.message)), i * 3000);
+  });
+  res.json({ success: true, message: `${errorFiles.length} arquivos sendo reprocessados` });
+});
+
 app.delete('/api/admin/knowledge/:id', adminMiddleware, (req, res) => {
   const file = db.prepare('SELECT * FROM knowledge_files WHERE id = ?').get(req.params.id);
   if (!file) return res.status(404).json({ error: 'Arquivo não encontrado' });

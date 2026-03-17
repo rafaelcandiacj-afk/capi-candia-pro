@@ -502,7 +502,8 @@ async function loadKnowledge() {
         ${f.status === 'processing' ? `<span id="poll-${f.id}" style="font-size:.72rem;color:var(--text-muted);margin-left:6px">gerando embeddings...</span>` : ''}
       </td>
       <td style="color:var(--text-muted)">${fmtDate(f.created_at)}</td>
-      <td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap">
+        ${f.status === 'error' ? `<button class="btn-sm" onclick="reprocessFile(${f.id})" style="border-color:rgba(255,193,7,.4);color:#ffc107">🔄 Tentar novamente</button>` : ''}
         <button class="btn-sm btn-danger" onclick="deleteKnowledgeFile(${f.id}, '${esc(f.original_name)}')">Remover</button>
       </td>
     </tr>
@@ -615,6 +616,13 @@ async function handleFiles(fileList) {
   statusEl.textContent = 'Concluído!';
   setTimeout(() => { progressEl.style.display = 'none'; fillEl.style.width = '0%'; }, 2000);
   loadKnowledge();
+}
+
+async function reprocessFile(id) {
+  const r = await fetch(`/api/admin/knowledge/${id}/reprocess`, { method: 'POST', headers: { 'x-admin-password': adminPassword } });
+  const d = await r.json();
+  if (d.success) { showToast('🔄 Reprocessando...'); setTimeout(loadKnowledge, 3000); }
+  else showToast('Erro: ' + d.error);
 }
 
 async function deleteKnowledgeFile(id, name) {
