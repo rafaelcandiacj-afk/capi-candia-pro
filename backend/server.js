@@ -752,9 +752,10 @@ app.get('/api/profile', authMiddleware, (req, res) => {
 
 // Registrar evento de chip clicado
 app.post('/api/analytics/chip', authMiddleware, (req, res) => {
-  const { chip_text } = req.body;
+  const { chip_text, chip } = req.body;
+  const chipValue = chip_text || chip || '';
   db.prepare('INSERT INTO message_analytics (user_id, message_type, chip_used) VALUES (?, ?, ?)')
-    .run(req.user.id, 'chip', chip_text || '');
+    .run(req.user.id, 'chip', chipValue);
   res.json({ success: true });
 });
 
@@ -865,7 +866,9 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
     ).run(req.body.conversation_id || null, req.user.id, req.file.filename, req.file.originalname, req.file.path, extractedText);
     
     res.json({
+      upload_id: result.lastInsertRowid,
       id: result.lastInsertRowid,
+      name: req.file.originalname,
       original_name: req.file.originalname,
       extracted_length: extractedText.length,
       preview: extractedText.substring(0, 200) + '...'
