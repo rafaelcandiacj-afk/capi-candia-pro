@@ -1922,6 +1922,19 @@ app.get('/api/honorarios/:sigla', (req, res) => {
 // Serve arquivos estáticos (CSS, JS, imagens) — após todas as rotas de API
 app.use(express.static(path.join(__dirname, '../frontend')));
 
+// Serve landing page na raiz /
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/landing/index.html'));
+});
+
+// Serve arquivos estáticos da landing (imagens, etc)
+app.use('/landing', express.static(path.join(__dirname, '../frontend/landing')));
+
+// Rota /app redireciona para o sistema (login)
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
 // Catch-all SPA — deve ficar após todas as rotas de API
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
