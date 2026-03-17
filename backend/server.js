@@ -1760,6 +1760,88 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
   }
 });
 
+// ─── WEBHOOK GURU (Digital Manager Guru) ───────────────────
+// Formato diferente do PagarMe — campos: subscriber.email, last_status, product.offer.name, charged_every_days
+app.post('/api/webhook/guru', express.json(), (req, res) => {
+  try {
+    const body = req.body;
+    console.log('📨 Webhook Guru:', body?.last_status, body?.subscriber?.email);
+
+    // Eventos de ativação/pagamento
+    const ACTIVE_STATUSES = ['active', 'ativa', 'paid', 'started'];
+    const CANCEL_STATUSES = ['canceled', 'cancelada', 'cancelled', 'expired', 'expirada'];
+
+    const status = (body?.last_status || '').toLowerCase();
+    const email = (body?.subscriber?.email || body?.last_transaction?.contact?.email || '').toLowerCase();
+    const customerName = body?.subscriber?.name || body?.last_transaction?.contact?.name || (email ? email.split('@')[0] : 'Assinante');
+    const subscriptionId = body?.id || body?.subscription_code;
+
+    // Detectar se é anual pelo intervalo ou nome da oferta
+    const offerName = (body?.product?.offer?.name || '').toLowerCase();
+    const intervalType = (body?.product?.offer?.plan?.interval_type || '').toLowerCase();
+    const interval = parseInt(body?.product?.offer?.plan?.interval || 1);
+    const chargedEveryDays = parseInt(body?.charged_every_days || 0);
+    const isAnnual = offerName.includes('anual') || offerName.includes('annual') ||
+                     intervalType === 'year' || intervalType === 'years' ||
+                     (intervalType === 'month' && interval >= 12) ||
+                     chargedEveryDays >= 360;
+
+    if (!email) {
+      console.log('⚠️ Webhook Guru sem email — ignorando');
+      return res.status(200).json({ ok: true });
+    }
+
+    if (ACTIVE_STATUSES.includes(status)) {
+      let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+      // Criar usuário se não existir
+      if (!user) {
+        const tempPass = require('crypto').randomBytes(8).toString('hex');
+        const hash = require('bcryptjs').hashSync(tempPass, 10);
+        try {
+          db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(customerName, email, hash);
+          user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+          console.log('✅ Usuário criado via webhook Guru:', email);
+        } catch(e) {
+          console.error('Erro ao criar usuário via webhook Guru:', e.message);
+        }
+      }
+
+      if (user) {
+        const expiresAt = new Date();
+        if (isAnnual) {
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        }
+
+        db.prepare(`
+          UPDATE users SET
+            plan_type = 'paid',
+            plan_expires_at = ?,
+            plan_activated_at = datetime('now'),
+            pagarme_subscription_id = ?,
+            active = 1
+          WHERE id = ?
+        `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
+
+        console.log(`✅ Guru: plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
+        setImmediate(() => sendWelcomeEmail(email, user.name));
+      }
+    }
+
+    if (CANCEL_STATUSES.includes(status)) {
+      db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE email = ?`).run(email);
+      console.log(`❌ Guru: plano cancelado para ${email}`);
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (e) {
+    console.error('Webhook Guru erro:', e.message);
+    res.status(200).json({ ok: true }); // sempre 200 para Guru não retentar
+  }
+});
+
 // ─── ROTA: Status do plano do usuário ───────────────────────
 app.get('/api/subscription/status', authMiddleware, (req, res) => {
   const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at FROM users WHERE id = ?').get(req.user.id);
