@@ -902,6 +902,23 @@ app.get('/api/admin/notifications', adminMiddleware, (req, res) => {
   res.json(notifs);
 });
 
+// Broadcast para todos os usuários
+app.post('/api/admin/broadcast', adminMiddleware, (req, res) => {
+  const { title, message } = req.body;
+  if (!title || !message) return res.status(400).json({ error: 'Título e mensagem obrigatórios' });
+  const activeUsers = db.prepare('SELECT COUNT(*) as c FROM users WHERE active = 1').get().c;
+  db.prepare('INSERT INTO notifications (title, body, active) VALUES (?, ?, 1)').run(title, message);
+  res.json({ success: true, sent_to: activeUsers });
+});
+
+// Ver mensagens de uma conversa específica (admin)
+app.get('/api/admin/conversations/:id/messages', adminMiddleware, (req, res) => {
+  const conv = db.prepare('SELECT c.*, u.name as user_name, u.email as user_email FROM conversations c JOIN users u ON u.id = c.user_id WHERE c.id = ?').get(req.params.id);
+  if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
+  const messages = db.prepare('SELECT role, content, created_at FROM messages WHERE conversation_id = ? ORDER BY id ASC').all(req.params.id);
+  res.json({ conversation: conv, messages });
+});
+
 // ─── UPLOAD NA CONVERSA ───────────────────────────────────────
 
 const uploadConv = multer({
@@ -982,6 +999,76 @@ app.delete('/api/favorites/:id', authMiddleware, (req, res) => {
   if (!fav) return res.status(404).json({ error: 'Favorito não encontrado' });
   db.prepare('DELETE FROM favorites WHERE id = ?').run(req.params.id);
   res.json({ success: true });
+});
+
+// ─── JOGO: SIMULADOR DE ATENDIMENTO ───────────────────────
+app.post('/api/game/chat', authMiddleware, async (req, res) => {
+  const { messages, level, area, client_temp } = req.body;
+  if (!messages || !level || !area) return res.status(400).json({ error: 'Dados do jogo incompletos' });
+  if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
+
+  const personalities = {
+    'Fácil': 'Você é João, aposentado, curioso, já ouviu falar que pode revisar seu benefício. Tem 1-2 objeções simples (preço, tempo). É receptivo e educado.',
+    'Médio': 'Você é Marcos, empresário, desconfiado, já gastou dinheiro com advogado que não entregou. Questiona honorários, pede garantias, compara preços. Tem 3-4 objeções.',
+    'Difícil': 'Você é Roberto, agressivo, foi enganado por advogado, desconfia de todos. Ataca o advogado, diz que é tudo golpe, extremamente difícil de convencer. Tem 5+ objeções pesadas.'
+  };
+
+  const gameSystemPrompt = `Você é um CLIENTE (não um assistente) num jogo de simulação de atendimento jurídico.
+Nível: ${level} — Área: ${area}
+
+${personalities[level] || personalities['Médio']}
+
+Regras:
+1. NUNCA saia do personagem. Você é o CLIENTE, não o advogado.
+2. A cada resposta, avalie internamente se o advogado foi bem (usou empatia, técnica, segurança) ou mal (foi genérico, prometeu demais, ficou na defensiva)
+3. A temperatura atual do cliente é ${client_temp || 50}%. Ajuste baseado na qualidade da resposta do advogado (+5 a +15 se foi boa, -5 a -20 se foi ruim).
+4. No final da sua resposta, adicione EXATAMENTE esta linha numa nova linha: [TEMP:XX] onde XX é a nova temperatura (0-100)
+5. Se temp >= 90, adicione também na linha seguinte: [WIN]
+6. Se temp <= 10, adicione na linha seguinte: [LOSE]
+7. Seja realista — não deixe ganhar fácil, mas seja justo
+8. Responda como cliente, com linguagem natural, faça objeções, perguntas, demonstre emoções.
+9. Mantenha respostas curtas (2-4 parágrafos).`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{ role: 'system', content: gameSystemPrompt }, ...messages.slice(-20)],
+        temperature: 0.8,
+        max_tokens: 600
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
+
+    let reply = data.choices[0].message.content;
+
+    // Parse temperatura e resultado
+    const tempMatch = reply.match(/\[TEMP:(\d+)\]/);
+    const newTemp = tempMatch ? parseInt(tempMatch[1]) : (client_temp || 50);
+    const isWin = /\[WIN\]/.test(reply);
+    const isLose = /\[LOSE\]/.test(reply);
+
+    // Remove as tags do texto exibido
+    reply = reply.replace(/\[TEMP:\d+\]/g, '').replace(/\[WIN\]/g, '').replace(/\[LOSE\]/g, '').trim();
+
+    let result = 'continue';
+    let feedback = '';
+    if (isWin || newTemp >= 90) {
+      result = 'win';
+      feedback = 'Parabéns! Você fechou o contrato usando técnicas de atendimento eficazes!';
+    } else if (isLose || newTemp <= 0) {
+      result = 'lose';
+      feedback = 'O cliente foi embora. Revise as técnicas dos 15 Passos do Atendimento do Rafael Cândia.';
+    }
+
+    res.json({ reply, new_temp: Math.max(0, Math.min(100, newTemp)), game_over: result !== 'continue', result, feedback });
+  } catch (e) {
+    console.error('Game error:', e);
+    res.status(500).json({ error: 'Erro ao processar jogo' });
+  }
 });
 
 // Catch-all SPA

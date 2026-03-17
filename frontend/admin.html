@@ -293,6 +293,78 @@
       <textarea id="promptEditor" class="prompt-editor" placeholder="Carregando prompt..."></textarea>
     </div>
 
+    <!-- ANALYTICS -->
+    <div id="tab-analytics" class="tab-panel">
+      <div class="stats-grid" style="grid-template-columns:1fr 1fr">
+        <div class="form-card">
+          <div class="section-title" style="margin-bottom:12px">🏷️ Chips mais <span class="hl">clicados</span></div>
+          <div id="topChipsList"><span style="color:var(--text-muted)">Carregando...</span></div>
+        </div>
+        <div class="form-card">
+          <div class="section-title" style="margin-bottom:12px">⚖️ Áreas mais <span class="hl">populares</span></div>
+          <div id="topAreasList"><span style="color:var(--text-muted)">Carregando...</span></div>
+        </div>
+      </div>
+      <div class="form-card">
+        <div class="section-title" style="margin-bottom:12px">🔁 Perguntas <span class="hl">repetidas</span></div>
+        <div id="topQuestionsList"><span style="color:var(--text-muted)">Carregando...</span></div>
+      </div>
+      <div class="form-card">
+        <div class="section-title" style="margin-bottom:12px">📊 Mensagens por <span class="hl">dia</span></div>
+        <div id="msgPerDayList" style="display:flex;gap:6px;align-items:flex-end;min-height:80px"><span style="color:var(--text-muted)">Carregando...</span></div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="tab-notifications" class="tab-panel">
+      <!-- Criar notificação -->
+      <div class="form-card">
+        <div class="section-title" style="margin-bottom:12px">🔔 Criar <span class="hl">notificação</span></div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Título</label>
+          <input type="text" id="notif_title" class="input-field" placeholder="Título da notificação" style="margin:0">
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Mensagem</label>
+          <input type="text" id="notif_body" class="input-field" placeholder="Corpo da mensagem" style="margin:0">
+        </div>
+        <button class="btn-green" onclick="createNotification()">Criar notificação</button>
+      </div>
+
+      <!-- Broadcast -->
+      <div class="form-card" style="border-color:rgba(255,215,64,.3)">
+        <div class="section-title" style="margin-bottom:12px">📢 <span class="hl">Broadcast</span> para todos</div>
+        <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:12px">Envia notificação para todos os usuários ativos. Aparece no banner do chat.</p>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Título</label>
+          <input type="text" id="broadcast_title" class="input-field" placeholder="Ex: Nova funcionalidade disponível!" style="margin:0">
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Mensagem</label>
+          <textarea id="broadcast_message" class="input-field" placeholder="Escreva a mensagem do broadcast..." style="margin:0;height:80px;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn-green" onclick="sendBroadcast()" id="broadcastBtn">📢 Enviar para todos</button>
+          <span id="broadcastCount" style="font-size:.8rem;color:var(--text-muted)"></span>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div class="section-header" style="margin-top:24px">
+        <div class="section-title">Histórico de <span class="hl">notificações</span></div>
+      </div>
+      <div id="notifList"><div style="color:var(--text-muted);text-align:center;padding:40px">Carregando...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Conversas do usuário -->
+<div id="userConvsModal" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;width:100%;max-width:800px;max-height:85vh;overflow-y:auto;position:relative">
+    <button onclick="closeUserConvsModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.4rem">✕</button>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--green);margin-bottom:16px" id="userConvsTitle">Conversas</div>
+    <div id="userConvsContent"></div>
   </div>
 </div>
 
@@ -658,6 +730,7 @@ async function loadUsers() {
       <td style="color:var(--text-muted)">${u.last_login ? fmtDate(u.last_login) : 'Nunca'}</td>
       <td>
         <div class="action-btns">
+          <button class="btn-sm" onclick="viewUserConvs(${u.id},'${esc(u.name)}')">💬 Conversas</button>
           <button class="btn-sm" onclick="toggleUser(${u.id},${u.active})">${u.active ? 'Desativar' : 'Ativar'}</button>
           <button class="btn-sm" onclick="resetPass(${u.id},'${esc(u.name)}')">Resetar senha</button>
           <button class="btn-sm btn-danger" onclick="deleteUser(${u.id},'${esc(u.name)}')">Apagar</button>
@@ -754,6 +827,85 @@ function fmtDate(dt) {
   const d = new Date(dt.replace(' ','T')+'Z');
   return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
+
+// ── BROADCAST ────────────────────────────────────────────
+async function sendBroadcast() {
+  const title = document.getElementById('broadcast_title').value.trim();
+  const message = document.getElementById('broadcast_message').value.trim();
+  if (!title || !message) { showToast('Preencha título e mensagem do broadcast', true); return; }
+  if (!confirm('Enviar broadcast para TODOS os usuários ativos?')) return;
+  const btn = document.getElementById('broadcastBtn');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  try {
+    const r = await fetch('/api/admin/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ title, message })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showToast('📢 Broadcast enviado para ' + d.sent_to + ' usuários!');
+      document.getElementById('broadcast_title').value = '';
+      document.getElementById('broadcast_message').value = '';
+      loadNotifications();
+    } else {
+      showToast(d.error || 'Erro ao enviar broadcast', true);
+    }
+  } catch (e) { showToast('Erro de conexão', true); }
+  btn.disabled = false; btn.textContent = '📢 Enviar para todos';
+}
+
+// ── VER CONVERSAS DO USUÁRIO ────────────────────────────
+async function viewUserConvs(userId, userName) {
+  document.getElementById('userConvsTitle').textContent = 'Conversas de ' + userName;
+  document.getElementById('userConvsContent').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Carregando...</div>';
+  document.getElementById('userConvsModal').style.display = 'flex';
+  try {
+    const r = await fetch('/api/admin/users/' + userId + '/conversations', { headers: { 'x-admin-password': adminPassword } });
+    if (!r.ok) throw new Error('Erro');
+    const convs = await r.json();
+    if (!convs.length) {
+      document.getElementById('userConvsContent').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Nenhuma conversa</div>';
+      return;
+    }
+    document.getElementById('userConvsContent').innerHTML =
+      '<div style="margin-bottom:12px;font-size:.82rem;color:var(--text-muted)">' + convs.length + ' conversas</div>' +
+      convs.map(c => `
+        <div onclick="viewConvMessages(${c.id},'${esc(c.title)}')" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-weight:600;color:var(--text);font-size:.88rem;margin-bottom:4px">${esc(c.title)}</div>
+          <div style="font-size:.72rem;color:var(--text-muted)">${c.msg_count || 0} mensagens · ${fmtDate(c.updated_at)}</div>
+        </div>
+      `).join('');
+  } catch (e) {
+    document.getElementById('userConvsContent').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Erro ao carregar conversas</div>';
+  }
+}
+
+async function viewConvMessages(convId, title) {
+  document.getElementById('userConvsTitle').textContent = title;
+  document.getElementById('userConvsContent').innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:20px">Carregando mensagens...</div>';
+  try {
+    const r = await fetch('/api/admin/conversations/' + convId + '/messages', { headers: { 'x-admin-password': adminPassword } });
+    if (!r.ok) throw new Error('Erro');
+    const data = await r.json();
+    const msgs = data.messages || [];
+    let html = '<button onclick="viewUserConvs(\'' + (data.conversation?.user_id || '') + '\',\'' + esc(data.conversation?.user_name || 'Usuário') + '\')" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text2);cursor:pointer;font-size:.78rem;margin-bottom:16px;display:inline-block">← Voltar às conversas</button>';
+    html += '<div style="display:flex;flex-direction:column;gap:10px">';
+    msgs.forEach(m => {
+      const isUser = m.role === 'user';
+      html += `<div style="display:flex;flex-direction:column;${isUser ? 'align-items:flex-end' : 'align-items:flex-start'}">
+        <div style="background:${isUser ? 'rgba(0,200,83,.12)' : 'linear-gradient(135deg,rgba(0,50,20,.45),rgba(0,80,35,.25))'};border:1px solid ${isUser ? 'var(--border2)' : 'var(--border)'};border-radius:12px;padding:10px 14px;max-width:80%;font-size:.85rem;line-height:1.6;color:var(--text2)">${esc(m.content).replace(/\n/g,'<br>')}</div>
+        <div style="font-size:.65rem;color:var(--text-muted);margin-top:2px">${m.role === 'user' ? '👤 Usuário' : '🤖 Capi'} · ${fmtDate(m.created_at)}</div>
+      </div>`;
+    });
+    html += '</div>';
+    document.getElementById('userConvsContent').innerHTML = html;
+  } catch (e) {
+    document.getElementById('userConvsContent').innerHTML = '<div style="color:var(--red);text-align:center;padding:20px">Erro ao carregar mensagens</div>';
+  }
+}
+
+function closeUserConvsModal() { document.getElementById('userConvsModal').style.display = 'none'; }
 
 document.getElementById('adminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 </script>

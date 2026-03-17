@@ -249,6 +249,69 @@
     /* ── PERFIL MODAL ── */
     .profile-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#00c853,#00e676);display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;color:#050a05;margin:0 auto 16px;border:2px solid var(--green);box-shadow:0 0 20px var(--green-glow)}
 
+    /* ── JOGO: SIMULADOR DE ATENDIMENTO ── */
+    .game-overlay{position:fixed;inset:0;z-index:250;background:var(--bg);display:flex;flex-direction:column;animation:fadeIn .3s ease}
+    .game-header{background:linear-gradient(135deg,#0a1a0a,#0f2b0f);border-bottom:2px solid rgba(255,215,64,.3);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .game-title{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:#ffd740;letter-spacing:.06em;text-transform:uppercase;text-shadow:0 0 12px rgba(255,215,64,.3)}
+    .game-close{background:rgba(239,83,80,.15);border:1px solid rgba(239,83,80,.3);border-radius:8px;color:#ef9a9a;padding:6px 14px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;text-transform:uppercase;transition:all .2s}
+    .game-close:hover{background:rgba(239,83,80,.25);color:#ef5350}
+    .game-setup{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;animation:fadeUp .5s ease}
+    .game-setup-title{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;color:#ffd740;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 20px rgba(255,215,64,.3);margin-bottom:8px}
+    .game-setup-sub{color:var(--text2);font-size:.9rem;margin-bottom:32px;text-align:center;max-width:500px}
+    .level-cards{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;justify-content:center}
+    .level-card{width:160px;padding:20px;border-radius:var(--radius);cursor:pointer;transition:all .3s;text-align:center;border:2px solid transparent}
+    .level-card:hover{transform:translateY(-4px)}
+    .level-card.selected{transform:translateY(-4px)}
+    .level-easy{background:rgba(0,200,83,.1);border-color:rgba(0,200,83,.3)}
+    .level-easy:hover,.level-easy.selected{border-color:#00c853;box-shadow:0 0 20px rgba(0,200,83,.3)}
+    .level-medium{background:rgba(255,215,64,.1);border-color:rgba(255,215,64,.3)}
+    .level-medium:hover,.level-medium.selected{border-color:#ffd740;box-shadow:0 0 20px rgba(255,215,64,.3)}
+    .level-hard{background:rgba(239,83,80,.1);border-color:rgba(239,83,80,.3)}
+    .level-hard:hover,.level-hard.selected{border-color:#ef5350;box-shadow:0 0 20px rgba(239,83,80,.3)}
+    .level-icon{font-size:2rem;margin-bottom:8px}
+    .level-name{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .level-desc{font-size:.72rem;color:var(--text-muted);margin-top:4px}
+    .game-area-select{width:100%;max-width:320px;margin-bottom:24px}
+    .game-play{flex:1;display:flex;flex-direction:column;min-height:0}
+    .game-status-bar{display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+    .temp-bar-wrap{flex:1;min-width:200px}
+    .temp-label{font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);margin-bottom:4px;display:flex;justify-content:space-between}
+    .temp-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+    .temp-fill{height:100%;border-radius:4px;transition:width .5s ease,background .5s ease}
+    .game-counter{font-size:.75rem;color:var(--text-muted);font-weight:600;white-space:nowrap}
+    .game-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+    .game-messages::-webkit-scrollbar{width:4px}
+    .game-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+    .game-msg{display:flex;gap:10px;max-width:80%;animation:fadeInUp .3s ease}
+    .game-msg-client{align-self:flex-start}
+    .game-msg-player{align-self:flex-end;flex-direction:row-reverse}
+    .game-msg-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;margin-top:2px}
+    .game-msg-client .game-msg-avatar{background:rgba(255,215,64,.15);border:1.5px solid rgba(255,215,64,.4)}
+    .game-msg-player .game-msg-avatar{background:linear-gradient(135deg,#00c853,#00e676);border:1.5px solid var(--green)}
+    .game-msg-bubble{padding:12px 16px;border-radius:12px;font-size:.88rem;line-height:1.65;word-wrap:break-word}
+    .game-msg-client .game-msg-bubble{background:rgba(255,215,64,.08);border:1px solid rgba(255,215,64,.2);border-top-left-radius:4px;color:var(--text)}
+    .game-msg-player .game-msg-bubble{background:linear-gradient(135deg,rgba(0,200,83,.14),rgba(0,230,118,.07));border:1px solid var(--border2);border-top-right-radius:4px;color:var(--text)}
+    .game-input-area{padding:14px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+    .game-input-wrap{display:flex;gap:10px;max-width:800px;margin:0 auto}
+    .game-input{flex:1;padding:11px 15px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.93rem;outline:none;transition:all .2s;resize:none;min-height:44px;max-height:100px}
+    .game-input:focus{border-color:#ffd740;box-shadow:0 0 0 3px rgba(255,215,64,.15)}
+    .game-result{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+    .game-result-icon{font-size:4rem;margin-bottom:16px;animation:bounceIn .6s ease}
+    @keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+    .game-result-title{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+    .game-win .game-result-title{color:#ffd740;text-shadow:0 0 20px rgba(255,215,64,.4)}
+    .game-lose .game-result-title{color:#ef5350;text-shadow:0 0 20px rgba(239,83,80,.4)}
+    .game-result-sub{color:var(--text2);font-size:.9rem;max-width:460px;line-height:1.6;margin-bottom:20px}
+    .game-result-score{font-family:'Rajdhani',sans-serif;font-size:1.3rem;font-weight:700;color:var(--green);margin-bottom:24px}
+    .game-result-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    .game-btn{padding:12px 24px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;border:none}
+    .game-btn-primary{background:linear-gradient(135deg,#ffd740,#ffab00);color:#1a1a00}
+    .game-btn-primary:hover{box-shadow:0 0 20px rgba(255,215,64,.4);transform:translateY(-2px)}
+    .game-btn-secondary{background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+    .game-btn-secondary:hover{border-color:var(--green);color:var(--green)}
+    @keyframes confetti-fall{0%{transform:translateY(-100vh) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+    .confetti-piece{position:fixed;width:8px;height:8px;top:-10px;z-index:260;animation:confetti-fall 3s linear forwards;pointer-events:none}
+
   </style>
 </head>
 <body>
@@ -333,6 +396,7 @@
           Teses
         </button>
         <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">📱 Conteúdo</button>
+        <button class="teses-btn" onclick="openGame()" title="Simulador de Atendimento" style="background:linear-gradient(135deg,rgba(255,215,64,.15),rgba(255,171,0,.1));border-color:rgba(255,215,64,.3);color:#ffd740">🎮 Jogo</button>
         <button class="btn-sm" onclick="openProfileModal()" title="Meu Perfil">👤 Perfil</button>
         <button class="btn-sm" onclick="newConversation()">Nova conversa</button>
         <button class="btn-sm" onclick="logout()">Sair</button>
@@ -1001,6 +1065,272 @@ async function deleteFavorite(e,id){
     loadFavorites();
     showToast('Favorito removido.');
   }catch(e){}
+}
+
+// ── JOGO: SIMULADOR DE ATENDIMENTO ──────────────────────
+let gameState = { active: false, level: '', area: '', temp: 50, messages: [], msgCount: 0, loading: false, maxMsgs: 15 };
+
+function openGame() {
+  gameState = { active: true, level: '', area: '', temp: 50, messages: [], msgCount: 0, loading: false, maxMsgs: 15 };
+  const overlay = document.createElement('div');
+  overlay.className = 'game-overlay';
+  overlay.id = 'gameOverlay';
+  overlay.innerHTML = `
+    <div class="game-header">
+      <div class="game-title">⚖️ Arena do Advogado</div>
+      <button class="game-close" onclick="closeGame()">✕ Abandonar</button>
+    </div>
+    <div class="game-setup" id="gameSetup">
+      <div class="game-setup-title">⚖️ Arena do Advogado</div>
+      <div class="game-setup-sub">Simule um atendimento real. Use as técnicas dos 15 Passos do Rafael Cândia para convencer o cliente a fechar contrato!</div>
+      <div class="level-cards" id="levelCards">
+        <div class="level-card level-easy" onclick="selectLevel(this,'Fácil')">
+          <div class="level-icon">🟢</div>
+          <div class="level-name" style="color:#00c853">Fácil</div>
+          <div class="level-desc">Cliente curioso, receptivo. 1-2 objeções simples.</div>
+        </div>
+        <div class="level-card level-medium" onclick="selectLevel(this,'Médio')">
+          <div class="level-icon">🟡</div>
+          <div class="level-name" style="color:#ffd740">Médio</div>
+          <div class="level-desc">Cliente desconfiado, questiona preço. 3-4 objeções.</div>
+        </div>
+        <div class="level-card level-hard" onclick="selectLevel(this,'Difícil')">
+          <div class="level-icon">🔴</div>
+          <div class="level-name" style="color:#ef5350">Difícil</div>
+          <div class="level-desc">Cliente agressivo, já foi enganado. 5+ objeções pesadas.</div>
+        </div>
+      </div>
+      <div class="game-area-select">
+        <select id="gameAreaSelect" class="form-select" style="text-align:center" onchange="checkGameReady()">
+          <option value="">Selecione a área do Direito...</option>
+          <option value="Família">Direito de Família</option>
+          <option value="Previdenciário">Direito Previdenciário</option>
+          <option value="Trabalhista">Direito Trabalhista</option>
+          <option value="Criminal">Direito Criminal</option>
+          <option value="Consumidor">Direito do Consumidor</option>
+          <option value="Civil">Direito Civil</option>
+          <option value="Empresarial">Direito Empresarial</option>
+          <option value="Tributário">Direito Tributário</option>
+        </select>
+      </div>
+      <button class="game-btn game-btn-primary" onclick="startGame()" id="startGameBtn" disabled>🎮 Iniciar Simulação</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function selectLevel(el, level) {
+  gameState.level = level;
+  document.querySelectorAll('.level-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  checkGameReady();
+}
+
+function checkGameReady() {
+  const area = document.getElementById('gameAreaSelect')?.value;
+  const btn = document.getElementById('startGameBtn');
+  if (btn) btn.disabled = !(gameState.level && area);
+}
+
+async function startGame() {
+  const area = document.getElementById('gameAreaSelect').value;
+  if (!gameState.level || !area) return;
+  gameState.area = area;
+  gameState.temp = 50;
+  gameState.messages = [];
+  gameState.msgCount = 0;
+
+  const overlay = document.getElementById('gameOverlay');
+  // Remove setup, show play screen
+  overlay.innerHTML = `
+    <div class="game-header">
+      <div class="game-title">⚖️ Arena do Advogado — ${gameState.level}</div>
+      <button class="game-close" onclick="closeGame()">✕ Abandonar</button>
+    </div>
+    <div class="game-play" id="gamePlay">
+      <div class="game-status-bar">
+        <div class="temp-bar-wrap">
+          <div class="temp-label"><span>🌡️ Interesse do cliente</span><span id="tempValue">50%</span></div>
+          <div class="temp-bar"><div class="temp-fill" id="tempFill" style="width:50%;background:#ffd740"></div></div>
+        </div>
+        <div class="game-counter" id="gameCounter">Mensagem 0/${gameState.maxMsgs}</div>
+      </div>
+      <div class="game-messages" id="gameMessages"></div>
+      <div class="game-input-area">
+        <div class="game-input-wrap">
+          <textarea id="gameInput" class="game-input" placeholder="Responda ao cliente como advogado..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendGameMsg()}" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+          <button id="gameSendBtn" class="btn-send" onclick="sendGameMsg()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Start game — send initial client message
+  gameState.loading = true;
+  addGameMsg('client', '...');
+  try {
+    const token = localStorage.getItem('capi_token');
+    const initMsg = 'Olá, estou procurando um advogado de ' + area + '. Me apresente a situação inicial e faça sua primeira objeção ou pergunta como cliente.';
+    gameState.messages.push({ role: 'user', content: initMsg });
+    const r = await fetch('/api/game/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ messages: gameState.messages, level: gameState.level, area: gameState.area, client_temp: gameState.temp })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Erro');
+    // Replace the placeholder message
+    gameState.messages.pop(); // remove the init message
+    gameState.messages.push({ role: 'assistant', content: data.reply });
+    updateGameTemp(data.new_temp);
+    const msgsEl = document.getElementById('gameMessages');
+    if (msgsEl) msgsEl.innerHTML = '';
+    addGameMsg('client', data.reply);
+    if (data.game_over) endGame(data.result, data.feedback);
+  } catch (e) {
+    const msgsEl = document.getElementById('gameMessages');
+    if (msgsEl) msgsEl.innerHTML = '';
+    addGameMsg('client', 'Olá, estou procurando um advogado de ' + area + '. Pode me ajudar?');
+    gameState.messages = [{ role: 'assistant', content: 'Olá, estou procurando um advogado de ' + area + '. Pode me ajudar?' }];
+  }
+  gameState.loading = false;
+  document.getElementById('gameInput')?.focus();
+}
+
+function addGameMsg(type, text) {
+  const el = document.getElementById('gameMessages');
+  if (!el) return;
+  const isClient = type === 'client';
+  const div = document.createElement('div');
+  div.className = 'game-msg ' + (isClient ? 'game-msg-client' : 'game-msg-player');
+  div.innerHTML = `
+    <div class="game-msg-avatar">${isClient ? '👤' : '⚖️'}</div>
+    <div class="game-msg-bubble">${text.replace(/\n/g, '<br>')}</div>
+  `;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateGameTemp(newTemp) {
+  gameState.temp = Math.max(0, Math.min(100, newTemp));
+  const fill = document.getElementById('tempFill');
+  const val = document.getElementById('tempValue');
+  if (fill) {
+    fill.style.width = gameState.temp + '%';
+    if (gameState.temp >= 70) fill.style.background = '#00c853';
+    else if (gameState.temp >= 40) fill.style.background = '#ffd740';
+    else fill.style.background = '#ef5350';
+  }
+  if (val) val.textContent = gameState.temp + '%';
+}
+
+async function sendGameMsg() {
+  const input = document.getElementById('gameInput');
+  const text = input?.value.trim();
+  if (!text || gameState.loading) return;
+  gameState.msgCount++;
+  input.value = '';
+  input.style.height = 'auto';
+
+  addGameMsg('player', text);
+  gameState.messages.push({ role: 'user', content: text });
+  const counter = document.getElementById('gameCounter');
+  if (counter) counter.textContent = 'Mensagem ' + gameState.msgCount + '/' + gameState.maxMsgs;
+
+  // Check if max messages exceeded
+  if (gameState.msgCount >= gameState.maxMsgs) {
+    endGame('lose', 'Você usou todas as ' + gameState.maxMsgs + ' mensagens sem fechar o contrato. Tente ser mais direto e usar as técnicas dos 15 Passos!');
+    return;
+  }
+
+  gameState.loading = true;
+  document.getElementById('gameSendBtn').disabled = true;
+  // Show typing
+  addGameMsg('client', '<div class="typing-indicator"><span></span><span></span><span></span></div>');
+
+  try {
+    const token = localStorage.getItem('capi_token');
+    const r = await fetch('/api/game/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ messages: gameState.messages, level: gameState.level, area: gameState.area, client_temp: gameState.temp })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Erro');
+
+    // Remove typing indicator (last message)
+    const msgsEl = document.getElementById('gameMessages');
+    if (msgsEl && msgsEl.lastChild) msgsEl.removeChild(msgsEl.lastChild);
+
+    gameState.messages.push({ role: 'assistant', content: data.reply });
+    addGameMsg('client', data.reply);
+    updateGameTemp(data.new_temp);
+
+    if (data.game_over) {
+      endGame(data.result, data.feedback);
+      return;
+    }
+  } catch (e) {
+    const msgsEl = document.getElementById('gameMessages');
+    if (msgsEl && msgsEl.lastChild) msgsEl.removeChild(msgsEl.lastChild);
+    addGameMsg('client', 'Hmm, tive um problema... Pode repetir?');
+  }
+  gameState.loading = false;
+  document.getElementById('gameSendBtn').disabled = false;
+  document.getElementById('gameInput')?.focus();
+}
+
+function endGame(result, feedback) {
+  const overlay = document.getElementById('gameOverlay');
+  if (!overlay) return;
+  const isWin = result === 'win';
+  const score = isWin ? Math.max(10, 100 - (gameState.msgCount * 5)) : 0;
+
+  const play = document.getElementById('gamePlay');
+  if (play) play.remove();
+
+  const resultDiv = document.createElement('div');
+  resultDiv.className = 'game-result ' + (isWin ? 'game-win' : 'game-lose');
+  resultDiv.innerHTML = `
+    <div class="game-result-icon">${isWin ? '🏆' : '💔'}</div>
+    <div class="game-result-title">${isWin ? 'Contrato Fechado!' : 'Cliente foi embora...'}</div>
+    <div class="game-result-sub">${feedback || (isWin ? 'Parabéns! Você usou as técnicas corretas!' : 'Revise os 15 Passos do Atendimento do Rafael Cândia.')}</div>
+    ${isWin ? '<div class="game-result-score">⭐ Pontuação: ' + score + '/100 (em ' + gameState.msgCount + ' mensagens)</div>' : ''}
+    <div class="game-result-btns">
+      <button class="game-btn game-btn-primary" onclick="closeGame();openGame()">🔄 Jogar novamente</button>
+      <button class="game-btn game-btn-secondary" onclick="closeGame()">← Voltar ao chat</button>
+    </div>
+  `;
+  overlay.appendChild(resultDiv);
+
+  if (isWin) spawnConfetti();
+}
+
+function spawnConfetti() {
+  const colors = ['#ffd740', '#00e676', '#ff4081', '#40c4ff', '#ff6e40', '#e040fb'];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    piece.style.animationDelay = (Math.random() * 1.5) + 's';
+    piece.style.width = (5 + Math.random() * 8) + 'px';
+    piece.style.height = (5 + Math.random() * 8) + 'px';
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 5000);
+  }
+}
+
+function closeGame() {
+  gameState.active = false;
+  const overlay = document.getElementById('gameOverlay');
+  if (overlay) overlay.remove();
+  // Clean up confetti
+  document.querySelectorAll('.confetti-piece').forEach(p => p.remove());
 }
 
 init();
