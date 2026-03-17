@@ -12,6 +12,7 @@
       --green-glow: rgba(0,230,118,0.22); --border: rgba(0,230,118,0.13);
       --border2: rgba(0,230,118,0.28); --text: #e8f5e9; --text2: #a5d6a7;
       --text-muted: #4caf50; --red: #ef5350; --red-dim: rgba(239,83,80,0.1);
+      --yellow: #ffd740; --yellow-dim: rgba(255,215,64,0.1);
       --radius: 12px; --radius-sm: 8px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -47,8 +48,8 @@
     .btn-danger:hover{border-color:var(--red);background:var(--red-dim);color:var(--red)}
 
     /* Tabs */
-    .tabs{display:flex;gap:0;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--border)}
-    .tab-btn{padding:12px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .tabs{display:flex;gap:0;padding:0 24px;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto}
+    .tab-btn{padding:12px 20px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap}
     .tab-btn.active{color:var(--green);border-bottom-color:var(--green)}
     .tab-btn:hover:not(.active){color:var(--text2)}
 
@@ -56,7 +57,7 @@
     .content{flex:1;padding:24px;overflow-y:auto;max-width:1200px;width:100%;margin:0 auto}
 
     /* Stats grid */
-    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:28px}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
     .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden}
     .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:.6}
     .stat-label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
@@ -78,6 +79,9 @@
     .badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
     .badge-active{background:rgba(0,230,118,.12);color:var(--green);border:1px solid var(--border2)}
     .badge-inactive{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,83,80,.3)}
+    .badge-processing{background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(255,215,64,.3)}
+    .badge-ready{background:rgba(0,230,118,.12);color:var(--green);border:1px solid var(--border2)}
+    .badge-error{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,83,80,.3)}
     .action-btns{display:flex;gap:6px;flex-wrap:wrap}
 
     /* User form */
@@ -87,13 +91,30 @@
     .form-group label{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted)}
     .btn-green{padding:10px 20px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:all .2s}
     .btn-green:hover{box-shadow:0 0 16px rgba(0,230,118,.35)}
+    .btn-green:disabled{opacity:.5;cursor:not-allowed}
 
     /* Prompt editor */
     .prompt-editor{width:100%;height:480px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text2);font-family:'Inter',sans-serif;font-size:.85rem;line-height:1.65;padding:16px;outline:none;resize:vertical;transition:all .2s}
     .prompt-editor:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
 
+    /* Knowledge / RAG styles */
+    .upload-zone{border:2px dashed var(--border2);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:all .3s;margin-bottom:24px;background:var(--bg2)}
+    .upload-zone:hover,.upload-zone.drag-over{border-color:var(--green);background:var(--green-dim)}
+    .upload-zone input{display:none}
+    .upload-icon{font-size:2.5rem;margin-bottom:12px}
+    .upload-title{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text);margin-bottom:6px}
+    .upload-sub{font-size:.82rem;color:var(--text-muted)}
+    .upload-progress{margin-top:12px;display:none}
+    .progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));transition:width .3s;width:0%}
+    .kb-info{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:24px}
+    .kb-info-title{font-family:'Rajdhani',sans-serif;font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--green);margin-bottom:8px}
+    .kb-info p{font-size:.82rem;color:var(--text-muted);line-height:1.6}
+    .ingest-btn{margin-top:12px}
+    .file-size{font-size:.75rem;color:var(--text-muted)}
+
     /* Toast */
-    .toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px 20px;color:var(--green);font-size:.85rem;font-weight:600;z-index:1000;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none}
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--green);border-radius:var(--radius-sm);padding:12px 20px;color:var(--green);font-size:.85rem;font-weight:600;z-index:1000;transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;max-width:360px}
     .toast.show{transform:translateY(0);opacity:1}
     .toast.error{border-color:var(--red);color:var(--red)}
 
@@ -133,6 +154,7 @@
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('overview')">Visão geral</button>
+    <button class="tab-btn" onclick="switchTab('knowledge')">📚 Conhecimento</button>
     <button class="tab-btn" onclick="switchTab('users')">Usuários</button>
     <button class="tab-btn" onclick="switchTab('prompt')">Prompt do agente</button>
   </div>
@@ -147,7 +169,63 @@
         <div class="stat-card"><div class="stat-label">Mensagens hoje</div><div class="stat-value" id="s-today">—</div></div>
         <div class="stat-card"><div class="stat-label">Total mensagens</div><div class="stat-value" id="s-msgs">—</div></div>
         <div class="stat-card"><div class="stat-label">Conversas</div><div class="stat-value" id="s-convs">—</div></div>
+        <div class="stat-card"><div class="stat-label">Arquivos ativos</div><div class="stat-value" id="s-kfiles">—</div><div class="stat-sub" id="s-chunks">— trechos indexados</div></div>
         <div class="stat-card"><div class="stat-label">Tokens usados</div><div class="stat-value" id="s-tokens">—</div><div class="stat-sub" id="s-cost">—</div></div>
+      </div>
+    </div>
+
+    <!-- KNOWLEDGE / RAG -->
+    <div id="tab-knowledge" class="tab-panel">
+
+      <div class="kb-info">
+        <div class="kb-info-title">🧠 Como funciona o Conhecimento da Capi</div>
+        <p>Funciona igual ao GPT — você sobe arquivos aqui e a Capi passa a ter acesso ao conteúdo deles. Quando alguém faz uma pergunta, ela busca automaticamente os trechos mais relevantes antes de responder. Suporta <strong>.txt, .pdf, .md e .docx</strong> (até 50MB cada).</p>
+      </div>
+
+      <!-- Upload zone -->
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" 
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <input type="file" id="fileInput" accept=".txt,.pdf,.md,.docx" multiple onchange="handleFiles(this.files)">
+        <div class="upload-icon">📂</div>
+        <div class="upload-title">Arraste arquivos ou clique para enviar</div>
+        <div class="upload-sub">Formatos aceitos: .txt &nbsp;·&nbsp; .pdf &nbsp;·&nbsp; .md &nbsp;·&nbsp; .docx &nbsp;·&nbsp; Até 50MB por arquivo</div>
+        <div class="upload-progress" id="uploadProgress">
+          <div style="font-size:.82rem;color:var(--text-muted)" id="uploadStatus">Enviando...</div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
+      </div>
+
+      <!-- Arquivos existentes no servidor (ingestão inicial) -->
+      <div class="form-card" id="serverFilesCard" style="display:none">
+        <div class="section-title" style="margin-bottom:8px">Arquivos detectados no servidor</div>
+        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:12px">Os arquivos de conhecimento do Rafael já estão no servidor. Clique para indexá-los agora.</p>
+        <div id="serverFilesList"></div>
+        <button class="btn-green ingest-btn" onclick="ingestServerFiles()">⚡ Indexar todos os arquivos agora</button>
+      </div>
+
+      <!-- Lista de arquivos indexados -->
+      <div class="section-header">
+        <div class="section-title">Arquivos <span class="hl">indexados</span></div>
+        <button class="btn-sm" onclick="loadKnowledge()">↻ Atualizar</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Arquivo</th>
+              <th>Tamanho</th>
+              <th>Trechos indexados</th>
+              <th>Status</th>
+              <th>Adicionado em</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="knowledgeTable">
+            <tr class="loading-row"><td colspan="6">Carregando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -208,7 +286,7 @@
         <button class="btn-green" onclick="savePrompt()">Salvar alterações</button>
       </div>
       <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:16px;line-height:1.6">
-        Aqui você controla toda a personalidade e conhecimento da Capi. Edite o texto abaixo e clique em "Salvar alterações". As mudanças entram em vigor imediatamente — sem precisar de novo deploy.
+        Aqui você controla a personalidade base da Capi. O sistema de conhecimento (arquivos) funciona separadamente — os arquivos são buscados automaticamente em cada conversa.
       </p>
       <textarea id="promptEditor" class="prompt-editor" placeholder="Carregando prompt..."></textarea>
     </div>
@@ -221,11 +299,25 @@
 <script>
 let adminPassword = '';
 
+// Arquivos do servidor para ingestão inicial
+const SERVER_FILES = [
+  { path: '/home/user/workspace/M_01_-_1-1-10.txt', name: 'M01 — História pessoal do Rafael Cândia' },
+  { path: '/home/user/workspace/M2_-_1-11.txt', name: 'M02 — Advocacia Raiz' },
+  { path: '/home/user/workspace/M3_-_1-7.txt', name: 'M03 — Prospecção (JusBrasil, Jusfy)' },
+  { path: '/home/user/workspace/M4_-_A2_P1-6.txt', name: 'M04 — Tráfego Pago (Meta Ads, Google Ads)' },
+  { path: '/home/user/workspace/M05_-_A01-8.txt', name: 'M05 — Atendimento e Precificação (15 Passos)' },
+  { path: '/home/user/workspace/M06_-_A01-9.txt', name: 'M06 — Módulo 6' },
+  { path: '/home/user/workspace/300-teses-juridicas-5.txt', name: '300 Teses Jurídicas' },
+  { path: '/home/user/workspace/DOSSIE_COMPLETO_TESES_JURIDICAS_ESCALAVEIS_PARA_TRAFEGO_PAGO-4.txt', name: 'Dossiê Completo — Teses Jurídicas Escaláveis' },
+  { path: '/home/user/workspace/CAPITURBO-Porque-produzir-conteudo-2-3.txt', name: 'CapiTurbo — Por que produzir conteúdo' },
+  { path: '/home/user/workspace/4f1120c0-8fc6-40f1-bd16-5051b80f1469_Sem_ttulo-1-2.txt', name: 'Documento complementar 1' },
+  { path: '/home/user/workspace/4f1120c0-8fc6-40f1-bd16-5051b80f1469_Sem_ttulo-2.txt', name: 'Documento complementar 2' },
+];
+
 function doLogin() {
   const pass = document.getElementById('adminPass').value;
   if (!pass) return;
   adminPassword = pass;
-  // Test with stats call
   fetch('/api/admin/stats', { headers: { 'x-admin-password': pass } })
     .then(r => {
       if (r.ok) {
@@ -248,18 +340,19 @@ function doLogout() {
 }
 
 function switchTab(tab) {
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const tabs = ['overview','users','prompt'];
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const tabs = ['overview', 'knowledge', 'users', 'prompt'];
     b.classList.toggle('active', tabs[i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'prompt') loadPrompt();
   if (tab === 'users') loadUsers();
   if (tab === 'overview') loadStats();
+  if (tab === 'knowledge') loadKnowledge();
 }
 
-function loadAll() { loadStats(); loadUsers(); }
+function loadAll() { loadStats(); loadUsers(); loadKnowledge(); }
 
 async function loadStats() {
   const r = await fetch('/api/admin/stats', { headers: { 'x-admin-password': adminPassword } });
@@ -270,10 +363,173 @@ async function loadStats() {
   document.getElementById('s-today').textContent = d.todayMessages;
   document.getElementById('s-msgs').textContent = d.totalMessages;
   document.getElementById('s-convs').textContent = d.totalConversations;
+  document.getElementById('s-kfiles').textContent = d.knowledgeFiles || 0;
+  document.getElementById('s-chunks').textContent = fmtNum(d.totalChunks || 0) + ' trechos indexados';
   document.getElementById('s-tokens').textContent = fmtNum(d.totalTokens);
-  // Rough cost estimate: GPT-4o ~$0.0025/1k tokens average
   const cost = ((d.totalTokens / 1000) * 0.0025).toFixed(2);
   document.getElementById('s-cost').textContent = '~$' + cost + ' USD estimado';
+}
+
+async function loadKnowledge() {
+  const r = await fetch('/api/admin/knowledge', { headers: { 'x-admin-password': adminPassword } });
+  if (!r.ok) return;
+  const files = await r.json();
+  const tbody = document.getElementById('knowledgeTable');
+
+  if (!files.length) {
+    tbody.innerHTML = '<tr class="loading-row"><td colspan="6">Nenhum arquivo indexado ainda. Clique em "Indexar todos os arquivos agora" para começar.</td></tr>';
+    document.getElementById('serverFilesCard').style.display = 'block';
+    renderServerFilesList();
+    return;
+  }
+
+  // Verifica se há arquivos do servidor ainda não indexados
+  const indexedPaths = files.map(f => f.file_path);
+  const pendingServerFiles = SERVER_FILES.filter(sf => !files.some(f => f.original_name === sf.name || f.file_path === sf.path));
+  if (pendingServerFiles.length > 0) {
+    document.getElementById('serverFilesCard').style.display = 'block';
+    renderServerFilesList(pendingServerFiles);
+  } else {
+    document.getElementById('serverFilesCard').style.display = 'none';
+  }
+
+  tbody.innerHTML = files.map(f => `
+    <tr>
+      <td><strong style="color:var(--text)">${esc(f.original_name)}</strong></td>
+      <td class="file-size">${fmtSize(f.file_size)}</td>
+      <td style="text-align:center;color:var(--green)">${f.chunk_count || '...'}</td>
+      <td>
+        <span class="badge badge-${f.status}" id="status-${f.id}">${statusLabel(f.status)}</span>
+        ${f.status === 'processing' ? `<span id="poll-${f.id}" style="font-size:.72rem;color:var(--text-muted);margin-left:6px">gerando embeddings...</span>` : ''}
+      </td>
+      <td style="color:var(--text-muted)">${fmtDate(f.created_at)}</td>
+      <td>
+        <button class="btn-sm btn-danger" onclick="deleteKnowledgeFile(${f.id}, '${esc(f.original_name)}')">Remover</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Poll status for processing files
+  files.filter(f => f.status === 'processing').forEach(f => pollFileStatus(f.id));
+}
+
+function renderServerFilesList(files) {
+  const list = files || SERVER_FILES;
+  document.getElementById('serverFilesList').innerHTML = list.map(f =>
+    `<div style="font-size:.82rem;color:var(--text2);padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:4px">📄 ${esc(f.name)}</div>`
+  ).join('');
+}
+
+async function ingestServerFiles() {
+  const btn = document.querySelector('.ingest-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Processando...';
+  showToast('Iniciando indexação dos arquivos... pode levar alguns minutos.');
+
+  try {
+    const r = await fetch('/api/admin/knowledge/ingest-server-files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ files: SERVER_FILES })
+    });
+    const d = await r.json();
+    if (r.ok) {
+      showToast(`✅ ${d.results.length} arquivos enfileirados! Os embeddings estão sendo gerados em background.`);
+      setTimeout(loadKnowledge, 2000);
+    } else {
+      showToast(d.error || 'Erro ao iniciar indexação', true);
+    }
+  } catch (e) {
+    showToast('Erro de conexão', true);
+  }
+  btn.disabled = false;
+  btn.textContent = '⚡ Indexar todos os arquivos agora';
+}
+
+async function pollFileStatus(fileId) {
+  const pollInterval = setInterval(async () => {
+    try {
+      const r = await fetch('/api/admin/knowledge/' + fileId + '/status', {
+        headers: { 'x-admin-password': adminPassword }
+      });
+      if (!r.ok) { clearInterval(pollInterval); return; }
+      const f = await r.json();
+      const statusEl = document.getElementById('status-' + fileId);
+      const pollEl = document.getElementById('poll-' + fileId);
+      if (statusEl) {
+        statusEl.className = 'badge badge-' + f.status;
+        statusEl.textContent = statusLabel(f.status);
+      }
+      if (f.status !== 'processing') {
+        clearInterval(pollInterval);
+        if (pollEl) pollEl.remove();
+        loadStats();
+        // Atualiza chunk count
+        const chunkCell = statusEl?.closest('tr')?.querySelector('td:nth-child(3)');
+        if (chunkCell && f.chunk_count) chunkCell.textContent = f.chunk_count;
+        if (f.status === 'ready') showToast('✅ Arquivo indexado com sucesso!');
+      }
+    } catch { clearInterval(pollInterval); }
+  }, 5000);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  handleFiles(e.dataTransfer.files);
+}
+
+async function handleFiles(fileList) {
+  if (!fileList || fileList.length === 0) return;
+  
+  const progressEl = document.getElementById('uploadProgress');
+  const statusEl = document.getElementById('uploadStatus');
+  const fillEl = document.getElementById('progressFill');
+  progressEl.style.display = 'block';
+  
+  for (let i = 0; i < fileList.length; i++) {
+    const file = fileList[i];
+    statusEl.textContent = `Enviando ${file.name} (${i+1}/${fileList.length})...`;
+    fillEl.style.width = ((i / fileList.length) * 100) + '%';
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const r = await fetch('/api/admin/knowledge/upload', {
+        method: 'POST',
+        headers: { 'x-admin-password': adminPassword },
+        body: formData
+      });
+      const d = await r.json();
+      if (r.ok) {
+        showToast(`✅ ${file.name} enviado! Gerando embeddings...`);
+      } else {
+        showToast(d.error || 'Erro ao enviar ' + file.name, true);
+      }
+    } catch {
+      showToast('Erro ao enviar ' + file.name, true);
+    }
+  }
+  
+  fillEl.style.width = '100%';
+  statusEl.textContent = 'Concluído!';
+  setTimeout(() => { progressEl.style.display = 'none'; fillEl.style.width = '0%'; }, 2000);
+  loadKnowledge();
+}
+
+async function deleteKnowledgeFile(id, name) {
+  if (!confirm('Remover o arquivo "' + name + '" e todos seus dados indexados?')) return;
+  const r = await fetch('/api/admin/knowledge/' + id, {
+    method: 'DELETE',
+    headers: { 'x-admin-password': adminPassword }
+  });
+  if (r.ok) { showToast('Arquivo removido'); loadKnowledge(); loadStats(); }
+  else showToast('Erro ao remover', true);
+}
+
+function statusLabel(s) {
+  return { processing: 'Indexando...', ready: 'Ativo', error: 'Erro' }[s] || s;
 }
 
 async function loadUsers() {
@@ -375,11 +631,17 @@ function showToast(msg, err = false) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (err ? ' error' : '');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  setTimeout(() => t.classList.remove('show'), 4000);
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : n; }
+function fmtNum(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'k' : n; }
+function fmtSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
 function fmtDate(dt) {
   if (!dt) return '—';
   const d = new Date(dt.replace(' ','T')+'Z');
