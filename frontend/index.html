@@ -595,11 +595,23 @@ function appendMessage(role,content){
     actions.className='msg-actions';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
     const audioId='audio-'+Date.now();
-    actions.innerHTML=`
-      <button class="msg-action-btn" onclick="copyMessage(${JSON.stringify(plainText)},this)">📋 Copiar</button>
-      <button class="msg-action-btn" onclick="shareWhatsApp(${JSON.stringify(plainText)})">📲 WhatsApp</button>
-      <button class="msg-action-btn tts-btn" id="tts-btn-${audioId}" onclick="playTTS(${JSON.stringify(plainText)},'${audioId}')">🔊 Ouvir</button>
-    `;
+    // Botões de ação
+    const copyBtn=document.createElement('button');
+    copyBtn.className='msg-action-btn';
+    copyBtn.innerHTML='📋 Copiar';
+    copyBtn.onclick=()=>copyMessage(plainText,copyBtn);
+    const waBtn=document.createElement('button');
+    waBtn.className='msg-action-btn';
+    waBtn.innerHTML='📲 WhatsApp';
+    waBtn.onclick=()=>shareWhatsApp(plainText);
+    const ttsBtn=document.createElement('button');
+    ttsBtn.className='msg-action-btn tts-btn';
+    ttsBtn.id='tts-btn-'+audioId;
+    ttsBtn.innerHTML='🔊 Ouvir';
+    ttsBtn.onclick=()=>playTTS(plainText,audioId);
+    actions.appendChild(copyBtn);
+    actions.appendChild(waBtn);
+    actions.appendChild(ttsBtn);
     // Container do player de áudio (oculto inicialmente)
     const audioContainer=document.createElement('div');
     audioContainer.id='audio-container-'+audioId;
