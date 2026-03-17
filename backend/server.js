@@ -1646,7 +1646,7 @@ async function sendEmail(to, subject, html) {
   const { Resend } = require('resend');
   const resend = new Resend(RESEND_API_KEY);
   const { error } = await resend.emails.send({
-    from: 'Capi Când-IA Pro <onboarding@resend.dev>',
+    from: 'Capi Când-IA Pro <noreply@capicand-ia.com>',
     to,
     subject,
     html
