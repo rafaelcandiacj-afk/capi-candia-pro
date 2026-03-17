@@ -1508,7 +1508,23 @@ Regras:
   }
 });
 
-// Catch-all SPA
+// ─── HONORÁRIOS API ──────────────────────────────────────────
+// GET /api/honorarios — lista todos os estados
+app.get('/api/honorarios', (req, res) => {
+  const lista = Object.entries(HONORARIOS).map(([sigla, d]) => ({
+    sigla, nome: d.nome, ano: d.ano
+  }));
+  res.json(lista.sort((a, b) => a.nome.localeCompare(b.nome)));
+});
+
+// GET /api/honorarios/:sigla — retorna tabela de um estado
+app.get('/api/honorarios/:sigla', (req, res) => {
+  const d = HONORARIOS[req.params.sigla.toUpperCase()];
+  if (!d) return res.status(404).json({ error: 'Estado não encontrado' });
+  res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
+});
+
+// Catch-all SPA — deve ficar após todas as rotas de API
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -1551,22 +1567,6 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
     console.error('TTS erro:', e.message);
     res.status(500).json({ error: 'Erro interno TTS' });
   }
-});
-
-// ─── HONORÁRIOS API ──────────────────────────────────────────
-// GET /api/honorarios — lista todos os estados
-app.get('/api/honorarios', (req, res) => {
-  const lista = Object.entries(HONORARIOS).map(([sigla, d]) => ({
-    sigla, nome: d.nome, ano: d.ano
-  }));
-  res.json(lista.sort((a, b) => a.nome.localeCompare(b.nome)));
-});
-
-// GET /api/honorarios/:sigla — retorna tabela de um estado
-app.get('/api/honorarios/:sigla', (req, res) => {
-  const d = HONORARIOS[req.params.sigla.toUpperCase()];
-  if (!d) return res.status(404).json({ error: 'Estado não encontrado' });
-  res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
 });
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
