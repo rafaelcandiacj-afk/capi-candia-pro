@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'capi-candia-secret-2026';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'capiAdmin2026';
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '60fiathVaK4HCn08Syd6';
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || 'sk_ef7c32daa249f0825ec017f69aa8721b2ca641739c552e8d';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '60fiathVaK4HCn08Syd6';
 
 // ─── UPLOAD CONFIG ────────────────────────────────────────────
