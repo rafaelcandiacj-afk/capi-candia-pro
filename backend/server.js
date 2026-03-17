@@ -1919,10 +1919,7 @@ app.get('/api/honorarios/:sigla', (req, res) => {
   res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
 });
 
-// Serve arquivos estáticos (CSS, JS, imagens) — após todas as rotas de API
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Serve landing page na raiz /
+// Serve landing page na raiz / — ANTES do express.static
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/landing/index.html'));
 });
@@ -1930,10 +1927,13 @@ app.get('/', (req, res) => {
 // Serve arquivos estáticos da landing (imagens, etc)
 app.use('/landing', express.static(path.join(__dirname, '../frontend/landing')));
 
-// Rota /app redireciona para o sistema (login)
+// Rota /app serve o sistema (login/chat)
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
+
+// Serve arquivos estáticos do app (CSS, JS) — após todas as rotas
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Catch-all SPA — deve ficar após todas as rotas de API
 app.get('/{*path}', (req, res) => {
