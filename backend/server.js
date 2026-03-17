@@ -586,13 +586,9 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   // Injeta memória do usuário (nome, área, cidade)
   const userProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
   let profileCtx = '';
-  if (userProfile && (userProfile.nome || userProfile.area)) {
-    profileCtx = '\n\nPERFIL DO USUÁRIO ATUAL:\n';
-    if (userProfile.nome) profileCtx += `- Nome: ${userProfile.nome}\n`;
-    if (userProfile.area) profileCtx += `- Área de atuação: ${userProfile.area}\n`;
-    if (userProfile.cidade) profileCtx += `- Cidade: ${userProfile.cidade}\n`;
-    if (userProfile.anos_experiencia) profileCtx += `- Anos de experiência: ${userProfile.anos_experiencia}\n`;
-    profileCtx += 'Use essas informações para personalizar suas respostas. Chame o usuário pelo nome quando natural.';
+  const hasProfile = userProfile && userProfile.nome;
+  if (hasProfile) {
+    profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:\n- Nome: ${userProfile.nome}\n- Área: ${userProfile.area || 'não informada'}\n- Experiência: ${userProfile.anos_experiencia || 'não informada'}\n- Cidade: ${userProfile.cidade || 'não informada'}\n\nIMPORTANTE: Você JÁ SABE quem é este usuário. NÃO pergunte o nome nem a área dele. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão nas suas respostas.`;
   }
   
   // Pega a última mensagem do usuário para busca semântica
@@ -619,10 +615,10 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const hasAssistantHistory = messages.some(m => m.role === 'assistant');
   const isFirstMessage = !hasAssistantHistory;
   
-  // Contexto de personalização: injeta instrução para perguntar nome/área APENAS na primeira mensagem
+  // Contexto de personalização: só pergunta nome/área se NÃO tiver perfil salvo
   let personalizationCtx = '';
-  if (isFirstMessage) {
-    personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa. OBRIGATORIAMENTE, ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Isso é fundamental para você personalizar as próximas respostas. Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
+  if (isFirstMessage && !hasProfile) {
+    personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa e AINDA NÃO tem perfil salvo. Ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
   }
 
   // Injeta documento enviado na conversa
@@ -1116,8 +1112,11 @@ app.post('/api/game/chat', authMiddleware, async (req, res) => {
     'Difícil': 'Você é Roberto, agressivo, foi enganado por advogado, desconfia de todos. Ataca o advogado, diz que é tudo golpe, extremamente difícil de convencer. Tem 5+ objeções pesadas.'
   };
 
+  const userName = req.user?.name || 'o advogado';
+
   const gameSystemPrompt = `Você é um CLIENTE (não um assistente) num jogo de simulação de atendimento jurídico.
 Nível: ${level} — Área: ${area}
+O advogado que está te atendendo se chama ${userName}.
 
 ${personalities[level] || personalities['Médio']}
 

@@ -19,8 +19,8 @@
       --border:     rgba(0,230,118,0.13);
       --border2:    rgba(0,230,118,0.28);
       --text:       #e8f5e9;
-      --text2:      #a5d6a7;
-      --text-muted: #81c784;
+      --text2:      #c8e6c9;
+      --text-muted: #a5d6a7;
       --radius:     12px;
       --radius-sm:  8px;
       --sidebar-w:  280px;
@@ -78,9 +78,9 @@
     .conv-item:hover{background:var(--bg3);border-color:var(--border)}
     .conv-item.active{background:var(--green-dim);border-color:var(--border2)}
     .conv-item-text{flex:1;overflow:hidden}
-    .conv-item-title{font-size:.82rem;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .conv-item-title{font-size:.82rem;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .conv-item.active .conv-item-title{color:var(--green)}
-    .conv-item-date{font-size:.68rem;color:var(--text-muted);margin-top:2px}
+    .conv-item-date{font-size:.68rem;color:var(--text2);margin-top:2px}
     .conv-delete{opacity:0;background:none;border:none;color:rgba(239,83,80,.7);cursor:pointer;font-size:.85rem;padding:2px 4px;border-radius:4px;transition:var(--trans);flex-shrink:0}
     .conv-item:hover .conv-delete{opacity:1}
     .conv-delete:hover{color:#ef5350;background:rgba(239,83,80,.12)}
@@ -100,7 +100,7 @@
     .chat-header-left{display:flex;align-items:center;gap:8px}
     .status-dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-    .header-status-txt{font-size:.72rem;color:var(--text-muted);letter-spacing:.06em}
+    .header-status-txt{font-size:.72rem;color:var(--text2);letter-spacing:.06em}
     .btn-sm{padding:6px 13px;border-radius:var(--radius-sm);font-family:'Rajdhani',sans-serif;font-size:.76rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:var(--trans);border:1px solid var(--border);background:var(--bg3);color:var(--text2)}
     .btn-sm:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
 
@@ -114,7 +114,7 @@
     .message{animation:fadeInUp .3s ease!important}
 
     /* Timestamp */
-    .msg-timestamp{font-size:.62rem;color:var(--text-muted);opacity:.6;margin-top:4px;letter-spacing:.03em}
+    .msg-timestamp{font-size:.62rem;color:var(--text2);opacity:.85;margin-top:4px;letter-spacing:.03em}
 
     /* Avatar glow when thinking */
     .message-avatar.thinking{box-shadow:0 0 12px var(--green),0 0 24px rgba(0,230,118,.3);animation:avatarGlow 1.5s ease-in-out infinite}
@@ -122,13 +122,13 @@
 
     /* Contextual suggestion chips */
     .ctx-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;animation:fadeInUp .3s ease}
-    .ctx-chip{padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:18px;color:var(--text2);font-size:.78rem;cursor:pointer;transition:var(--trans)}
+    .ctx-chip{padding:8px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:18px;color:var(--text);font-size:.82rem;cursor:pointer;transition:var(--trans)}
     .ctx-chip:hover{border-color:var(--green);color:var(--green);background:var(--green-dim);transform:translateY(-1px)}
 
     /* Favorites section in sidebar */
     .fav-section{padding:4px 8px;border-top:1px solid var(--border)}
-    .fav-section-title{font-size:.7rem;font-weight:700;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;display:flex;align-items:center;gap:4px}
-    .fav-item{padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--trans);font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+    .fav-section-title{font-size:.7rem;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;display:flex;align-items:center;gap:4px}
+    .fav-item{padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--trans);font-size:.78rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
     .fav-item:hover{background:var(--bg3);border-color:var(--border);color:var(--green)}
     .fav-item-actions{display:flex;gap:4px;align-items:center}
     .fav-delete{opacity:0;background:none;border:none;color:rgba(239,83,80,.7);cursor:pointer;font-size:.78rem;padding:1px 3px;border-radius:3px;transition:var(--trans)}
@@ -192,6 +192,10 @@
       .sidebar.open{left:0}
       .sidebar-toggle{display:block}
       .message{max-width:92%}
+      .chat-toolbar{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+      .chat-toolbar::-webkit-scrollbar{height:0}
+      .chat-toolbar .teses-btn{white-space:nowrap;flex-shrink:0;font-size:.72rem;padding:6px 11px}
+      .chat-header{flex-wrap:wrap;gap:6px;padding:8px 12px}
     }
 
     /* ── GERADOR DE TESES ── */
@@ -228,9 +232,9 @@
     .file-badge button:hover{color:#ef5350}
 
     /* ── COPIAR/COMPARTILHAR ── */
-    .msg-actions{display:flex;gap:6px;margin-top:6px;opacity:0;transition:opacity .2s ease}
+    .msg-actions{display:flex;gap:6px;margin-top:8px;opacity:.75;transition:opacity .2s ease}
     .message-assistant:hover .msg-actions{opacity:1}
-    .msg-action-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;color:var(--text-muted);font-size:.7rem;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:4px}
+    .msg-action-btn{padding:6px 13px;background:var(--bg3);border:1px solid var(--border2);border-radius:14px;color:var(--text2);font-size:.76rem;font-weight:600;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px;letter-spacing:.02em}
     .msg-action-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .msg-action-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .msg-action-btn.tts-loading{opacity:.6;pointer-events:none}
@@ -476,7 +480,7 @@
         <span class="status-dot"></span>
         <span class="header-status-txt">Online • Pronto para ajudar</span>
       </div>
-      <div style="display:flex;gap:8px">
+      <div class="chat-toolbar" style="display:flex;gap:8px">
         <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Teses
