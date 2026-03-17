@@ -109,6 +109,31 @@
     .chat-messages::-webkit-scrollbar{width:4px}
     .chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
+    /* Message animations */
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .message{animation:fadeInUp .3s ease!important}
+
+    /* Timestamp */
+    .msg-timestamp{font-size:.62rem;color:var(--text-muted);opacity:.6;margin-top:4px;letter-spacing:.03em}
+
+    /* Avatar glow when thinking */
+    .message-avatar.thinking{box-shadow:0 0 12px var(--green),0 0 24px rgba(0,230,118,.3);animation:avatarGlow 1.5s ease-in-out infinite}
+    @keyframes avatarGlow{0%,100%{box-shadow:0 0 8px var(--green),0 0 18px rgba(0,230,118,.2)}50%{box-shadow:0 0 16px var(--green),0 0 32px rgba(0,230,118,.4)}}
+
+    /* Contextual suggestion chips */
+    .ctx-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;animation:fadeInUp .3s ease}
+    .ctx-chip{padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:18px;color:var(--text2);font-size:.78rem;cursor:pointer;transition:var(--trans)}
+    .ctx-chip:hover{border-color:var(--green);color:var(--green);background:var(--green-dim);transform:translateY(-1px)}
+
+    /* Favorites section in sidebar */
+    .fav-section{padding:4px 8px;border-top:1px solid var(--border)}
+    .fav-section-title{font-size:.7rem;font-weight:700;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase;padding:8px 4px 4px;display:flex;align-items:center;gap:4px}
+    .fav-item{padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--trans);font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+    .fav-item:hover{background:var(--bg3);border-color:var(--border);color:var(--green)}
+    .fav-item-actions{display:flex;gap:4px;align-items:center}
+    .fav-delete{opacity:0;background:none;border:none;color:rgba(239,83,80,.7);cursor:pointer;font-size:.78rem;padding:1px 3px;border-radius:3px;transition:var(--trans)}
+    .fav-item:hover .fav-delete{opacity:1}
+
     /* Welcome */
     .chat-welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;text-align:center;padding:40px 20px;animation:fadeUp .5s ease}
     .welcome-avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid var(--green);box-shadow:0 0 36px var(--green-glow),0 0 70px rgba(0,230,118,.07);margin-bottom:18px}
@@ -129,7 +154,7 @@
     .message-assistant .message-avatar img{width:100%;height:100%;object-fit:cover}
     .message-bubble{padding:12px 16px;border-radius:12px;line-height:1.68;font-size:.89rem;word-wrap:break-word;max-width:100%}
     .message-user .message-bubble{background:linear-gradient(135deg,rgba(0,200,83,.14),rgba(0,230,118,.07));border:1px solid var(--border2);border-top-right-radius:4px}
-    .message-assistant .message-bubble{background:var(--bg2);border:1px solid var(--border);border-top-left-radius:4px}
+    .message-assistant .message-bubble{background:linear-gradient(135deg,rgba(0,50,20,.45),rgba(0,80,35,.25));border:1px solid var(--border);border-top-left-radius:4px}
 
     /* Rich text in messages */
     .message-bubble strong{color:var(--green);font-weight:700}
@@ -142,12 +167,12 @@
     .message-bubble p{margin-bottom:6px}
     .message-bubble p:last-child{margin-bottom:0}
 
-    /* Typing */
-    .typing-indicator{display:flex;gap:4px;align-items:center;padding:2px 0}
-    .typing-indicator span{width:7px;height:7px;background:var(--green);border-radius:50%;animation:typing 1.2s infinite;opacity:.4}
+    /* Typing — glowing dots */
+    .typing-indicator{display:flex;gap:5px;align-items:center;padding:4px 0}
+    .typing-indicator span{width:8px;height:8px;background:var(--green);border-radius:50%;animation:typingGlow 1.4s infinite;opacity:.3;box-shadow:0 0 4px var(--green)}
     .typing-indicator span:nth-child(2){animation-delay:.2s}
     .typing-indicator span:nth-child(3){animation-delay:.4s}
-    @keyframes typing{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-5px);opacity:1}}
+    @keyframes typingGlow{0%,100%{transform:translateY(0);opacity:.3;box-shadow:0 0 4px var(--green)}50%{transform:translateY(-6px);opacity:1;box-shadow:0 0 12px var(--green),0 0 20px rgba(0,230,118,.4)}}
 
     /* Input */
     .chat-input-area{padding:14px 20px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
@@ -278,6 +303,10 @@
     <div class="conv-list" id="convList">
       <div class="conv-empty">Nenhuma conversa ainda.<br>Comece digitando sua primeira pergunta!</div>
     </div>
+    <div class="fav-section" id="favSection" style="display:none">
+      <div class="fav-section-title">⭐ Favoritos</div>
+      <div id="favList"></div>
+    </div>
     <div class="sidebar-footer">
       <div class="user-info">
         <div class="user-avatar" id="sidebarInitial">R</div>
@@ -303,6 +332,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           Teses
         </button>
+        <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">📱 Conteúdo</button>
         <button class="btn-sm" onclick="openProfileModal()" title="Meu Perfil">👤 Perfil</button>
         <button class="btn-sm" onclick="newConversation()">Nova conversa</button>
         <button class="btn-sm" onclick="logout()">Sair</button>
@@ -428,6 +458,9 @@ function showChat(user){
   $('sidebarEmail').textContent=user.email;
   $('sidebarInitial').textContent=(user.name||user.email).charAt(0).toUpperCase();
   $('chatInput').focus();
+  loadProfile();
+  loadFavorites();
+  setTimeout(loadNotifications,1500);
 }
 function logout(){
   localStorage.removeItem('capi_token');localStorage.removeItem('capi_user');
@@ -565,7 +598,9 @@ async function sendMessage(){
       loadConversations(); // refresh sidebar
     }
     convHistory.push({role:'assistant',content:reply});
-    removeTyping(typingEl);appendMessage('assistant',reply);
+    removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);
+    // Clear upload after sending
+    if(pendingUploadId){pendingUploadId=null;document.getElementById('fileBadgeArea').innerHTML='';}
   }catch(err){
     removeTyping(typingEl);appendMessage('assistant','⚠️ Desculpe, ocorreu um erro. Tente novamente.');
   }finally{
@@ -573,7 +608,7 @@ async function sendMessage(){
   }
 }
 
-function appendMessage(role,content){
+function appendMessage(role,content,suggestions){
   const imgSrc=document.querySelector('.auth-logo-img').src;
   const user=JSON.parse(localStorage.getItem('capi_user')||'{}');
   const wrapper=document.createElement('div');
@@ -589,13 +624,18 @@ function appendMessage(role,content){
   const msgContent=document.createElement('div');
   msgContent.style.cssText='display:flex;flex-direction:column;min-width:0;max-width:100%';
   msgContent.appendChild(bubble);
+  // Timestamp
+  const ts=document.createElement('div');
+  ts.className='msg-timestamp';
+  const now=new Date();
+  ts.textContent=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  msgContent.appendChild(ts);
   // Botões de ação apenas para mensagens do assistente
   if(role==='assistant'){
     const actions=document.createElement('div');
     actions.className='msg-actions';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
     const audioId='audio-'+Date.now();
-    // Botões de ação
     const copyBtn=document.createElement('button');
     copyBtn.className='msg-action-btn';
     copyBtn.innerHTML='📋 Copiar';
@@ -609,16 +649,33 @@ function appendMessage(role,content){
     ttsBtn.id='tts-btn-'+audioId;
     ttsBtn.innerHTML='🔊 Ouvir';
     ttsBtn.onclick=()=>playTTS(plainText,audioId);
+    const favBtn=document.createElement('button');
+    favBtn.className='msg-action-btn';
+    favBtn.innerHTML='⭐ Favoritar';
+    favBtn.onclick=()=>addFavorite(content,favBtn);
     actions.appendChild(copyBtn);
     actions.appendChild(waBtn);
     actions.appendChild(ttsBtn);
-    // Container do player de áudio (oculto inicialmente)
+    actions.appendChild(favBtn);
     const audioContainer=document.createElement('div');
     audioContainer.id='audio-container-'+audioId;
     audioContainer.style.cssText='display:none;margin-top:8px;';
     audioContainer.innerHTML=`<audio id="${audioId}" controls style="width:100%;max-width:380px;height:36px;border-radius:20px;outline:none;" src=""></audio>`;
     msgContent.appendChild(actions);
     msgContent.appendChild(audioContainer);
+    // Contextual suggestions
+    if(suggestions&&suggestions.length){
+      const chipsDiv=document.createElement('div');
+      chipsDiv.className='ctx-suggestions';
+      suggestions.forEach(s=>{
+        const chip=document.createElement('button');
+        chip.className='ctx-chip';
+        chip.textContent=s;
+        chip.onclick=()=>sendSuggestion(chip);
+        chipsDiv.appendChild(chip);
+      });
+      msgContent.appendChild(chipsDiv);
+    }
   }
   wrapper.appendChild(msgContent);
   $('chatMessages').appendChild(wrapper);
@@ -662,7 +719,7 @@ function showTyping(){
   const imgSrc=document.querySelector('.auth-logo-img').src;
   const w=document.createElement('div');
   w.className='message message-assistant';w.id='typingIndicator';
-  const av=document.createElement('div');av.className='message-avatar';
+  const av=document.createElement('div');av.className='message-avatar thinking';
   av.innerHTML='<img src="'+imgSrc+'" alt="Capi">';
   const b=document.createElement('div');b.className='message-bubble';
   b.innerHTML='<div class="typing-indicator"><span></span><span></span><span></span></div>';
@@ -862,6 +919,90 @@ function gerarTese(){
   sendMessage();
 }
 
+// ── MONTE SEU CONTEÚDO ──────────────────────────────────
+function openConteudoModal(){document.getElementById('conteudoModal').classList.remove('hidden');}
+function closeConteudoModal(){document.getElementById('conteudoModal').classList.add('hidden');}
+
+function gerarConteudo(){
+  const tipo=document.getElementById('conteudo_tipo').value;
+  const area=document.getElementById('conteudo_area').value.trim();
+  const objetivo=document.getElementById('conteudo_objetivo').value;
+  const diferencial=document.getElementById('conteudo_diferencial').value.trim();
+  if(!tipo){showToast('Selecione o tipo de conteúdo');return;}
+  if(!area){showToast('Informe a área jurídica');return;}
+  if(!objetivo){showToast('Selecione o objetivo');return;}
+  closeConteudoModal();
+  const prompt='Crie um conteúdo jurídico completo no estilo Rafael Cândia para:\n\n📱 Tipo: '+tipo+'\n⚖️ Área: '+area+'\n🎯 Objetivo: '+objetivo+'\n✨ Diferencial: '+(diferencial||'Nenhum informado')+'\n\nQuero: roteiro completo, legenda com CTA, hashtags estratégicas e dica de arte visual. Use linguagem do Rafael — direto, impactante, sem juridiquês.';
+  $('chatInput').value=prompt;
+  $('sendBtn').disabled=false;
+  sendMessage();
+}
+
+// ── FAVORITOS ──────────────────────────────────────────
+async function addFavorite(content,btn){
+  const title=prompt('Dê um título para esta tese/resposta:');
+  if(!title||!title.trim()) return;
+  const token=localStorage.getItem('capi_token');
+  try{
+    const r=await fetch('/api/favorites',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({title:title.trim(),content})
+    });
+    if(!r.ok){const d=await r.json();throw new Error(d.error||'Erro');}
+    btn.innerHTML='⭐ Salvo!';
+    btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
+    showToast('⭐ Tese salva nos favoritos!');
+    loadFavorites();
+  }catch(e){showToast('❌ '+e.message);}
+}
+
+async function loadFavorites(){
+  try{
+    const token=localStorage.getItem('capi_token');
+    const r=await fetch('/api/favorites',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    const favs=await r.json();
+    const section=document.getElementById('favSection');
+    const list=document.getElementById('favList');
+    if(!favs.length){section.style.display='none';return;}
+    section.style.display='block';
+    list.innerHTML=favs.map(f=>`
+      <div class="fav-item" style="display:flex;justify-content:space-between;align-items:center">
+        <span onclick="showFavDetail(${f.id})" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">⭐ ${f.title}</span>
+        <button class="fav-delete" onclick="deleteFavorite(event,${f.id})" title="Remover">✕</button>
+      </div>
+    `).join('');
+  }catch(e){}
+}
+
+async function showFavDetail(id){
+  const token=localStorage.getItem('capi_token');
+  try{
+    const r=await fetch('/api/favorites',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    const favs=await r.json();
+    const fav=favs.find(f=>f.id===id);
+    if(!fav) return;
+    document.getElementById('favDetailTitle').textContent=fav.title;
+    document.getElementById('favDetailContent').innerHTML=formatMsg(fav.content);
+    document.getElementById('favDetailModal').classList.remove('hidden');
+  }catch(e){}
+}
+
+function closeFavDetailModal(){document.getElementById('favDetailModal').classList.add('hidden');}
+
+async function deleteFavorite(e,id){
+  e.stopPropagation();
+  if(!confirm('Remover este favorito?')) return;
+  const token=localStorage.getItem('capi_token');
+  try{
+    await fetch('/api/favorites/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    loadFavorites();
+    showToast('Favorito removido.');
+  }catch(e){}
+}
+
 init();
 </script>
 
@@ -959,6 +1100,59 @@ init();
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeProfileModal()">Cancelar</button>
       <button class="btn-modal-ok" onclick="saveProfile()">💾 Salvar Perfil</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL MONTE SEU CONTEÚDO ──────────────────────── -->
+<div id="conteudoModal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeConteudoModal()">✕</button>
+    <div class="modal-title">📱 Monte seu Conteúdo</div>
+    <div class="form-group">
+      <label>Tipo de conteúdo</label>
+      <select id="conteudo_tipo" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="Reels">Reels</option>
+        <option value="Carrossel">Carrossel</option>
+        <option value="Story">Story</option>
+        <option value="Post Feed">Post Feed</option>
+        <option value="Thread">Thread</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Área jurídica</label>
+      <input type="text" id="conteudo_area" class="form-input" placeholder="Ex: Direito do Consumidor, Previdenciário...">
+    </div>
+    <div class="form-group">
+      <label>Objetivo</label>
+      <select id="conteudo_objetivo" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="Atrair clientes">Atrair clientes</option>
+        <option value="Construir autoridade">Construir autoridade</option>
+        <option value="Viralizar">Viralizar</option>
+        <option value="Educar">Educar</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Seu diferencial (opcional)</label>
+      <input type="text" id="conteudo_diferencial" class="form-input" placeholder="Ex: Atendimento humanizado, 10 anos de experiência...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal-cancel" onclick="closeConteudoModal()">Cancelar</button>
+      <button class="btn-modal-ok" onclick="gerarConteudo()">🚀 Gerar Conteúdo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL FAVORITO DETALHE ──────────────────────────── -->
+<div id="favDetailModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-height:80vh;overflow-y:auto">
+    <button class="modal-close" onclick="closeFavDetailModal()">✕</button>
+    <div class="modal-title">⭐ <span id="favDetailTitle"></span></div>
+    <div id="favDetailContent" class="message-bubble" style="background:linear-gradient(135deg,rgba(0,50,20,.45),rgba(0,80,35,.25));border:1px solid var(--border);font-size:.87rem;line-height:1.7"></div>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn-modal-cancel" onclick="closeFavDetailModal()">Fechar</button>
     </div>
   </div>
 </div>

@@ -39,7 +39,11 @@ const upload = multer({
 });
 
 // ─── BANCO DE DADOS ───────────────────────────────────────────
-const db = new Database(path.join(__dirname, 'capi.db'));
+// DB_PATH permite apontar para um volume persistente no Railway
+// Configure DB_PATH=/data/capi.db no Railway + adicione um Volume em /data
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'capi.db');
+const db = new Database(DB_PATH);
+console.log('📦 Banco de dados:', DB_PATH);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
@@ -135,6 +139,15 @@ db.exec(`
     file_path TEXT NOT NULL,
     extracted_text TEXT,
     created_at TEXT DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS favorites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
 
@@ -555,12 +568,49 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
     // Auto-detectar e salvar perfil se usuário informou nome/área
     if (isFirstMessage) {
-      const userMsgContent = messages.find(m => m.role === 'user')?.content || '';
-      // Salva evento de analytics
       db.prepare("INSERT INTO message_analytics (user_id, message_type) VALUES (?, 'first_message')").run(userId);
     }
 
-    res.json({ reply, tokens, conversation_id: convId });
+    // TAREFA 6 — Auto-detectar nome e área na mensagem do usuário
+    const userMsg = messages[messages.length - 1]?.content || '';
+    const existingProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId);
+    if (!existingProfile?.nome || !existingProfile?.area) {
+      const nomeMatch = userMsg.match(/(?:me chamo|meu nome é|sou o|sou a|pode me chamar de)\s+([A-ZÀ-Ú][a-zà-ú]+(?:\s+[A-ZÀ-Ú][a-zà-ú]+)?)/i);
+      const areaMatch = userMsg.match(/(?:trabalho com|atuo em|área de|sou advogado de|especializ[ao] em)\s+([^.,!?]+)/i);
+      if (nomeMatch || areaMatch) {
+        const nome = nomeMatch ? nomeMatch[1] : existingProfile?.nome;
+        const area = areaMatch ? areaMatch[1].trim() : existingProfile?.area;
+        db.prepare('INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, anos_experiencia, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"))').run(userId, nome || null, area || null, existingProfile?.cidade || null, existingProfile?.anos_experiencia || null);
+      }
+    }
+
+    // TAREFA 3 — Gerar sugestões contextuais de follow-up
+    let suggestions = [];
+    try {
+      const sugResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'Gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) relacionadas à resposta abaixo. Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Pergunta 1?","Pergunta 2?","Pergunta 3?"]' },
+            { role: 'user', content: reply.substring(0, 500) }
+          ],
+          temperature: 0.7,
+          max_tokens: 150
+        })
+      });
+      if (sugResponse.ok) {
+        const sugData = await sugResponse.json();
+        const sugText = sugData.choices[0]?.message?.content || '[]';
+        const parsed = JSON.parse(sugText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+        if (Array.isArray(parsed)) suggestions = parsed.slice(0, 3);
+      }
+    } catch (e) {
+      console.error('Erro ao gerar sugestões:', e.message);
+    }
+
+    res.json({ reply, tokens, conversation_id: convId, suggestions });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Erro ao conectar com a OpenAI' });
@@ -912,6 +962,27 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
 // ─── CHAT COM SUPORTE A DOCUMENTO ─────────────────────────────
 // Extensão do /api/chat para aceitar upload_id
 // (o upload_id é injetado no contexto como documento adicional)
+
+// ─── FAVORITOS ───────────────────────────────────────────
+
+app.post('/api/favorites', authMiddleware, (req, res) => {
+  const { title, content } = req.body;
+  if (!title || !content) return res.status(400).json({ error: 'Título e conteúdo obrigatórios' });
+  const result = db.prepare('INSERT INTO favorites (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, title, content);
+  res.json({ id: result.lastInsertRowid, title, content });
+});
+
+app.get('/api/favorites', authMiddleware, (req, res) => {
+  const favs = db.prepare('SELECT id, title, content, created_at FROM favorites WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+  res.json(favs);
+});
+
+app.delete('/api/favorites/:id', authMiddleware, (req, res) => {
+  const fav = db.prepare('SELECT * FROM favorites WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!fav) return res.status(404).json({ error: 'Favorito não encontrado' });
+  db.prepare('DELETE FROM favorites WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
 
 // Catch-all SPA
 app.get('/{*path}', (req, res) => {
