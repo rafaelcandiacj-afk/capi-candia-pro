@@ -1107,18 +1107,21 @@ app.post('/api/game/chat', authMiddleware, async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
   const personalities = {
-    'Fácil': 'Você é João, aposentado, curioso, já ouviu falar que pode revisar seu benefício. Tem 1-2 objeções simples (preço, tempo). É receptivo e educado.',
-    'Médio': 'Você é Marcos, empresário, desconfiado, já gastou dinheiro com advogado que não entregou. Questiona honorários, pede garantias, compara preços. Tem 3-4 objeções.',
-    'Difícil': 'Você é Roberto, agressivo, foi enganado por advogado, desconfia de todos. Ataca o advogado, diz que é tudo golpe, extremamente difícil de convencer. Tem 5+ objeções pesadas.'
+    'Fácil':  'Você é João, aposentado, curioso, já ouviu falar que pode revisar seu benefício. Tem 1-2 objeções simples (preço, tempo). É receptivo e educado.',
+    'Médio':  'Você é Carlos, empresário, desconfiado, já gastou dinheiro com advogado que não entregou. Questiona honorários, pede garantias, compara preços. Tem 3-4 objeções.',
+    'Difícil':'Você é Roberto, agressivo, foi enganado por advogado, desconfia de todos. Ataca o advogado, diz que é tudo golpe, extremamente difícil de convencer. Tem 5+ objeções pesadas.'
   };
+  // aceita level numérico (1/2/3) ou textual ('Fácil'/'Médio'/'Difícil')
+  const levelMap = { 1: 'Fácil', '1': 'Fácil', 2: 'Médio', '2': 'Médio', 3: 'Difícil', '3': 'Difícil' };
+  const levelKey = personalities[level] ? level : (levelMap[level] || 'Médio');
 
   const userName = req.user?.name || 'o advogado';
 
   const gameSystemPrompt = `Você é um CLIENTE (não um assistente) num jogo de simulação de atendimento jurídico.
-Nível: ${level} — Área: ${area}
-O advogado que está te atendendo se chama ${userName}.
+Nível: ${levelKey} — Área: ${area}
+O advogado que está te atendendo se chama ${userName}. Use o nome dele quando se referir ao advogado.
 
-${personalities[level] || personalities['Médio']}
+${personalities[levelKey]}
 
 Regras:
 1. NUNCA saia do personagem. Você é o CLIENTE, não o advogado.
