@@ -1599,6 +1599,57 @@ function planMiddleware(req, res, next) {
   }
 }
 
+// ─── EMAIL BOAS-VINDAS ───────────────────────────────────────
+async function sendWelcomeEmail(toEmail, toName) {
+  try {
+    const nodemailer = require('nodemailer');
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com',
+        pass: process.env.SMTP_PASS || ''
+      }
+    });
+    const firstName = (toName || toEmail.split('@')[0]).split(' ')[0];
+    await transporter.sendMail({
+      from: `"Rafael Cândia" <${process.env.SMTP_USER || 'rafaelcandia.cj@gmail.com'}>`,
+      to: toEmail,
+      subject: 'Seu acesso à Capi Când-IA Pro está liberado! 🎉',
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
+          <div style="text-align:center;margin-bottom:32px">
+            <h1 style="font-size:28px;color:#ffd700;margin:0">Capi Când-IA Pro</h1>
+            <p style="color:#aaa;font-size:13px;margin-top:6px">A IA treinada com o método Cândia</p>
+          </div>
+          <p style="font-size:16px">Olá, <strong>${firstName}</strong>!</p>
+          <p style="font-size:15px;line-height:1.7;color:#ccc">Seja bem-vindo(a) à <strong style="color:#ffd700">Capi Când-IA Pro</strong> — a inteligência artificial treinada com 300+ teses jurídicas e todo o método Cândia.</p>
+          <p style="font-size:15px;color:#ccc">Seu acesso está liberado. Clique no botão abaixo para entrar:</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="https://capi-candia-pro-production.up.railway.app" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">👉 Acessar a Capi Când-IA Pro</a>
+          </div>
+          <p style="font-size:14px;color:#aaa">Use o email desta mensagem e crie sua senha no primeiro acesso.</p>
+          <hr style="border:none;border-top:1px solid #333;margin:24px 0">
+          <p style="font-size:14px;color:#ccc"><strong style="color:#ffd700">O que você tem disponível:</strong></p>
+          <ul style="color:#ccc;font-size:14px;line-height:2">
+            <li>💬 Chat com 300+ teses jurídicas</li>
+            <li>✍️ Monte seu Conteúdo (ético e estratégico)</li>
+            <li>📄 Revisor de Petição</li>
+            <li>🎮 Simulador de Casos</li>
+            <li>💰 Honorários por estado</li>
+            <li>🎙️ Voz do Cândia (TTS)</li>
+          </ul>
+          <hr style="border:none;border-top:1px solid #333;margin:24px 0">
+          <p style="font-size:13px;color:#888">Qualquer dúvida, responda este email.</p>
+          <p style="font-size:14px;color:#ccc">Bons estudos!<br><strong style="color:#ffd700">Rafael Cândia</strong></p>
+        </div>
+      `
+    });
+    console.log('✅ Email boas-vindas enviado para:', toEmail);
+  } catch(e) {
+    console.error('⚠️ Erro ao enviar email boas-vindas:', e.message);
+  }
+}
+
 // ─── WEBHOOK PAGARME ─────────────────────────────────────────
 const PAGARME_WEBHOOK_SECRET = process.env.PAGARME_WEBHOOK_SECRET || 'capi-pagarme-webhook-secret-2026';
 
@@ -1670,6 +1721,9 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
           `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
 
           console.log(`✅ Plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
+
+          // Enviar email de boas-vindas
+          sendWelcomeEmail(email, user.name);
         }
       }
     }
