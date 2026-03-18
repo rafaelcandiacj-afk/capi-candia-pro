@@ -1070,9 +1070,11 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   let honorariosCtx = '';
   const lastMsg = messages.filter(m => m.role === 'user').pop()?.content?.toLowerCase() || '';
   const isHonorarioQuery = lastMsg.includes('cobrar') || lastMsg.includes('honorar') || 
-    lastMsg.includes('quanto') && (lastMsg.includes('ação') || lastMsg.includes('acao') || lastMsg.includes('causa') || lastMsg.includes('processo') || lastMsg.includes('tabela') || lastMsg.includes('oab')) ||
-    lastMsg.includes('tabela oab') || lastMsg.includes('valor mínimo') || lastMsg.includes('valor minimo') ||
-    lastMsg.includes('precificar') || lastMsg.includes('preço') || lastMsg.includes('preco');
+    (lastMsg.includes('quanto') && (lastMsg.includes('ação') || lastMsg.includes('acao') || lastMsg.includes('causa') || lastMsg.includes('processo') || lastMsg.includes('tabela') || lastMsg.includes('oab'))) ||
+    lastMsg.includes('tabela oab') || lastMsg.includes('tabela da oab') || lastMsg.includes('oab/') || lastMsg.includes('oab-') ||
+    lastMsg.includes('valor mínimo') || lastMsg.includes('valor minimo') ||
+    lastMsg.includes('precificar') || lastMsg.includes('preço') || lastMsg.includes('preco') ||
+    lastMsg.includes('honorário') || lastMsg.includes('minimo de honorar') || lastMsg.includes('mínimo de honorar');
   
   if (isHonorarioQuery) {
     // detecta estado mencionado na mensagem
@@ -1093,8 +1095,19 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     
     let estadoSigla = null;
     const msgComEspacos = ' ' + lastMsg + ' ';
+    // Primeiro: tenta detectar por nome/sigla com espaços (ex: "mato grosso do sul", " ms ")
     for (const [nome, sigla] of Object.entries(estadoMap)) {
       if (msgComEspacos.includes(nome)) { estadoSigla = sigla; break; }
+    }
+    // Segundo: se não encontrou, tenta detectar siglas de 2 letras em qualquer posição
+    // Ex: OAB/MS, OAB-SP, (RJ), "honorarios MG", etc.
+    if (!estadoSigla) {
+      const todasSiglas = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+      for (const sigla of todasSiglas) {
+        // Captura sigla precedida e seguida por qualquer não-letra (barra, hífen, espaço, parêntese, etc)
+        const regex = new RegExp('(?<![a-zA-Z])' + sigla + '(?![a-zA-Z])', 'i');
+        if (regex.test(lastMsg)) { estadoSigla = sigla; break; }
+      }
     }
     
     if (estadoSigla && HONORARIOS[estadoSigla]) {
