@@ -1200,9 +1200,15 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.patch('/api/admin/users/:id', adminMiddleware, (req, res) => {
-  const { active } = req.body;
-  db.prepare('UPDATE users SET active = ? WHERE id = ?').run(active ? 1 : 0, req.params.id);
-  res.json({ success: true });
+  const { active, name } = req.body;
+  if (name !== undefined) {
+    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, req.params.id);
+  }
+  if (active !== undefined) {
+    db.prepare('UPDATE users SET active = ? WHERE id = ?').run(active ? 1 : 0, req.params.id);
+  }
+  const user = db.prepare('SELECT id, name, email, active FROM users WHERE id = ?').get(req.params.id);
+  res.json({ success: true, user });
 });
 
 app.delete('/api/admin/users/:id', adminMiddleware, (req, res) => {
@@ -1831,7 +1837,11 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
 
     const status = (body?.last_status || '').toLowerCase();
     const email = (body?.subscriber?.email || body?.last_transaction?.contact?.email || '').toLowerCase();
-    const customerName = body?.subscriber?.name || body?.last_transaction?.contact?.name || (email ? email.split('@')[0] : 'Assinante');
+    // Nome completo: tenta subscriber.name (campo pode vir como nome completo ou só primeiro)
+    const rawName = body?.subscriber?.name || body?.last_transaction?.contact?.name || '';
+    const firstName = body?.subscriber?.first_name || '';
+    const lastName = body?.subscriber?.last_name || '';
+    const customerName = rawName || (firstName && lastName ? firstName + ' ' + lastName : firstName || lastName || (email ? email.split('@')[0] : 'Assinante'));
     const subscriptionId = body?.id || body?.subscription_code;
 
     // Detectar se é anual pelo intervalo ou nome da oferta
