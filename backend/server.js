@@ -1984,6 +1984,15 @@ app.post('/api/admin/grant-access', adminMiddleware, (req, res) => {
   res.json({ ok: true, user });
 });
 
+// Debug: pegar token de reset de um usuário (apenas para testes internos)
+app.get('/api/admin/user-reset-token', adminMiddleware, (req, res) => {
+  const { email } = req.query;
+  if (!email) return res.status(400).json({ error: 'Email obrigatório' });
+  const row = db.prepare('SELECT token, expires_at FROM reset_tokens WHERE email = ? ORDER BY rowid DESC LIMIT 1').get(email.toLowerCase());
+  if (!row) return res.status(404).json({ error: 'Nenhum token encontrado' });
+  res.json({ token: row.token, expires_at: row.expires_at, link: `https://capicand-ia.com/app?reset=${row.token}` });
+});
+
 // Reenviar email de boas-vindas
 app.post('/api/admin/resend-welcome', adminMiddleware, (req, res) => {
   const { user_id, email } = req.body;
