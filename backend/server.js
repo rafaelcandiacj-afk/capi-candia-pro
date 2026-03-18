@@ -1953,6 +1953,18 @@ app.post('/api/admin/grant-access', adminMiddleware, (req, res) => {
   res.json({ ok: true, user });
 });
 
+// Reenviar email de boas-vindas
+app.post('/api/admin/resend-welcome', adminMiddleware, (req, res) => {
+  const { user_id, email } = req.body;
+  const user = user_id
+    ? db.prepare('SELECT * FROM users WHERE id = ?').get(user_id)
+    : db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+  setImmediate(() => sendWelcomeEmail(user.email, user.name));
+  console.log(`📧 Reenvio de boas-vindas para: ${user.email}`);
+  res.json({ ok: true, email: user.email });
+});
+
 app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
   const { user_id } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id obrigatório' });
