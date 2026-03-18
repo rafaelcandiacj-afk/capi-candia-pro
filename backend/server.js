@@ -832,7 +832,7 @@ async function searchKnowledge(query, topK = 5) {
     });
     
     scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, topK).filter(c => c.score > 0.3);
+    return scored.slice(0, topK).filter(c => c.score > 0.2);
   } catch (e) {
     console.error('Erro na busca semântica:', e.message);
     return [];
@@ -1024,13 +1024,16 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:\n- Nome: ${userProfile.nome}\n- Área: ${userProfile.area || 'não informada'}\n- Experiência: ${userProfile.anos_experiencia || 'não informada'}\n- Cidade: ${userProfile.cidade || 'não informada'}\n\nIMPORTANTE: Você JÁ SABE quem é este usuário. NÃO pergunte o nome nem a área dele. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão nas suas respostas.`;
   }
   
-  // Pega a última mensagem do usuário para busca semântica
+  // Pega as últimas mensagens para enriquecer a busca semântica com contexto
   const lastUserMsg = messages.filter(m => m.role === 'user').pop();
   
   let ragContext = '';
   if (lastUserMsg) {
     try {
-      const relevantChunks = await searchKnowledge(lastUserMsg.content, 5);
+      // Constrói query enriquecida: última msg + contexto das 3 msgs anteriores
+      const recentMsgs = messages.slice(-6);
+      const contextQuery = recentMsgs.map(m => m.content).join(' ') + ' ' + lastUserMsg.content;
+      const relevantChunks = await searchKnowledge(contextQuery, 8);
       if (relevantChunks.length > 0) {
         ragContext = '\n\n━━━ CONHECIMENTO DO RAFAEL CÂNDIA (use isto para responder) ━━━\n';
         relevantChunks.forEach((chunk, i) => {
