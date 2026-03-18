@@ -576,7 +576,7 @@
         <textarea id="chatInput" class="chat-input" placeholder="Digite sua mensagem para a Capi..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <label class="upload-btn" title="Enviar documento (PDF, TXT, DOCX)">
-          <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx" style="display:none" onchange="handleConvUpload(this)">
+          <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </label>
         <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled>
@@ -1185,7 +1185,15 @@ async function handleConvUpload(input){
     // Mostra badge
     const area=document.getElementById('fileBadgeArea');
     area.innerHTML=`<div class="file-badge">📎 ${file.name} <button onclick="clearUpload()">✕</button></div>`;
-    showToast('✅ Arquivo pronto! Envie sua pergunta sobre ele.');
+    // Auto-preenche o input com sugestão de pergunta
+    const inputEl = $('chatInput');
+    if (!inputEl.value.trim()) {
+      inputEl.value = 'Analise este documento para mim';
+      $('sendBtn').disabled = false;
+      inputEl.focus();
+      inputEl.select();
+    }
+    showToast('✅ ' + file.name + ' anexado! Edite ou envie a pergunta.');
   }catch(e){showToast('❌ '+e.message);}
   input.value='';
 }

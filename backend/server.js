@@ -1525,9 +1525,9 @@ const uploadConv = multer({
   }),
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.txt', '.pdf', '.md', '.docx'];
+    const allowed = ['.txt', '.pdf', '.md', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
     const ext = require('path').extname(file.originalname).toLowerCase();
-    allowed.includes(ext) ? cb(null, true) : cb(new Error('Formato não suportado'));
+    allowed.includes(ext) ? cb(null, true) : cb(new Error('Formato não suportado. Use PDF, DOCX, TXT ou imagem (JPG/PNG).'));
   }
 });
 
@@ -1536,6 +1536,7 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
   
   let extractedText = '';
   const ext = require('path').extname(req.file.originalname).toLowerCase();
+  const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
   
   try {
     if (ext === '.txt' || ext === '.md') {
@@ -1546,8 +1547,34 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
       const data = await pdfParse(buf);
       extractedText = data.text;
     } else if (ext === '.docx') {
-      // Tenta ler como texto (fallback simples)
-      extractedText = fs.readFileSync(req.file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+      try {
+        const mammoth = require('mammoth');
+        const result = await mammoth.extractRawText({ path: req.file.path });
+        extractedText = result.value;
+      } catch(e) {
+        extractedText = fs.readFileSync(req.file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+      }
+    } else if (isImage) {
+      // Usa OpenAI Vision para extrair texto/conteúdo da imagem
+      const imageBase64 = fs.readFileSync(req.file.path).toString('base64');
+      const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente. Se não houver texto, descreva o conteúdo.' },
+              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+            ]
+          }],
+          max_tokens: 2000
+        })
+      });
+      const visionData = await visionResp.json();
+      extractedText = visionData.choices?.[0]?.message?.content || 'Não foi possível extrair o conteúdo da imagem.';
     }
     
     // Limita a 8000 chars para não explodir o contexto
