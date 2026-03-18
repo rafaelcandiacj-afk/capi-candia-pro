@@ -756,7 +756,8 @@ async function extractText(filePath, originalName) {
   
   if (ext === '.pdf') {
     try {
-      const pdfParse = require('pdf-parse');
+      const pdfMod = require('pdf-parse');
+      const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
       const buffer = fs.readFileSync(filePath);
       const data = await pdfParse(buffer);
       if (data.text && data.text.trim().length > 50) return data.text;
@@ -1542,7 +1543,8 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
     if (ext === '.txt' || ext === '.md') {
       extractedText = fs.readFileSync(req.file.path, 'utf8');
     } else if (ext === '.pdf') {
-      const pdfParse = require('pdf-parse');
+      const pdfMod = require('pdf-parse');
+      const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
       const buf = fs.readFileSync(req.file.path);
       const data = await pdfParse(buf);
       extractedText = data.text;
