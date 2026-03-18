@@ -203,9 +203,21 @@
       .chat-header{flex-wrap:wrap;gap:6px;padding:8px 12px}
     }
 
-    /* ── GERADOR DE TESES ── */
-    .teses-btn{padding:7px 14px;background:linear-gradient(135deg,rgba(0,200,83,.18),rgba(0,230,118,.1));border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--green);font-family:'Rajdhani',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px}
-    .teses-btn:hover{background:rgba(0,230,118,.25);box-shadow:0 0 12px rgba(0,230,118,.2)}
+    /* ── TOOLBAR ── */
+    .chat-toolbar-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .teses-btn{padding:7px 15px;background:transparent;border:1px solid #e0dbd4;border-radius:20px;color:#555;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .teses-btn:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee}
+    .teses-btn .btn-icon{font-size:.88rem}
+    /* Header actions (Perfil, Nova, Sair) */
+    .header-action-btn{padding:7px 14px;background:transparent;border:1px solid transparent;border-radius:8px;color:#888;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px}
+    .header-action-btn:hover{background:#f3f0eb;color:var(--text);border-color:#e0dbd4}
+    .header-action-btn.danger:hover{color:#e53935;background:#fef2f2;border-color:#fecaca}
+    /* Divider vertical */
+    .header-divider{width:1px;height:22px;background:#e0dbd4;flex-shrink:0}
+    /* Status badge */
+    .header-status{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px}
+    .status-dot{width:6px;height:6px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite;flex-shrink:0}
+    .header-status-txt{font-size:.72rem;color:#16a34a;font-weight:500;letter-spacing:.02em}
 
     /* Modal base */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
@@ -513,21 +525,29 @@
     <header class="chat-header">
       <div class="chat-header-left">
         <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
-        <span class="status-dot"></span>
-        <span class="header-status-txt">Online • Pronto para ajudar</span>
+        <div class="header-status">
+          <span class="status-dot"></span>
+          <span class="header-status-txt">Online · Pronto para ajudar</span>
+        </div>
       </div>
-      <div class="chat-toolbar" style="display:flex;gap:8px">
-        <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          Teses
+      <div class="chat-toolbar" style="display:flex;gap:4px;align-items:center">
+        <div class="chat-toolbar-wrap">
+          <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">⚖️ Teses</button>
+          <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">✍️ Conteúdo</button>
+          <button class="teses-btn" onclick="openPeticaoModal()" title="Revisor de Petição">📄 Petição</button>
+          <button class="teses-btn" onclick="abrirChatHonorarios()" title="Tabela de Honorários">💰 Honorários</button>
+          <button class="teses-btn" onclick="openGame()" title="Simulador de Casos">🎮 Jogo</button>
+        </div>
+        <div class="header-divider"></div>
+        <button class="header-action-btn" onclick="openProfileModal()" title="Meu Perfil">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Perfil
         </button>
-        <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">📱 Conteúdo</button>
-        <button class="teses-btn" onclick="openPeticaoModal()" title="Revisor de Petição">📝 Petição</button>
-        <button class="teses-btn" onclick="abrirChatHonorarios()" title="Tabela de Honorários">💰 Honorários</button>
-        <button class="teses-btn" onclick="openGame()" title="Simulador de Atendimento" style="background:linear-gradient(135deg,rgba(255,215,64,.15),rgba(255,171,0,.1));border-color:rgba(255,215,64,.3);color:#ffd740">🎮 Jogo</button>
-        <button class="btn-sm" onclick="openProfileModal()" title="Meu Perfil">👤 Perfil</button>
-        <button class="btn-sm" onclick="newConversation()">Nova conversa</button>
-        <button class="btn-sm" onclick="logout()">Sair</button>
+        <button class="header-action-btn" onclick="newConversation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nova
+        </button>
+        <button class="header-action-btn danger" onclick="logout()" title="Sair">Sair</button>
       </div>
     </header>
 
