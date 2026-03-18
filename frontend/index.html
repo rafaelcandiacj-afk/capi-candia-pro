@@ -391,6 +391,22 @@
           <button onclick="showLoginForm()" style="background:none;border:none;color:var(--text-muted);font-size:.82rem;cursor:pointer;text-decoration:underline">← Voltar para o login</button>
         </div>
       </div>
+
+      <!-- TELA CRIAR/REDEFINIR SENHA (via link do email) -->
+      <div id="resetForm" style="display:none">
+        <p style="font-size:.95rem;color:var(--text2);margin-bottom:20px;line-height:1.6;text-align:center">Crie sua senha para acessar a plataforma.</p>
+        <form onsubmit="handleResetPassword(event)">
+          <div class="input-group">
+            <label>Nova senha</label>
+            <input type="password" id="resetPassword" class="input-field" placeholder="Mínimo 6 caracteres" minlength="6" required>
+          </div>
+          <div class="input-group">
+            <label>Confirmar senha</label>
+            <input type="password" id="resetPasswordConfirm" class="input-field" placeholder="Repita a senha" minlength="6" required>
+          </div>
+          <button type="submit" id="resetBtn" class="btn-primary">🔐 Criar minha senha e entrar</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -568,6 +584,7 @@ const $ = id => document.getElementById(id);
 
 // ── INIT ──
 async function init(){
+  checkResetToken();
   const token=localStorage.getItem('capi_token');
   const user=JSON.parse(localStorage.getItem('capi_user')||'null');
   if(token&&user){
@@ -637,6 +654,43 @@ async function handleForgot(e){
     showSuccess('Link enviado! Verifique sua caixa de entrada (e spam).');
   }catch(err){showErr(err.message);}
   finally{$('forgotBtn').disabled=false;$('forgotBtn').textContent='Enviar link de acesso';}
+}
+
+// Tratamento de token de reset na URL (?reset=TOKEN)
+function checkResetToken(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('reset');
+  if(token){
+    window._resetToken = token;
+    $('loginForm').style.display='none';
+    $('forgotForm').style.display='none';
+    $('resetForm').style.display='block';
+    // Limpa token da URL sem recarregar
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+async function handleResetPassword(e){
+  e.preventDefault(); hideErr();
+  const password = $('resetPassword').value;
+  const confirm = $('resetPasswordConfirm').value;
+  if(password !== confirm){ showErr('As senhas não coincidem.'); return; }
+  if(password.length < 6){ showErr('Senha deve ter pelo menos 6 caracteres.'); return; }
+  $('resetBtn').disabled=true;
+  $('resetBtn').textContent='Salvando...';
+  try{
+    const res=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:window._resetToken,password})});
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Erro ao criar senha.');
+    // Senha criada — faz login automático
+    showSuccess('Senha criada! Entrando...');
+    setTimeout(() => {
+      $('resetForm').style.display='none';
+      $('loginForm').style.display='block';
+      showSuccess('Senha criada com sucesso! Faça seu login.');
+    }, 1500);
+  }catch(err){showErr(err.message);}
+  finally{$('resetBtn').disabled=false;$('resetBtn').textContent='🔐 Criar minha senha e entrar';}
 }
 
 // ── SCREENS ──

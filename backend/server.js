@@ -885,8 +885,21 @@ app.post('/api/login', async (req, res) => {
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
 });
 
-// ─── FORGOT / RESET PASSWORD ────────────────────────────────
-const resetTokens = new Map();
+// ─── FORGOT / RESET PASSWORD (tokens salvos no banco, não na RAM) ──────────
+// Cria tabela de reset tokens se não existir
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS reset_tokens (
+    token TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  )
+`).run();
+
+// Limpa tokens expirados periodicamente
+setInterval(() => {
+  db.prepare('DELETE FROM reset_tokens WHERE expires_at < ?').run(Date.now());
+}, 60 * 60 * 1000);
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -895,19 +908,21 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   if (!user) return res.json({ ok: true }); // não revela se email existe
 
   const token = require('crypto').randomBytes(32).toString('hex');
-  resetTokens.set(token, { email: email.toLowerCase(), expires: Date.now() + 3600000 });
+  const expiresAt = Date.now() + 24 * 3600000; // 24 horas
 
-  const BASE_URL = process.env.BASE_URL || 'https://capi-candia-pro-production.up.railway.app';
-  const resetLink = `${BASE_URL}/reset-password?token=${token}`;
+  // Salva no banco (persiste entre reinicializações)
+  db.prepare('INSERT OR REPLACE INTO reset_tokens (token, email, expires_at) VALUES (?, ?, ?)').run(token, email.toLowerCase(), expiresAt);
+
+  const BASE_URL = 'https://capicand-ia.com';
+  const resetLink = `${BASE_URL}/app?reset=${token}`;
 
   // Responde imediatamente, envia email em background
   res.json({ ok: true });
 
-  // Envia email de forma assíncrona (não bloqueia a resposta)
   setImmediate(async () => {
     try {
-      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><h2 style="color:#ffd700;text-align:center">Capi Când-IA Pro</h2><p style="color:#ccc">Clique no botão abaixo para criar ou redefinir sua senha. Link válido por <strong>1 hora</strong>.</p><div style="text-align:center;margin:32px 0"><a href="${resetLink}" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Criar/Redefinir minha senha</a></div><p style="font-size:12px;color:#555">${resetLink}</p></div>`;
-      await sendEmail(email, 'Seu link de acesso — Capi Când-IA Pro', html);
+      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><h2 style="color:#ffd700;text-align:center">Capi Când-IA Pro</h2><p style="color:#ccc">Clique no botão abaixo para criar ou redefinir sua senha. Link válido por <strong>24 horas</strong>.</p><div style="text-align:center;margin:32px 0"><a href="${resetLink}" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">🔐 Criar minha senha</a></div><p style="font-size:12px;color:#555">Ou copie: ${resetLink}</p></div>`;
+      await sendEmail(email, 'Crie sua senha — Capi Când-IA Pro', html);
       console.log('✅ Email reset enviado para:', email);
     } catch(e) { console.error('⚠️ Erro email reset:', e.message); }
   });
@@ -916,12 +931,13 @@ app.post('/api/auth/forgot-password', async (req, res) => {
 app.post('/api/auth/reset-password', async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: 'Dados inválidos' });
-  const data = resetTokens.get(token);
-  if (!data || data.expires < Date.now()) return res.status(400).json({ error: 'Link expirado ou inválido. Solicite um novo.' });
+  // Busca token no banco (não na RAM)
+  const data = db.prepare('SELECT * FROM reset_tokens WHERE token = ?').get(token);
+  if (!data || data.expires_at < Date.now()) return res.status(400).json({ error: 'Link expirado ou inválido. Solicite um novo.' });
   const hash = await bcrypt.hash(password, 10);
   db.prepare('UPDATE users SET password = ? WHERE email = ?').run(hash, data.email);
-  resetTokens.delete(token);
-  console.log('✅ Senha redefinida para:', data.email);
+  db.prepare('DELETE FROM reset_tokens WHERE token = ?').run(token);
+  console.log('✅ Senha definida para:', data.email);
   res.json({ ok: true });
 });
 
@@ -1667,9 +1683,41 @@ async function sendEmail(to, subject, html) {
 async function sendWelcomeEmail(toEmail, toName) {
   try {
     const firstName = (toName || toEmail.split('@')[0]).split(' ')[0];
-    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px"><div style="text-align:center;margin-bottom:32px"><h1 style="font-size:28px;color:#ffd700;margin:0">Capi Când-IA Pro</h1><p style="color:#aaa;font-size:13px;margin-top:6px">A IA treinada com o método Cândia</p></div><p style="font-size:16px">Olá, <strong>${firstName}</strong>!</p><p style="font-size:15px;line-height:1.7;color:#ccc">Seja bem-vindo(a) à <strong style="color:#ffd700">Capi Când-IA Pro</strong> — a IA treinada com 300+ teses jurídicas e todo o método Cândia.</p><p style="font-size:15px;color:#ccc">Seu acesso está liberado:</p><div style="text-align:center;margin:32px 0"><a href="https://capi-candia-pro-production.up.railway.app" style="background:#ffd700;color:#000;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">👉 Acessar a Capi Când-IA Pro</a></div><p style="font-size:14px;color:#aaa">Use o email desta mensagem e crie sua senha no primeiro acesso (clique em "Primeiro acesso" na tela de login).</p><hr style="border:none;border-top:1px solid #333;margin:24px 0"><p style="font-size:14px;color:#ccc"><strong style="color:#ffd700">O que você tem disponível:</strong></p><ul style="color:#ccc;font-size:14px;line-height:2"><li>💬 Chat com 300+ teses jurídicas</li><li>✍️ Monte seu Conteúdo</li><li>📄 Revisor de Petição</li><li>🎮 Simulador de Casos</li><li>💰 Honorários por estado</li><li>🎙️ Voz do Cândia</li></ul><hr style="border:none;border-top:1px solid #333;margin:24px 0"><p style="font-size:14px;color:#ccc">Bons estudos!<br><strong style="color:#ffd700">Rafael Cândia</strong></p></div>`;
-    await sendEmail(toEmail, 'Seu acesso à Capi Când-IA Pro está liberado! 🎉', html);
-    console.log('✅ Email boas-vindas enviado para:', toEmail);
+
+    // Gera token direto no email de boas-vindas para criar senha sem precisar de passos extras
+    const token = require('crypto').randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + 7 * 24 * 3600000; // 7 dias
+    db.prepare('INSERT OR REPLACE INTO reset_tokens (token, email, expires_at) VALUES (?, ?, ?)').run(token, toEmail.toLowerCase(), expiresAt);
+    const createPasswordLink = `https://capicand-ia.com/app?reset=${token}`;
+
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
+      <div style="text-align:center;margin-bottom:32px">
+        <h1 style="font-size:28px;color:#ffd700;margin:0">Capi Când-IA Pro</h1>
+        <p style="color:#aaa;font-size:13px;margin-top:6px">A IA treinada com o método Cândia</p>
+      </div>
+      <p style="font-size:16px">Olá, <strong>${firstName}</strong>!</p>
+      <p style="font-size:15px;line-height:1.7;color:#ccc">Sua compra foi confirmada! Seja bem-vindo(a) à <strong style="color:#ffd700">Capi Când-IA Pro</strong> — a IA treinada com 300+ teses jurídicas e todo o método Cândia.</p>
+      <p style="font-size:15px;color:#ffd700;font-weight:bold">👇 Clique no botão abaixo para criar sua senha e já entrar na plataforma:</p>
+      <div style="text-align:center;margin:32px 0">
+        <a href="${createPasswordLink}" style="background:#ffd700;color:#000;padding:18px 48px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:17px;display:inline-block">🔐 Criar minha senha e entrar</a>
+      </div>
+      <p style="font-size:13px;color:#666;text-align:center">Link válido por 7 dias. Se o botão não funcionar, copie e cole no navegador:<br><span style="color:#aaa">${createPasswordLink}</span></p>
+      <hr style="border:none;border-top:1px solid #333;margin:24px 0">
+      <p style="font-size:14px;color:#ccc"><strong style="color:#ffd700">O que você tem disponível:</strong></p>
+      <ul style="color:#ccc;font-size:14px;line-height:2">
+        <li>💬 Chat com 300+ teses jurídicas</li>
+        <li>✍️ Monte seu Conteúdo</li>
+        <li>📄 Revisor de Petição</li>
+        <li>🎮 Simulador de Casos</li>
+        <li>💰 Honorários por estado</li>
+        <li>🎙️ Voz do Cândia</li>
+      </ul>
+      <hr style="border:none;border-top:1px solid #333;margin:24px 0">
+      <p style="font-size:14px;color:#ccc">Bons estudos!<br><strong style="color:#ffd700">Rafael Cândia</strong></p>
+    </div>`;
+
+    await sendEmail(toEmail, '🎉 Acesso liberado! Crie sua senha — Capi Când-IA Pro', html);
+    console.log('✅ Email boas-vindas (com link de criar senha) enviado para:', toEmail);
   } catch(e) {
     console.error('⚠️ Erro ao enviar email boas-vindas:', e.message);
   }
