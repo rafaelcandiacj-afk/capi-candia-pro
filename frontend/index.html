@@ -354,10 +354,15 @@
     .onboarding-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
     .onboarding-btn:disabled{opacity:.5;cursor:not-allowed}
 
-    /* ── REVISOR DE PETIÇÃO MODAL ── */
-    .peticao-textarea{width:100%;min-height:200px;padding:12px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;outline:none;transition:var(--trans);resize:vertical;line-height:1.6}
-    .peticao-textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-dim)}
-    .peticao-textarea::placeholder{color:rgba(200,230,210,.5)}
+    /* ── CONSTRUTOR DE PETIÇÃO MODAL ── */
+    .pet-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(184,134,11,.12);border:1px solid rgba(184,134,11,.25);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--gold);font-weight:600;margin-bottom:16px}
+    .pet-badge svg{flex-shrink:0}
+    .pet-step{display:none;animation:fadeUp .25s ease}
+    .pet-step.active{display:block}
+    .pet-progress{display:flex;gap:6px;margin-bottom:18px}
+    .pet-progress-dot{flex:1;height:3px;border-radius:2px;background:var(--border);transition:all .3s}
+    .pet-progress-dot.done{background:var(--gold)}
+    .pet-hint{font-size:.78rem;color:var(--text2);margin-top:5px;opacity:.8;line-height:1.5}
 
   </style>
 </head>
@@ -534,7 +539,7 @@
         <div class="chat-toolbar-wrap">
           <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">⚖️ Teses</button>
           <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">✍️ Conteúdo</button>
-          <button class="teses-btn" onclick="openPeticaoModal()" title="Revisor de Petição">📄 Petição</button>
+          <button class="teses-btn" onclick="openPeticaoModal()" title="Construtor de Petição">📄 Petição</button>
           <button class="teses-btn" onclick="abrirChatHonorarios()" title="Tabela de Honorários">💰 Honorários</button>
           <button class="teses-btn" onclick="openGame()" title="Simulador de Casos">🎮 Jogo</button>
         </div>
@@ -1635,17 +1640,77 @@ async function finishOnboarding() {
   }, 500);
 }
 
-// ── REVISOR DE PETIÇÃO ──
-function openPeticaoModal() { $('peticaoModal').classList.remove('hidden'); }
+// ── CONSTRUTOR DE PETIÇÃO ──
+const PET_STEPS = ['tipo','fatos','pedidos'];
+let petStep = 0;
+
+function openPeticaoModal() {
+  petStep = 0;
+  ['pet_tipo','pet_vara','pet_fatos','pet_provas','pet_pedidos','pet_obs'].forEach(id => {
+    const el = $(id); if(el) el.value = '';
+  });
+  petShowStep(0);
+  $('peticaoModal').classList.remove('hidden');
+}
 function closePeticaoModal() { $('peticaoModal').classList.add('hidden'); }
 
+function petShowStep(n) {
+  petStep = n;
+  document.querySelectorAll('.pet-step').forEach((el,i) => el.classList.toggle('active', i===n));
+  document.querySelectorAll('.pet-progress-dot').forEach((el,i) => el.classList.toggle('done', i<=n));
+  $('petBtnBack').style.display = n === 0 ? 'none' : '';
+  $('petBtnNext').textContent = n === PET_STEPS.length-1 ? '🚀 Construir Petição' : 'Avançar →';
+}
+
+function petNext() {
+  if (petStep === 0) {
+    if (!$('pet_tipo').value) { alert('Selecione o tipo de petição.'); return; }
+  }
+  if (petStep === 1) {
+    if (!$('pet_fatos').value.trim()) { alert('Descreva os fatos do caso.'); return; }
+  }
+  if (petStep === PET_STEPS.length - 1) {
+    enviarPeticao(); return;
+  }
+  petShowStep(petStep + 1);
+}
+
+function petBack() { if(petStep>0) petShowStep(petStep-1); }
+
 function enviarPeticao() {
-  const tipo = $('peticao_tipo').value;
-  const texto = $('peticao_texto').value.trim();
-  if (!texto) { alert('Cole o texto da petição antes de revisar.'); return; }
-  const prompt = '📝 REVISÃO DE PETIÇÃO — ' + tipo + '\n\n' + texto + '\n\nPor favor, revise esta petição e me aponte:\n1. ⚠️ Pontos fracos ou vulneráveis\n2. ✅ O que está bom e deve ser mantido\n3. 💡 Sugestões de melhoria (linguagem, argumentação, fundamentos)\n4. 📋 Verificar se há citações de lei/jurisprudência adequadas\n5. 🎯 Como fortalecer o pedido principal\n\nSeja específico e direto, como o Rafael Cândia faria.';
+  const tipo    = $('pet_tipo').value;
+  const vara    = $('pet_vara').value.trim();
+  const fatos   = $('pet_fatos').value.trim();
+  const provas  = $('pet_provas').value.trim();
+  const pedidos = $('pet_pedidos').value.trim();
+  const obs     = $('pet_obs').value.trim();
+  if (!fatos) { alert('Descreva os fatos do caso antes de continuar.'); return; }
+
+  const prompt =
+`📄 CONSTRUTOR DE PETIÇÃO — ${tipo}
+
+Atue como um estagiário experiente que vai construir esta peça jurídica completa do zero. Siga a estrutura técnica padrão.
+
+📋 DADOS DO CASO:
+- Tipo de peça: ${tipo}
+- Vara/Juízo: ${vara || 'não informado — use genérico'}
+- Fatos: ${fatos}
+${provas ? '- Provas disponíveis: ' + provas : ''}
+${pedidos ? '- Pedidos principais: ' + pedidos : ''}
+${obs ? '- Observações extras: ' + obs : ''}
+
+🎯 ENTREGUE a petição completa com:
+1. Endereçamento (Excelentíssimo Senhor Doutor Juiz...)
+2. Qualificação das partes (use [NOME DO CLIENTE] e [NOME DA PARTE CONTRÁRIA] como placeholder)
+3. Dos Fatos — narrativa detalhada e persuasiva
+4. Do Direito — fundamentos jurídicos (arts. de lei + doutrina + jurisprudência)
+5. Dos Pedidos — lista numerada, clara e completa
+6. Do Valor da Causa: R$ [VALOR]
+7. Fechamento com local, data e assinatura
+
+⚠️ Tom técnico-profissional na peça. Ao finalizar, volte ao modo papi e me diga o que checar antes de protocolar.`;
+
   closePeticaoModal();
-  $('peticao_texto').value = '';
   $('chatInput').value = prompt;
   $('sendBtn').disabled = false;
   sendMessage();
@@ -1805,29 +1870,82 @@ init();
   </div>
 </div>
 
-<!-- ── MODAL REVISOR DE PETIÇÃO ──────────────────────── -->
+<!-- ── MODAL CONSTRUTOR DE PETIÇÃO ───────────────────── -->
 <div id="peticaoModal" class="modal-overlay hidden">
-  <div class="modal-box" style="max-width:600px">
+  <div class="modal-box" style="max-width:560px">
     <button class="modal-close" onclick="closePeticaoModal()">✕</button>
-    <div class="modal-title">📝 Revisor de Petição</div>
-    <div class="form-group">
-      <label>Tipo de petição</label>
-      <select id="peticao_tipo" class="form-select">
-        <option value="Inicial">Inicial</option>
-        <option value="Recurso">Recurso</option>
-        <option value="Contestação">Contestação</option>
-        <option value="Agravo">Agravo</option>
-        <option value="Habeas Corpus">Habeas Corpus</option>
-        <option value="Outro">Outro</option>
-      </select>
+
+    <div class="modal-title" style="margin-bottom:6px">📄 Construtor de Petição</div>
+    <div class="pet-badge">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Estagiário Capi no comando
     </div>
-    <div class="form-group">
-      <label>Cole o texto da sua petição aqui</label>
-      <textarea id="peticao_texto" class="peticao-textarea" placeholder="Cole aqui o texto completo da sua petição para revisão..."></textarea>
+
+    <div class="pet-progress">
+      <div class="pet-progress-dot done" id="pdot0"></div>
+      <div class="pet-progress-dot" id="pdot1"></div>
+      <div class="pet-progress-dot" id="pdot2"></div>
     </div>
-    <div class="modal-footer">
-      <button class="btn-modal-cancel" onclick="closePeticaoModal()">Cancelar</button>
-      <button class="btn-modal-ok" onclick="enviarPeticao()">🔍 Revisar Petição</button>
+
+    <!-- STEP 0: tipo + vara -->
+    <div class="pet-step active" id="pet-step-0">
+      <div class="form-group">
+        <label class="form-label">Que peça vamos construir?</label>
+        <select id="pet_tipo" class="form-select">
+          <option value="">Selecione...</option>
+          <option value="Petição Inicial — Cível">Petição Inicial — Cível</option>
+          <option value="Petição Inicial — Trabalhista">Petição Inicial — Trabalhista</option>
+          <option value="Petição Inicial — Previdenciária">Petição Inicial — Previdenciária</option>
+          <option value="Petição Inicial — Criminal (queixa-crime)">Petição Inicial — Criminal (queixa-crime)</option>
+          <option value="Petição Inicial — Família (divórcio)">Petição Inicial — Família (divórcio)</option>
+          <option value="Petição Inicial — Família (alimentos)">Petição Inicial — Família (alimentos)</option>
+          <option value="Petição Inicial — Família (inventário)">Petição Inicial — Família (inventário)</option>
+          <option value="Contestação">Contestação</option>
+          <option value="Recurso de Apelação">Recurso de Apelação</option>
+          <option value="Agravo de Instrumento">Agravo de Instrumento</option>
+          <option value="Habeas Corpus">Habeas Corpus</option>
+          <option value="Mandado de Segurança">Mandado de Segurança</option>
+          <option value="Impugnação ao Cumprimento de Sentença">Impugnação ao Cumprimento de Sentença</option>
+          <option value="Embargos à Execução">Embargos à Execução</option>
+          <option value="Outro">Outro tipo de peça</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vara / Juízo <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+        <input id="pet_vara" class="form-input" placeholder="Ex: 3ª Vara Cível de Campo Grande/MS" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.88rem;width:100%;outline:none;box-sizing:border-box">
+        <div class="pet-hint">Deixe em branco para gerar com endereçamento genérico.</div>
+      </div>
+    </div>
+
+    <!-- STEP 1: fatos + provas -->
+    <div class="pet-step" id="pet-step-1">
+      <div class="form-group">
+        <label class="form-label">Conta o caso — quem é o cliente e o que aconteceu?</label>
+        <textarea id="pet_fatos" class="form-textarea" rows="5" placeholder="Ex: Meu cliente João da Silva foi demitido sem justa causa após 5 anos de empresa, sem receber FGTS, aviso prévio nem férias proporcionais. A empresa alega que ele pediu demissão, mas ele tem mensagens comprovando o contrário..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;resize:vertical;line-height:1.6;min-height:120px;box-sizing:border-box"></textarea>
+        <div class="pet-hint">Quanto mais detalhe, melhor a petição. Pode escrever como se estivesse conversando.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Provas disponíveis <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+        <input id="pet_provas" class="form-input" placeholder="Ex: mensagens WhatsApp, contrato, holerites, laudos..." style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.88rem;width:100%;outline:none;box-sizing:border-box">
+      </div>
+    </div>
+
+    <!-- STEP 2: pedidos + obs -->
+    <div class="pet-step" id="pet-step-2">
+      <div class="form-group">
+        <label class="form-label">O que o cliente quer? <span style="opacity:.6;font-weight:400">(pedidos — opcional)</span></label>
+        <textarea id="pet_pedidos" class="form-textarea" rows="3" placeholder="Ex: FGTS, multa 40%, aviso prévio indenizado, férias + 1/3, horas extras, danos morais..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;resize:vertical;line-height:1.6;min-height:90px;box-sizing:border-box"></textarea>
+        <div class="pet-hint">Deixe em branco que o Capi sugere os pedidos conforme o caso.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Algum detalhe extra? <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+        <input id="pet_obs" class="form-input" placeholder="Ex: urgência, tutela antecipada, réu é empresa grande..." style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.88rem;width:100%;outline:none;box-sizing:border-box">
+      </div>
+    </div>
+
+    <div class="modal-footer" style="margin-top:20px">
+      <button id="petBtnBack" class="btn-modal-cancel" onclick="petBack()" style="display:none">← Voltar</button>
+      <button id="petBtnNext" class="btn-modal-ok" onclick="petNext()">Avançar →</button>
     </div>
   </div>
 </div>
