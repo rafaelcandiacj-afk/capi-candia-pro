@@ -1732,9 +1732,9 @@ app.post('/api/game/chat', authMiddleware, async (req, res) => {
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
   const personalities = {
-    'Fácil':  'Você é João, aposentado, curioso, já ouviu falar que pode revisar seu benefício. Tem 1-2 objeções simples (preço, tempo). É receptivo e educado.',
-    'Médio':  'Você é Carlos, empresário, desconfiado, já gastou dinheiro com advogado que não entregou. Questiona honorários, pede garantias, compara preços. Tem 3-4 objeções.',
-    'Difícil':'Você é Roberto, agressivo, foi enganado por advogado, desconfia de todos. Ataca o advogado, diz que é tudo golpe, extremamente difícil de convencer. Tem 5+ objeções pesadas.'
+    'Fácil':  `Você é um cliente comum, curioso e receptivo, que tem um problema jurídico na área de ${area}. Está buscando um advogado pela primeira vez, nunca contratou nenhum antes. Tem 1-2 objeções simples (preço, tempo). É educado e aberto a ouvir.`,
+    'Médio':  `Você é um cliente desconfiado, já gastou dinheiro com advogado que não entregou resultado na área de ${area}. Questiona honorários, pede garantias, compara preços. Tem 3-4 objeções e não aceita respostas vagas.`,
+    'Difícil':`Você é um cliente agressivo e cético, foi enganado por advogados antes em casos de ${area}. Desconfia de tudo, diz que advocacia é tudo golpe, interrompe, ataca. Tem 5+ objeções pesadas e é extremamente difícil de convencer.`
   };
   // aceita level numérico (1/2/3) ou textual ('Fácil'/'Médio'/'Difícil')
   const levelMap = { 1: 'Fácil', '1': 'Fácil', 2: 'Médio', '2': 'Médio', 3: 'Difícil', '3': 'Difícil' };
@@ -1747,6 +1747,8 @@ Nível: ${levelKey} — Área: ${area}
 O advogado que está te atendendo se chama ${userName}. Use o nome dele quando se referir ao advogado.
 
 ${personalities[levelKey]}
+
+IMPORTANTE: Seu problema DEVE ser específico da área de ${area}. Não invente casos de outras áreas.
 
 Regras:
 1. NUNCA saia do personagem. Você é o CLIENTE, não o advogado.
