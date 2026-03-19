@@ -385,7 +385,8 @@ db.exec(`
     plan_activated_at TEXT,
     pagarme_subscription_id TEXT,
     created_at TEXT DEFAULT (datetime('now')),
-    last_login TEXT
+    last_login TEXT,
+    reativacao_enviada TEXT
   );
 
   CREATE TABLE IF NOT EXISTS conversations (
@@ -932,6 +933,44 @@ db.prepare(`
 setInterval(() => {
   db.prepare('DELETE FROM reset_tokens WHERE expires_at < ?').run(Date.now());
 }, 60 * 60 * 1000);
+
+// Email de reativação — usuários pagos inativos há 7 dias
+setInterval(async () => {
+  try {
+    const sete_dias_atras = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+    const inativos = db.prepare(`
+      SELECT id, name, email FROM users
+      WHERE plan = 'paid'
+      AND active = 1
+      AND (last_login IS NULL OR last_login < ?)
+      AND (reativacao_enviada IS NULL OR reativacao_enviada < ?)
+    `).all(sete_dias_atras, sete_dias_atras);
+
+    for (const user of inativos) {
+      const nome = user.name ? user.name.split(' ')[0] : 'Advogado';
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
+          <h2 style="color:#b8860b;text-align:center">Oi, ${nome}! A Capi sentiu sua falta. 👋</h2>
+          <p style="color:#ccc;font-size:15px;line-height:1.6">Faz alguns dias que você não passa por aqui. Enquanto isso, a Capi continua prontinha pra te ajudar com honorários, teses jurídicas, petições e muito mais.</p>
+          <p style="color:#ccc;font-size:15px;line-height:1.6">Que tal dar uma olhada no que tem de novo?</p>
+          <div style="text-align:center;margin:32px 0">
+            <a href="https://capicand-ia.com/app" style="background:#b8860b;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">⚖️ Voltar para a Capi</a>
+          </div>
+          <p style="font-size:12px;color:#555;text-align:center">Capi Când-IA Pro &mdash; Sua assistente jurídica com IA</p>
+        </div>
+      `;
+      try {
+        await sendEmail(user.email, `${nome}, a Capi sentiu sua falta! 👋`, html);
+        db.prepare('UPDATE users SET reativacao_enviada = ? WHERE id = ?').run(new Date().toISOString(), user.id);
+        console.log(`✅ Email reativacao enviado para: ${user.email}`);
+      } catch(e) {
+        console.error(`⚠️ Erro email reativacao ${user.email}:`, e.message);
+      }
+    }
+  } catch(e) {
+    console.error('⚠️ Erro no job de reativacao:', e.message);
+  }
+}, 24 * 60 * 60 * 1000); // Roda 1x por dia
 
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
@@ -1712,6 +1751,9 @@ try {
 } catch(e) { /* coluna já existe */ }
 try {
   db.exec(`ALTER TABLE users ADD COLUMN pagarme_subscription_id TEXT`);
+} catch(e) { /* coluna já existe */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN reativacao_enviada TEXT`);
 } catch(e) { /* coluna já existe */ }
 
 // ─── HELPER: verificar se usuário tem acesso ativo ─────────────

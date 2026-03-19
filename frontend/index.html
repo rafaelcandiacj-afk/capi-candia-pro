@@ -1360,6 +1360,7 @@ function openGame() {
           <option value="Tributário">Direito Tributário</option>
         </select>
       </div>
+      <div id="gameHint" style="font-size:13px;color:#b8860b;margin-bottom:12px;min-height:18px;text-align:center"></div>
       <button class="game-btn game-btn-primary" onclick="startGame()" id="startGameBtn" disabled>🎮 Iniciar Simulação</button>
     </div>
   `;
@@ -1376,7 +1377,15 @@ function selectLevel(el, level) {
 function checkGameReady() {
   const area = document.getElementById('gameAreaSelect')?.value;
   const btn = document.getElementById('startGameBtn');
-  if (btn) btn.disabled = !(gameState.level && area);
+  const hint = document.getElementById('gameHint');
+  const ready = !!(gameState.level && area);
+  if (btn) btn.disabled = !ready;
+  if (hint) {
+    if (!gameState.level && !area) hint.textContent = '';
+    else if (!gameState.level) hint.textContent = '👆 Selecione o nível de dificuldade';
+    else if (!area) hint.textContent = '👆 Selecione a área do Direito';
+    else hint.textContent = '';
+  }
 }
 
 async function startGame() {
