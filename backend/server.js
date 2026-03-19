@@ -1073,7 +1073,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       // Constrói query enriquecida: última msg + contexto das 3 msgs anteriores
       const recentMsgs = messages.slice(-6);
       const contextQuery = recentMsgs.map(m => m.content).join(' ') + ' ' + lastUserMsg.content;
-      const relevantChunks = await searchKnowledge(contextQuery, 8);
+      const relevantChunks = await searchKnowledge(contextQuery, 5);
       if (relevantChunks.length > 0) {
         ragContext = '\n\n━━━ CONHECIMENTO DO RAFAEL CÂNDIA (use isto para responder) ━━━\n';
         relevantChunks.forEach((chunk, i) => {
