@@ -576,7 +576,7 @@
         <textarea id="chatInput" class="chat-input" placeholder="Digite sua mensagem para a Capi..." rows="1"
           onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
         <label class="upload-btn" title="Enviar documento (PDF, TXT, DOCX)">
-          <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)">
+          <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)" multiple>
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
         </label>
         <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled>
@@ -882,7 +882,7 @@ async function sendMessage(){
     const res=await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_id:pendingUploadId||undefined})
+      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:pendingUploadIds.length>0?pendingUploadIds:undefined})
     });
     if(res.status===401){removeTyping(typingEl);isLoading=false;logout();return;}
     const data=await res.json();
@@ -895,7 +895,7 @@ async function sendMessage(){
     convHistory.push({role:'assistant',content:reply});
     removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);
     // Clear upload after sending
-    if(pendingUploadId){pendingUploadId=null;document.getElementById('fileBadgeArea').innerHTML='';}
+    if(pendingUploadIds.length>0){pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';}
   }catch(err){
     removeTyping(typingEl);appendMessage('assistant','⚠️ Desculpe, ocorreu um erro. Tente novamente.');
   }finally{
@@ -1028,7 +1028,7 @@ function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrol
 
 
 // ── ESTADO GLOBAL EXTRA ──────────────────────────────────────
-let pendingUploadId = null;
+let pendingUploadIds = [];
 let userProfile = {};
 
 // ── NOTIFICAÇÕES ─────────────────────────────────────────────
@@ -1170,36 +1170,49 @@ function shareWhatsApp(text){
 
 // ── UPLOAD NA CONVERSA ───────────────────────────────────────
 async function handleConvUpload(input){
-  const file=input.files[0];
-  if(!file) return;
+  const files = Array.from(input.files);
+  if(!files.length) return;
   const token=localStorage.getItem('capi_token');
-  const fd=new FormData();
-  fd.append('file',file);
-  if(currentConvId) fd.append('conversation_id',currentConvId);
-  showToast('⏳ Processando arquivo...');
+  showToast('⏳ Processando ' + files.length + ' arquivo(s)...');
   try{
-    const r=await fetch('/api/conversation/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
-    const data=await r.json();
-    if(!r.ok) throw new Error(data.error||'Erro');
-    pendingUploadId=data.id;
-    // Mostra badge
-    const area=document.getElementById('fileBadgeArea');
-    area.innerHTML=`<div class="file-badge">📎 ${file.name} <button onclick="clearUpload()">✕</button></div>`;
+    for(const file of files){
+      const fd=new FormData();
+      fd.append('file',file);
+      if(currentConvId) fd.append('conversation_id',currentConvId);
+      const r=await fetch('/api/conversation/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+      const data=await r.json();
+      if(!r.ok) throw new Error(data.error||'Erro');
+      const uploadId = Array.isArray(data) ? data[0].id : data.id;
+      pendingUploadIds.push(uploadId);
+      // Adiciona badge para cada arquivo
+      const area=document.getElementById('fileBadgeArea');
+      const badge=document.createElement('div');
+      badge.className='file-badge';
+      badge.dataset.uploadId=uploadId;
+      badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId})">✕</button>`;
+      area.appendChild(badge);
+    }
     // Auto-preenche o input com sugestão de pergunta
     const inputEl = $('chatInput');
     if (!inputEl.value.trim()) {
-      inputEl.value = 'Analise este documento para mim';
+      const sugestao = pendingUploadIds.length > 1 ? 'Analise estes documentos para mim' : 'Analise este documento para mim';
+      inputEl.value = sugestao;
       $('sendBtn').disabled = false;
       inputEl.focus();
       inputEl.select();
     }
-    showToast('✅ ' + file.name + ' anexado! Edite ou envie a pergunta.');
+    showToast('✅ ' + files.length + ' arquivo(s) anexado(s)!');
   }catch(e){showToast('❌ '+e.message);}
   input.value='';
 }
 
+function removeUpload(btn, uploadId){
+  pendingUploadIds = pendingUploadIds.filter(id => id !== uploadId);
+  btn.closest('.file-badge').remove();
+}
+
 function clearUpload(){
-  pendingUploadId=null;
+  pendingUploadIds=[];
   document.getElementById('fileBadgeArea').innerHTML='';
 }
 

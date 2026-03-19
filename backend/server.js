@@ -1050,7 +1050,7 @@ app.delete('/api/conversations/:id', authMiddleware, (req, res) => {
 
 // ─── CHAT COM RAG ─────────────────────────────────────────────
 app.post('/api/chat', authMiddleware, async (req, res) => {
-  const { messages, conversation_id, upload_id } = req.body;
+  const { messages, conversation_id, upload_id, upload_ids } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
@@ -1097,12 +1097,21 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa e AINDA NÃO tem perfil salvo. Ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
   }
 
-  // Injeta documento enviado na conversa
+  // Injeta documento(s) enviado(s) na conversa
   let docCtx = '';
-  if (upload_id) {
-    const upload = db.prepare('SELECT original_name, extracted_text FROM conversation_uploads WHERE id = ? AND user_id = ?').get(upload_id, req.user.id);
-    if (upload && upload.extracted_text) {
-      docCtx = `\n\n━━━ DOCUMENTO ENVIADO PELO USUÁRIO ━━━\nArquivo: ${upload.original_name}\n\n${upload.extracted_text}\n━━━ FIM DO DOCUMENTO ━━━\nAnalise e responda com base neste documento quando relevante.`;
+  const allUploadIds = upload_ids && Array.isArray(upload_ids) ? upload_ids : (upload_id ? [upload_id] : []);
+  if (allUploadIds.length > 0) {
+    const docs = [];
+    for (const uid of allUploadIds) {
+      const upload = db.prepare('SELECT original_name, extracted_text FROM conversation_uploads WHERE id = ? AND user_id = ?').get(uid, req.user.id);
+      if (upload && upload.extracted_text) docs.push(upload);
+    }
+    if (docs.length > 0) {
+      docCtx = '\n\n━━━ DOCUMENTOS ENVIADOS PELO USUÁRIO ━━━\n';
+      docs.forEach((d, i) => {
+        docCtx += `\n[Documento ${i+1}] ${d.original_name}:\n${d.extracted_text}\n`;
+      });
+      docCtx += '━━━ FIM DOS DOCUMENTOS ━━━\nAnalise e responda com base nestes documentos quando relevante.';
     }
   }
 
@@ -1571,68 +1580,121 @@ const uploadConv = multer({
   }
 });
 
-app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-  
-  let extractedText = '';
-  const ext = require('path').extname(req.file.originalname).toLowerCase();
-  const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
-  
+// Helper: extrai texto de PDF — tenta texto nativo, fallback para Vision OCR
+async function extractPdfText(filePath) {
+  // Tenta extração de texto nativo primeiro
   try {
-    if (ext === '.txt' || ext === '.md') {
-      extractedText = fs.readFileSync(req.file.path, 'utf8');
-    } else if (ext === '.pdf') {
-      const pdfMod = require('pdf-parse');
-      const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
-      const buf = fs.readFileSync(req.file.path);
-      const data = await pdfParse(buf);
-      extractedText = data.text;
-    } else if (ext === '.docx') {
-      try {
-        const mammoth = require('mammoth');
-        const result = await mammoth.extractRawText({ path: req.file.path });
-        extractedText = result.value;
-      } catch(e) {
-        extractedText = fs.readFileSync(req.file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
-      }
-    } else if (isImage) {
-      // Usa OpenAI Vision para extrair texto/conteúdo da imagem
-      const imageBase64 = fs.readFileSync(req.file.path).toString('base64');
-      const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    const pdfMod = require('pdf-parse');
+    const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+    const buf = fs.readFileSync(filePath);
+    const data = await pdfParse(buf);
+    const text = (data.text || '').trim();
+    // Se extraiu texto suficiente, retorna
+    if (text.length > 100) return { text, method: 'native' };
+  } catch(e) { /* fallback para OCR */ }
+
+  // PDF escaneado — converte primeira(s) página(s) para imagem e usa Vision
+  try {
+    const { execSync } = require('child_process');
+    const os = require('os');
+    const tmpDir = fs.mkdtempSync(require('path').join(os.tmpdir(), 'pdf_ocr_'));
+    // Converte até 3 páginas em imagem (resolução 150dpi para equilibrar qualidade/tamanho)
+    execSync(`pdftoppm -r 150 -l 3 -png "${filePath}" "${tmpDir}/page"`, { timeout: 30000 });
+    const pages = fs.readdirSync(tmpDir).filter(f => f.endsWith('.png')).sort();
+    if (pages.length === 0) throw new Error('Nenhuma página convertida');
+
+    // Envia cada página para Vision e concatena
+    let fullText = '';
+    for (const page of pages) {
+      const imageBase64 = fs.readFileSync(require('path').join(tmpDir, page)).toString('base64');
       const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4.1',
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente. Se não houver texto, descreva o conteúdo.' },
-              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
-            ]
-          }],
-          max_tokens: 2000
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: 'Transcreva integralmente todo o texto deste documento jurídico. Mantenha a estrutura original, incluindo cabeçalhos, parágrafos, numerações e dados. Não omita nenhuma parte.' },
+            { type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } }
+          ]}],
+          max_tokens: 3000
         })
       });
-      const visionData = await visionResp.json();
-      extractedText = visionData.choices?.[0]?.message?.content || 'Não foi possível extrair o conteúdo da imagem.';
+      const vd = await visionResp.json();
+      fullText += (vd.choices?.[0]?.message?.content || '') + '\n\n';
     }
-    
-    // Limita a 8000 chars para não explodir o contexto
-    extractedText = extractedText.substring(0, 8000);
-    
-    const result = db.prepare(
-      'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, extracted_text) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(req.body.conversation_id || null, req.user.id, req.file.filename, req.file.originalname, req.file.path, extractedText);
-    
-    res.json({
-      upload_id: result.lastInsertRowid,
-      id: result.lastInsertRowid,
-      name: req.file.originalname,
-      original_name: req.file.originalname,
-      extracted_length: extractedText.length,
-      preview: extractedText.substring(0, 200) + '...'
+    // Limpa tmp
+    try { execSync(`rm -rf "${tmpDir}"`); } catch(e) {}
+    return { text: fullText.trim(), method: 'ocr' };
+  } catch(e) {
+    console.error('Erro OCR PDF:', e.message);
+    return { text: '', method: 'error' };
+  }
+}
+
+// Processa um arquivo e retorna o texto extraído
+async function processUploadedFile(file) {
+  const ext = require('path').extname(file.originalname).toLowerCase();
+  const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
+  let extractedText = '';
+
+  if (ext === '.txt' || ext === '.md') {
+    extractedText = fs.readFileSync(file.path, 'utf8');
+  } else if (ext === '.pdf') {
+    const result = await extractPdfText(file.path);
+    extractedText = result.text;
+  } else if (ext === '.docx') {
+    try {
+      const mammoth = require('mammoth');
+      const result = await mammoth.extractRawText({ path: file.path });
+      extractedText = result.value;
+    } catch(e) {
+      extractedText = fs.readFileSync(file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+    }
+  } else if (isImage) {
+    const imageBase64 = fs.readFileSync(file.path).toString('base64');
+    const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({
+        model: 'gpt-4.1',
+        messages: [{ role: 'user', content: [
+          { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente.' },
+          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+        ]}],
+        max_tokens: 2000
+      })
     });
+    const visionData = await visionResp.json();
+    extractedText = visionData.choices?.[0]?.message?.content || '';
+  }
+
+  return extractedText.substring(0, 8000);
+}
+
+// Endpoint único — aceita 1 arquivo (mantém compatibilidade) ou múltiplos via 'files'
+app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5), async (req, res) => {
+  const files = req.files && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+  if (files.length === 0) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+  try {
+    const results = [];
+    for (const file of files) {
+      const extractedText = await processUploadedFile(file);
+      const result = db.prepare(
+        'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, extracted_text) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(req.body.conversation_id || null, req.user.id, file.filename, file.originalname, file.path, extractedText);
+      results.push({
+        upload_id: result.lastInsertRowid,
+        id: result.lastInsertRowid,
+        name: file.originalname,
+        original_name: file.originalname,
+        extracted_length: extractedText.length,
+        preview: extractedText.substring(0, 200) + '...'
+      });
+    }
+    // Retorna array de resultados (ou objeto único se foi 1 arquivo — compatibilidade)
+    res.json(results.length === 1 ? results[0] : results);
   } catch (e) {
     res.status(500).json({ error: 'Erro ao processar arquivo: ' + e.message });
   }
