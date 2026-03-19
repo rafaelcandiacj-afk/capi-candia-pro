@@ -1165,7 +1165,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1',
         messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
         temperature: 0.75,
         max_tokens: 1500
@@ -1603,7 +1603,7 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.single('file'), 
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4.1',
           messages: [{
             role: 'user',
             content: [
@@ -1702,7 +1702,7 @@ Regras:
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1',
         messages: [{ role: 'system', content: gameSystemPrompt }, ...messages.slice(-20)],
         temperature: 0.8,
         max_tokens: 600
