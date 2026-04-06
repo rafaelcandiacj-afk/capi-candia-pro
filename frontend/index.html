@@ -540,7 +540,7 @@
           <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">⚖️ Teses</button>
           <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">✍️ Conteúdo</button>
           <button class="teses-btn" onclick="openPeticaoModal()" title="Construtor de Petição">📄 Petição</button>
-          <button class="teses-btn" onclick="abrirChatHonorarios()" title="Tabela de Honorários">💰 Honorários</button>
+          <button class="teses-btn" onclick="openCalculadoraModal()" title="Calculadora de Honorários">💰 Honorários</button>
           <button class="teses-btn" onclick="openGame()" title="Simulador de Casos">🎮 Jogo</button>
         </div>
         <div class="header-divider"></div>
@@ -1787,6 +1787,96 @@ ${obs ? '- Observações extras: ' + obs : ''}
   sendMessage();
 }
 
+// ── CALCULADORA DE HONORÁRIOS ─────────────────────────────
+function openCalculadoraModal(){ document.getElementById('calculadoraModal').classList.remove('hidden'); }
+function closeCalculadoraModal(){ document.getElementById('calculadoraModal').classList.add('hidden'); }
+
+function calcularHonorarios() {
+  const estado = document.getElementById('calc_estado').value;
+  const area = document.getElementById('calc_area').value;
+  const caso = document.getElementById('calc_caso').value.trim();
+  const complexidade = document.getElementById('calc_complexidade').value;
+  const cliente = document.getElementById('calc_cliente').value;
+
+  if (!estado) { showToast('Selecione o estado'); return; }
+  if (!area) { showToast('Selecione a área do Direito'); return; }
+  if (!caso) { showToast('Descreva o caso'); return; }
+
+  closeCalculadoraModal();
+
+  const prompt = `💰 CALCULADORA DE HONORÁRIOS — Análise Profissional
+
+Preciso que você calcule quanto devo cobrar neste caso, com justificativa detalhada.
+
+📋 DADOS:
+- Estado: OAB/${estado}
+- Área: ${area}
+- Complexidade: ${complexidade}
+- Perfil do cliente: ${cliente}
+- Descrição do caso: ${caso}
+
+🎯 ME ENTREGUE:
+1. **Valor mínimo pela tabela OAB/${estado}** (cite o valor exato)
+2. **Faixa recomendada de mercado** (mínimo e máximo sugerido para este perfil)
+3. **Modelo de cobrança ideal** (fixo, êxito, misto — com percentuais sugeridos)
+4. **3 argumentos prontos** para justificar o valor ao cliente
+5. **Alerta de risco** — o que acontece se cobrar abaixo do mínimo
+
+Seja direto e prático. Use o estilo Capi — números concretos, sem enrolação.`;
+
+  $('chatInput').value = prompt;
+  $('sendBtn').disabled = false;
+  sendMessage();
+}
+
+// ── PACOTE COMPLETO DE TESE ───────────────────────────────
+function gerarPacoteCompleto() {
+  const area = document.getElementById('tese_area').value;
+  const publico = document.getElementById('tese_publico').value.trim();
+  const canal = document.getElementById('tese_canal').value;
+  if (!area) { showToast('Selecione a área do Direito'); return; }
+  closeTesesModal();
+
+  const prompt = `🚀 PACOTE COMPLETO DE TESE — ${area}
+
+Gere um pacote completo e pronto para usar, no estilo Rafael Cândia:
+${publico ? '👥 Público-alvo: ' + publico : ''}
+📱 Canal principal: ${canal}
+
+ENTREGUE EXATAMENTE NESTE FORMATO:
+
+⚖️ **TESE JURÍDICA**
+[tese completa com fundamentação legal]
+
+🎬 **ROTEIRO DE VÍDEO 60 SEGUNDOS**
+[gancho + desenvolvimento + CTA, linha por linha]
+
+📝 **3 VARIAÇÕES DE COPY**
+Agressiva: [copy direto e impactante]
+Educativa: [copy informativo e didático]
+Storytelling: [copy com narrativa]
+
+🖼️ **SUGESTÃO DE CRIATIVO**
+[descrição da imagem/arte para o designer ou IA]
+
+📅 **ESTRATÉGIA DE DISTRIBUIÇÃO**
+[melhor dia, horário, frequência e formato por plataforma]
+
+💬 **GUIA DE COMENTÁRIOS**
+[como responder os 3 tipos de comentário mais comuns para gerar leads]
+
+📊 **PASSO A PASSO META ADS**
+[objetivo, público, orçamento sugerido, CPC esperado]
+
+📱 **FUNIL DE ATENDIMENTO**
+[como converter visualizações em consultas — passo a passo no WhatsApp]`;
+
+  $('chatInput').value = prompt;
+  $('sendBtn').disabled = false;
+  sendMessage();
+}
+
+
 init();
 </script>
 
@@ -1833,6 +1923,7 @@ init();
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeTesesModal()">Cancelar</button>
+      <button class="btn-modal-ok" style="background:var(--bg3);color:var(--primary);border:1px solid var(--primary);margin-right:8px" onclick="gerarPacoteCompleto()">🚀 Pacote Completo</button>
       <button class="btn-modal-ok" id="tesesGerarBtn" onclick="gerarTese()">
         ⚡ Gerar Tese
       </button>
@@ -2055,6 +2146,96 @@ init();
     <div class="modal-actions" style="margin-top:16px">
       <button class="btn-secondary" onclick="closeHonorariosModal()">Fechar</button>
       <button class="btn-primary" onclick="consultarHonorarios()">Ver valor mínimo</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── MODAL CALCULADORA DE HONORÁRIOS ──────────────────── -->
+<div id="calculadoraModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:520px">
+    <button class="modal-close" onclick="closeCalculadoraModal()">✕</button>
+    <div class="modal-title">💰 Calculadora de Honorários</div>
+    <p style="font-size:.83rem;color:var(--text2);margin-bottom:16px">Descreva o caso e a Capi analisa quanto você deve cobrar, com justificativa baseada na tabela OAB e no mercado.</p>
+
+    <div class="form-group">
+      <label class="form-label">Estado onde será a ação <span style="color:#e74c3c">*</span></label>
+      <select id="calc_estado" class="form-select">
+        <option value="">Selecione o estado...</option>
+        <option value="AC">AC — Acre</option>
+        <option value="AL">AL — Alagoas</option>
+        <option value="AM">AM — Amazonas</option>
+        <option value="AP">AP — Amapá</option>
+        <option value="BA">BA — Bahia</option>
+        <option value="CE">CE — Ceará</option>
+        <option value="DF">DF — Distrito Federal</option>
+        <option value="ES">ES — Espírito Santo</option>
+        <option value="GO">GO — Goiás</option>
+        <option value="MA">MA — Maranhão</option>
+        <option value="MG">MG — Minas Gerais</option>
+        <option value="MS">MS — Mato Grosso do Sul</option>
+        <option value="MT">MT — Mato Grosso</option>
+        <option value="PA">PA — Pará</option>
+        <option value="PB">PB — Paraíba</option>
+        <option value="PE">PE — Pernambuco</option>
+        <option value="PI">PI — Piauí</option>
+        <option value="PR">PR — Paraná</option>
+        <option value="RJ">RJ — Rio de Janeiro</option>
+        <option value="RN">RN — Rio Grande do Norte</option>
+        <option value="RO">RO — Rondônia</option>
+        <option value="RR">RR — Roraima</option>
+        <option value="RS">RS — Rio Grande do Sul</option>
+        <option value="SC">SC — Santa Catarina</option>
+        <option value="SE">SE — Sergipe</option>
+        <option value="SP">SP — São Paulo</option>
+        <option value="TO">TO — Tocantins</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Área do Direito <span style="color:#e74c3c">*</span></label>
+      <select id="calc_area" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="civel">⚖️ Cível</option>
+        <option value="trabalhista">👷 Trabalhista</option>
+        <option value="familia">👨‍👩‍👧 Família</option>
+        <option value="criminal">🔒 Criminal</option>
+        <option value="previdenciario">🏛️ Previdenciário/INSS</option>
+        <option value="tributario">📊 Tributário</option>
+        <option value="consumidor">🛒 Consumidor</option>
+        <option value="empresarial">🏢 Empresarial</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Descreva o caso <span style="color:#e74c3c">*</span></label>
+      <textarea id="calc_caso" class="form-textarea" rows="3" placeholder="Ex: Demissão sem justa causa. Cliente trabalhou 5 anos, salário R$ 3.500/mês. Empresa de médio porte. Quer FGTS, multa 40%, férias e aviso prévio..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;resize:vertical;line-height:1.6;min-height:80px;box-sizing:border-box"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label class="form-label">Complexidade</label>
+        <select id="calc_complexidade" class="form-select">
+          <option value="simples">Simples</option>
+          <option value="media" selected>Média</option>
+          <option value="complexa">Complexa</option>
+          <option value="muito complexa">Muito complexa</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Perfil do cliente</label>
+        <select id="calc_cliente" class="form-select">
+          <option value="pessoa fisica comum">Pessoa física comum</option>
+          <option value="empresário ou executivo">Empresário/Executivo</option>
+          <option value="empresa pequena">Empresa pequena</option>
+          <option value="empresa grande">Empresa grande</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-secondary" onclick="closeCalculadoraModal()">Cancelar</button>
+      <button class="btn-primary" onclick="calcularHonorarios()">💰 Calcular Honorários</button>
     </div>
   </div>
 </div>
