@@ -2008,10 +2008,28 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
 
 // ─── WEBHOOK GURU (Digital Manager Guru) ───────────────────
 // Formato diferente do PagarMe — campos: subscriber.email, last_status, product.offer.name, charged_every_days
+// Códigos dos produtos da IA no Guru — APENAS estes disparam cadastro
+const GURU_IA_PRODUCT_CODES = ['1773774908', '1773783918']; // Mensal e Anual
+
 app.post('/api/webhook/guru', express.json(), (req, res) => {
   try {
     const body = req.body;
-    console.log('📨 Webhook Guru:', body?.last_status, body?.subscriber?.email);
+    console.log('📨 Webhook Guru:', body?.last_status, body?.subscriber?.email, '| produto:', body?.product?.code);
+
+    // ── FILTRO DE PRODUTO: só processa se for a IA ──────────────
+    const productCode = String(body?.product?.code || body?.product?.id || '');
+    const productName = (body?.product?.name || body?.product?.offer?.name || '').toLowerCase();
+    const isIAProduct = GURU_IA_PRODUCT_CODES.includes(productCode) ||
+                        productName.includes('capi când') ||
+                        productName.includes('capi cand') ||
+                        productName.includes('capi-ia') ||
+                        productName.includes('capi ia');
+
+    if (!isIAProduct) {
+      console.log(`⚠️ Webhook Guru ignorado — produto não é a IA (código: ${productCode}, nome: ${productName})`);
+      return res.status(200).json({ ok: true, skipped: true });
+    }
+    // ────────────────────────────────────────────────────────────
 
     // Eventos de ativação/pagamento
     const ACTIVE_STATUSES = ['active', 'ativa', 'paid', 'started'];
