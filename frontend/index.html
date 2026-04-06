@@ -1556,22 +1556,27 @@ async function sendGameMsg() {
   document.getElementById('gameInput')?.focus();
 }
 
-function endGame(result, feedback) {
+async function endGame(result, feedback) {
   const overlay = document.getElementById('gameOverlay');
   if (!overlay) return;
   const isWin = result === 'win';
-  const score = isWin ? Math.max(10, 100 - (gameState.msgCount * 5)) : 0;
+  const score = isWin ? Math.max(10, 100 - (gameState.msgCount * 5)) : Math.max(0, Math.round(gameState.temp / 2));
 
   const play = document.getElementById('gamePlay');
   if (play) play.remove();
 
   const resultDiv = document.createElement('div');
   resultDiv.className = 'game-result ' + (isWin ? 'game-win' : 'game-lose');
+  resultDiv.style.overflowY = 'auto';
   resultDiv.innerHTML = `
     <div class="game-result-icon">${isWin ? '🏆' : '💔'}</div>
     <div class="game-result-title">${isWin ? 'Contrato Fechado!' : 'Cliente foi embora...'}</div>
     <div class="game-result-sub">${feedback || (isWin ? 'Parabéns! Você usou as técnicas corretas!' : 'Revise os 15 Passos do Atendimento do Rafael Cândia.')}</div>
-    ${isWin ? '<div class="game-result-score">⭐ Pontuação: ' + score + '/100 (em ' + gameState.msgCount + ' mensagens)</div>' : ''}
+    <div class="game-result-score">${isWin ? '⭐' : '📊'} Pontuação: ${score}/100 (${gameState.msgCount} mensagens usadas)</div>
+    <div id="gameAnalysis" style="background:rgba(255,215,64,.07);border:1px solid rgba(255,215,64,.2);border-radius:10px;padding:16px;margin:16px 0;text-align:left;font-size:.85rem;color:var(--text2);line-height:1.7;max-width:500px">
+      <div style="color:#ffd740;font-weight:700;margin-bottom:8px;font-family:'Rajdhani',sans-serif;letter-spacing:.05em">🧠 ANÁLISE DO RAFAEL</div>
+      <div id="gameAnalysisText" style="color:var(--text2)">Gerando análise da sua performance...⏳</div>
+    </div>
     <div class="game-result-btns">
       <button class="game-btn game-btn-primary" onclick="closeGame();openGame()">🔄 Jogar novamente</button>
       <button class="game-btn game-btn-secondary" onclick="closeGame()">← Voltar ao chat</button>
@@ -1580,6 +1585,32 @@ function endGame(result, feedback) {
   overlay.appendChild(resultDiv);
 
   if (isWin) spawnConfetti();
+
+  // Gera análise de performance via IA
+  try {
+    const token = localStorage.getItem('capi_token');
+    const transcript = gameState.messages.map(m => `${m.role === 'user' ? 'ADVOGADO' : 'CLIENTE'}: ${m.content}`).join('\n');
+    const analysisResp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content:
+          `Analise brevemente este atendimento simulado (nível: ${gameState.level}, área: ${gameState.area}, resultado: ${isWin ? 'FECHOU CONTRATO' : 'PERDEU O CLIENTE'}):\n\n${transcript}\n\nEm até 5 pontos curtos, diga: o que o advogado fez BEM, o que poderia melhorar, e 1 dica prática dos 15 Passos do Atendimento. Seja direto, use o estilo Capi, máximo 150 palavras.`
+        }],
+        conversation_id: null
+      })
+    });
+    const aData = await analysisResp.json();
+    const analysisEl = document.getElementById('gameAnalysisText');
+    if (analysisEl && aData.reply) {
+      analysisEl.textContent = aData.reply;
+    }
+  } catch(e) {
+    const analysisEl = document.getElementById('gameAnalysisText');
+    if (analysisEl) analysisEl.textContent = isWin
+      ? 'Boa performance! Revise os 15 Passos do Atendimento para fechar ainda mais rápido.'
+      : 'Revise os 15 Passos do Atendimento do Rafael Cândia e tente novamente.';
+  }
 }
 
 function spawnConfetti() {
