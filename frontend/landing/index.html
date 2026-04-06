@@ -317,18 +317,14 @@ section { padding: 96px 40px; }
   margin-top: 0;
 }
 .sobre-avatar {
-  width: 200px; height: 200px;
+  width: 220px; height: 220px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--bg3), var(--bg4));
   border: 3px solid var(--gold);
   box-shadow: 0 0 40px var(--gold-glow);
-  display: flex; align-items: center; justify-content: center;
+  object-fit: cover;
+  object-position: center top;
   flex-shrink: 0;
-}
-.sobre-avatar-initials {
-  font-family: 'Rajdhani', sans-serif;
-  font-size: 3.5rem; font-weight: 700;
-  color: var(--gold);
+  display: block;
 }
 .sobre-quote {
   font-family: 'Rajdhani', sans-serif;
@@ -705,9 +701,7 @@ footer {
 <section class="sobre">
   <div class="section-inner">
     <div class="sobre-layout fade-in">
-      <div class="sobre-avatar">
-        <span class="sobre-avatar-initials">RC</span>
-      </div>
+      <img src="/landing/rafael-sobre-opt.jpg" alt="Rafael Cândia" class="sobre-avatar">
       <div>
         <div class="section-tag">quem está por trás da IA</div>
         <p class="sobre-quote">Todo o meu método está dentro da Capi. É como me ter do seu lado em cada caso.</p>
