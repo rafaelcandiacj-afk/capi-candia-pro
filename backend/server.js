@@ -1263,8 +1263,8 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
     res.json({ reply, tokens, conversation_id: convId, suggestions });
   } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Erro ao conectar com a OpenAI' });
+    console.error('Erro chat endpoint:', e.message, e.stack?.split('\n')[1]);
+    res.status(500).json({ error: 'Erro interno: ' + (e.message || 'desconhecido') });
   }
 });
 
