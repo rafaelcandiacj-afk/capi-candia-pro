@@ -897,7 +897,12 @@ async function sendMessage(){
     // Clear upload after sending
     if(pendingUploadIds.length>0){pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';}
   }catch(err){
-    removeTyping(typingEl);appendMessage('assistant','⚠️ Desculpe, ocorreu um erro. Tente novamente.');
+    removeTyping(typingEl);
+    const errMsg = err.message || '';
+    const msgErro = errMsg.includes('timeout') || errMsg.includes('esgotado')
+      ? '⚠️ A pergunta demorou demais para processar. Tente simplificar um pouco ou envie novamente — o Capi está aqui!'
+      : '⚠️ Ocorreu um erro de conexão. Tente enviar a mensagem novamente.';
+    appendMessage('assistant', msgErro);
   }finally{
     isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='';
   }
@@ -1729,14 +1734,19 @@ ${provas ? '- Provas disponíveis: ' + provas : ''}
 ${pedidos ? '- Pedidos principais: ' + pedidos : ''}
 ${obs ? '- Observações extras: ' + obs : ''}
 
+📍 DADOS DO ADVOGADO:
+- Local: ${cidade || 'informar cidade/UF'}
+- OAB: ${oab || 'informar número OAB'}
+- Data: ${dataFormatada}
+
 🎯 ENTREGUE a petição completa com:
 1. Endereçamento (Excelentíssimo Senhor Doutor Juiz...)
-2. Qualificação das partes (use [NOME DO CLIENTE] e [NOME DA PARTE CONTRÁRIA] como placeholder)
+2. Qualificação das partes (use [NOME DO CLIENTE], [CPF], [ENDEREÇO] como placeholder onde não informado)
 3. Dos Fatos — narrativa detalhada e persuasiva
 4. Do Direito — fundamentos jurídicos (arts. de lei + doutrina + jurisprudência)
 5. Dos Pedidos — lista numerada, clara e completa
-6. Do Valor da Causa: R$ [VALOR]
-7. Fechamento com local, data e assinatura
+6. Do Valor da Causa: calcule e informe o valor estimado com base nos fatos
+7. Fechamento: ${cidade || '[Cidade/UF]'}, ${dataFormatada}. Assinatura: [Nome do Advogado] — ${oab || '[OAB/UF número]'}
 
 ⚠️ Tom técnico-profissional na peça. Ao finalizar, volte ao modo papi e me diga o que checar antes de protocolar.`;
 
@@ -1960,12 +1970,22 @@ init();
       </div>
     </div>
 
-    <!-- STEP 2: pedidos + obs -->
+    <!-- STEP 2: pedidos + obs + dados do advogado -->
     <div class="pet-step" id="pet-step-2">
       <div class="form-group">
         <label class="form-label">O que o cliente quer? <span style="opacity:.6;font-weight:400">(pedidos — opcional)</span></label>
         <textarea id="pet_pedidos" class="form-textarea" rows="3" placeholder="Ex: FGTS, multa 40%, aviso prévio indenizado, férias + 1/3, horas extras, danos morais..." style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:inherit;font-size:.88rem;outline:none;resize:vertical;line-height:1.6;min-height:90px;box-sizing:border-box"></textarea>
         <div class="pet-hint">Deixe em branco que o Capi sugere os pedidos conforme o caso.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group">
+          <label class="form-label">Cidade/Estado <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+          <input id="pet_cidade" class="form-input" placeholder="Ex: Campo Grande/MS" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.88rem;width:100%;outline:none;box-sizing:border-box">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Seu número OAB <span style="opacity:.6;font-weight:400">(opcional)</span></label>
+          <input id="pet_oab" class="form-input" placeholder="Ex: OAB/MS 23.215" style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:.88rem;width:100%;outline:none;box-sizing:border-box">
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Algum detalhe extra? <span style="opacity:.6;font-weight:400">(opcional)</span></label>

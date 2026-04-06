@@ -1169,20 +1169,35 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
   const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx;
 
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: 'gpt-4.1',
-        messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
-        temperature: 0.75,
-        max_tokens: 1500
-      })
-    });
+  // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
+  let response, data;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
+          temperature: 0.75,
+          max_tokens: 1500
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      data = await response.json();
+      if (response.ok) break; // sucesso, sai do loop
+      if (attempt === 2) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
+      console.log(`⚠️ Tentativa ${attempt} falhou, tentando novamente...`);
+    } catch(fetchErr) {
+      if (attempt === 2) return res.status(504).json({ error: 'Tempo esgotado. Tente novamente com uma pergunta mais curta.' });
+      console.log(`⚠️ Timeout tentativa ${attempt}, retentando...`);
+    }
+  }
 
-    const data = await response.json();
-    if (!response.ok) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
+  try {
 
     const reply = data.choices[0].message.content;
     const tokens = data.usage?.total_tokens || 0;
