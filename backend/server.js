@@ -1311,12 +1311,15 @@ app.post('/api/admin/users', adminMiddleware, async (req, res) => {
 });
 
 app.patch('/api/admin/users/:id', adminMiddleware, (req, res) => {
-  const { active, name } = req.body;
+  const { active, name, email } = req.body;
   if (name !== undefined) {
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, req.params.id);
   }
   if (active !== undefined) {
     db.prepare('UPDATE users SET active = ? WHERE id = ?').run(active ? 1 : 0, req.params.id);
+  }
+  if (email !== undefined) {
+    db.prepare('UPDATE users SET email = ? WHERE id = ?').run(email.toLowerCase().trim(), req.params.id);
   }
   const user = db.prepare('SELECT id, name, email, active FROM users WHERE id = ?').get(req.params.id);
   res.json({ success: true, user });
