@@ -1168,7 +1168,9 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     }
   }
 
-  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx;
+  // Regra de jurisprudência — adicionada via código para garantir aplicação
+  const jurisRegra = `\n\n⚠️ REGRA SOBRE JURISPRUDÊNCIA: Use seu conhecimento sobre tendências jurisprudenciais, valores médios e súmulas. MAS NUNCA cite número de processo específico, nome de relator ou data exata de julgamento — esses dados são verificáveis e um erro expõe o advogado. Diga "o TJMS tem entendimento consolidado de que..." sem inventar número. Se o advogado precisar de decisões específicas, oriente a buscar no JusBrasil ou no site do tribunal.`;
+  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx + jurisRegra;
 
   // Detecta se é petição/tese (precisa de mais tokens) ou chat normal
   const lastMsgContent = messages[messages.length-1]?.content || '';
