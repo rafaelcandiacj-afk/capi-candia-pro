@@ -1176,9 +1176,9 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const lastMsgContent = messages[messages.length-1]?.content || '';
   // Petição e tese precisam de mais tokens (são peças completas)
   // Calculadora e chat normal usam 900 (respostas mais concisas)
-  const isPeticaoOuTese = lastMsgContent.includes('CONSTRUTOR DE PETI') ||
-                          lastMsgContent.includes('PACOTE COMPLETO DE TESE');
-  const maxTok = isPeticaoOuTese ? 1500 : 900;
+  const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
+  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
+  const maxTok = isPeticao ? 2500 : isTese ? 1500 : 900;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
