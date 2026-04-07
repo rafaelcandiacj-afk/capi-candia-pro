@@ -1178,7 +1178,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   // Calculadora e chat normal usam 900 (respostas mais concisas)
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
-  const maxTok = isPeticao ? 2500 : isTese ? 1500 : 900;
+  const maxTok = isPeticao ? 4000 : isTese ? 1500 : 900;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
