@@ -1923,6 +1923,11 @@ async function sendWelcomeEmail(toEmail, toName) {
         <a href="${createPasswordLink}" style="background:#ffd700;color:#000;padding:18px 48px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:17px;display:inline-block">🔐 Criar minha senha e entrar</a>
       </div>
       <p style="font-size:13px;color:#666;text-align:center">Link válido por 7 dias. Se o botão não funcionar, copie e cole no navegador:<br><span style="color:#aaa">${createPasswordLink}</span></p>
+      <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:16px;margin:20px 0;text-align:center">
+        <p style="margin:0 0 8px;font-size:13px;color:#aaa">Após criar sua senha, o endereço da plataforma é:</p>
+        <a href="https://capicand-ia.com/app" style="color:#ffd700;font-size:16px;font-weight:bold;text-decoration:none">🔗 capicand-ia.com/app</a>
+        <p style="margin:8px 0 0;font-size:12px;color:#666">Guarde este link! É por ele que você acessa a Capi em qualquer dispositivo.</p>
+      </div>
       <hr style="border:none;border-top:1px solid #333;margin:24px 0">
       <p style="font-size:14px;color:#ccc"><strong style="color:#ffd700">O que você tem disponível:</strong></p>
       <ul style="color:#ccc;font-size:14px;line-height:2">
