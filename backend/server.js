@@ -1297,6 +1297,7 @@ app.get('/api/admin/users', adminMiddleware, (req, res) => {
   const users = db.prepare(`
     SELECT u.id, u.name, u.email, u.active, u.created_at, u.last_login,
            u.plan_type, u.plan_expires_at, u.plan_activated_at, u.pagarme_subscription_id,
+           u.welcome_email_sent,
            COUNT(DISTINCT c.id) as total_conversations,
            COUNT(m.id) as total_messages
     FROM users u
@@ -1848,6 +1849,9 @@ try {
 try {
   db.exec(`ALTER TABLE users ADD COLUMN reativacao_enviada TEXT`);
 } catch(e) { /* coluna já existe */ }
+try {
+  db.exec(`ALTER TABLE users ADD COLUMN welcome_email_sent INTEGER DEFAULT 0`);
+} catch(e) { /* coluna já existe */ }
 
 // ─── HELPER: verificar se usuário tem acesso ativo ─────────────
 function hasActiveAccess(user) {
@@ -1935,6 +1939,8 @@ async function sendWelcomeEmail(toEmail, toName) {
 
     await sendEmail(toEmail, '🎉 Acesso liberado! Crie sua senha — Capi Când-IA Pro', html);
     console.log('✅ Email boas-vindas (com link de criar senha) enviado para:', toEmail);
+    // Marca email como enviado no banco
+    try { db.prepare('UPDATE users SET welcome_email_sent = 1 WHERE email = ?').run(toEmail); } catch(e) {}
   } catch(e) {
     console.error('⚠️ Erro ao enviar email boas-vindas:', e.message);
   }
