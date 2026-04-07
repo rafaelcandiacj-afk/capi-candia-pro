@@ -1074,7 +1074,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       // Constrói query enriquecida: última msg + contexto das 3 msgs anteriores
       const recentMsgs = messages.slice(-6);
       const contextQuery = recentMsgs.map(m => m.content).join(' ') + ' ' + lastUserMsg.content;
-      const relevantChunks = await searchKnowledge(contextQuery, 5);
+      const relevantChunks = await searchKnowledge(contextQuery, 3);
       if (relevantChunks.length > 0) {
         ragContext = '\n\n━━━ CONHECIMENTO DO RAFAEL CÂNDIA (use isto para responder) ━━━\n';
         relevantChunks.forEach((chunk, i) => {
@@ -1170,6 +1170,14 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
   const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx;
 
+  // Detecta se é petição/tese (precisa de mais tokens) ou chat normal
+  const lastMsgContent = messages[messages.length-1]?.content || '';
+  const isPeticaoOuTese = lastMsgContent.includes('CONSTRUTOR DE PETI') ||
+                          lastMsgContent.includes('PACOTE COMPLETO DE TESE') ||
+                          lastMsgContent.includes('CALCULADORA DE HONOR') ||
+                          lastMsgContent.includes('Gerador de Teses');
+  const maxTok = isPeticaoOuTese ? 1500 : 900;
+
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
   for (let attempt = 1; attempt <= 2; attempt++) {
@@ -1181,9 +1189,9 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4.1',
-          messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
+          messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-10)],
           temperature: 0.75,
-          max_tokens: 1500
+          max_tokens: maxTok
         }),
         signal: controller.signal
       });
