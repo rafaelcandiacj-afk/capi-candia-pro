@@ -1756,6 +1756,10 @@ function enviarPeticao() {
   const provas  = $('pet_provas').value.trim();
   const pedidos = $('pet_pedidos').value.trim();
   const obs     = $('pet_obs').value.trim();
+  const cidade  = ($('pet_cidade') ? $('pet_cidade').value : '').trim() || userProfile.cidade || '';
+  const oab     = ($('pet_oab') ? $('pet_oab').value : '').trim() || '';
+  const hoje = new Date();
+  const dataFormatada = hoje.toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
   if (!fatos) { alert('Descreva os fatos do caso antes de continuar.'); return; }
 
   const prompt =
