@@ -693,7 +693,8 @@ Seu lema: "Capivara que anda em bando não vira comida de onça."`;
 })();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // NOTA: express.static movido para após as rotas de API (ver final do arquivo)
 
 // ─── FORÇA HTTPS ─────────────────────────────────────────────
@@ -1590,7 +1591,7 @@ const uploadConv = multer({
       cb(null, 'conv_' + Date.now() + '_' + safe);
     }
   }),
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
     const allowed = ['.txt', '.pdf', '.md', '.docx', '.jpg', '.jpeg', '.png', '.webp'];
     const ext = require('path').extname(file.originalname).toLowerCase();
