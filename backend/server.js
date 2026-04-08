@@ -2219,6 +2219,18 @@ app.get('/api/admin/user-reset-token', adminMiddleware, (req, res) => {
 });
 
 // Reenviar email de boas-vindas
+// Envia email customizado para um destinatário específico
+app.post('/api/admin/send-email', adminMiddleware, async (req, res) => {
+  const { email, subject, html } = req.body;
+  if (!email || !subject || !html) return res.status(400).json({ error: 'email, subject e html obrigatórios' });
+  try {
+    await sendEmail(email, subject, html);
+    res.json({ ok: true, email });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.post('/api/admin/resend-welcome', adminMiddleware, (req, res) => {
   const { user_id, email } = req.body;
   const user = user_id
