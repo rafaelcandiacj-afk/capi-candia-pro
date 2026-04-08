@@ -1169,7 +1169,11 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   }
 
   // Regras injetadas via código para garantir aplicação em produção
-  const regrasCodigo = `\n\n⚠️ REGRA SOBRE JURISPRUDÊNCIA: Use seu conhecimento sobre tendências jurisprudenciais, valores médios e súmulas. MAS NUNCA cite número de processo específico, nome de relator ou data exata de julgamento — esses dados são verificáveis e um erro expõe o advogado. Diga "o TJMS tem entendimento consolidado de que..." sem inventar número. Se precisar de decisões específicas, oriente a buscar no JusBrasil ou no site do tribunal.\n\n⚡ TAMANHO DAS RESPOSTAS: Seja direto e objetivo. No chat normal, máximo 3 parágrafos curtos + tópicos se necessário. Não dê textao. Se o usuário quiser mais detalhes, ele pede. Apenas petições e teses completas devem ser longas.`;
+  const regrasCodigo = `\n\n📊 VALORES ATUALIZADOS 2026 (OBRIGATÓRIO USAR ESTES):
+- Salário mínimo: R$ 1.621,00 (vigente desde 01/01/2026, Decreto 12.797/2025)
+- Teto INSS/RGPS: R$ 8.475,55
+- Salário maternidade sem carência: Empregada CLT, doméstica e avulsa NÃO precisam de carência desde março/2024 (Lei 14.811/2024). Apenas contribuinte individual e facultativa precisam de 10 contribuições.
+- BPC/LOAS: R$ 1.621,00\n\n⚠️ REGRA SOBRE JURISPRUDÊNCIA: Use seu conhecimento sobre tendências jurisprudenciais, valores médios e súmulas. MAS NUNCA cite número de processo específico, nome de relator ou data exata de julgamento — esses dados são verificáveis e um erro expõe o advogado. Diga "o TJMS tem entendimento consolidado de que..." sem inventar número. Se precisar de decisões específicas, oriente a buscar no JusBrasil ou no site do tribunal.\n\n⚡ TAMANHO DAS RESPOSTAS: Seja direto e objetivo. No chat normal, máximo 3 parágrafos curtos + tópicos se necessário. Não dê textao. Se o usuário quiser mais detalhes, ele pede. Apenas petições e teses completas devem ser longas.`;
   const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx + regrasCodigo;
 
   // Detecta se é petição/tese (precisa de mais tokens) ou chat normal
