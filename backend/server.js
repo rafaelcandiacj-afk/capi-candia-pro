@@ -1182,7 +1182,8 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   // Calculadora e chat normal usam 900 (respostas mais concisas)
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
-  const maxTok = isPeticao ? 4000 : isTese ? 1500 : 900;
+  const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
+  const maxTok = isPeticao ? 4000 : isTese ? 1500 : temDocumento ? 2000 : 900;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
@@ -1703,7 +1704,7 @@ async function processUploadedFile(file) {
     extractedText = visionData.choices?.[0]?.message?.content || '';
   }
 
-  return extractedText.substring(0, 8000);
+  return extractedText.substring(0, 15000);
 }
 
 // Endpoint único — aceita 1 arquivo (mantém compatibilidade) ou múltiplos via 'files'
