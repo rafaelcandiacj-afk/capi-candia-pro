@@ -2139,6 +2139,16 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
 
         console.log(`✅ Guru: plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
 
+        // 🎉 Notifica Rafael a cada nova venda
+        const planoLabel = isAnnual ? 'Anual — R$ 397' : 'Mensal — R$ 47';
+        const notifHtml = `<div style="font-family:Arial,sans-serif;padding:24px;background:#0a0a0a;color:#eee;border-radius:8px;max-width:500px">
+          <h2 style="color:#ffd700;margin:0 0 16px">🎉 Nova venda! Capi Când-IA Pro</h2>
+          <p><strong>Nome:</strong> ${customerName}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Plano:</strong> ${planoLabel}</p>
+          <p><strong>Hora:</strong> ${new Date().toLocaleString('pt-BR',{timeZone:'America/Campo_Grande'})}</p>
+        </div>`;
+        sendEmail('rafaelcandia.cj@gmail.com', `🎉 +1 assinante! ${customerName} — ${planoLabel}`, notifHtml).catch(e => {});
         setImmediate(() => sendWelcomeEmail(email, user.name));
       }
     }
