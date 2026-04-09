@@ -1551,10 +1551,10 @@ async function toggleRecording() {
   }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'
-      : MediaRecorder.isTypeSupported('audio/ogg') ? 'audio/ogg' : '';
+    // Safari usa audio/mp4, outros usam webm
+    let mimeType = '';
+    const types = ['audio/webm;codecs=opus','audio/webm','audio/ogg','audio/mp4'];
+    for(const t of types){ if(MediaRecorder.isTypeSupported(t)){ mimeType = t; break; } }
     const options = mimeType ? { mimeType } : {};
     mediaRecorder = new MediaRecorder(stream, options);
     audioChunks = [];
@@ -1565,10 +1565,13 @@ async function toggleRecording() {
       const btn = document.getElementById('micBtn');
       btn.classList.remove('recording');
       btn.title = 'Gravar áudio';
-      if (audioChunks.length === 0) return;
+      if (audioChunks.length === 0) { showToast('⚠️ Nenhum áudio capturado'); return; }
       const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-      const ext = (mimeType || '').includes('ogg') ? 'ogg' : 'webm';
-      showToast('⏳ Transcrevendo áudio...');
+      // Extensão baseada no mime type real
+      let ext = 'webm';
+      if(mimeType.includes('mp4')) ext = 'mp4';
+      else if(mimeType.includes('ogg')) ext = 'ogg';
+      showToast('⏳ Transcrevendo...');
       try {
         const token = localStorage.getItem('capi_token');
         const fd = new FormData();
@@ -1586,22 +1589,25 @@ async function toggleRecording() {
         inp.value = text;
         autoResize(inp);
         document.getElementById('sendBtn').disabled = false;
-        showToast('✅ Enviando...');
-        // Envia automaticamente após transcrever
-        window._voiceModeActive = true;
-        await sendMessage();
+        if(window._voiceModeEnabled){
+          showToast('✅ Enviando em modo voz...');
+          await sendMessage();
+        } else {
+          showToast('✅ Áudio transcrito! Revise e envie.');
+          inp.focus();
+        }
       } catch(e) {
         showToast('❌ Erro ao transcrever: ' + e.message);
       }
     };
-    mediaRecorder.start();
+    mediaRecorder.start(100); // coleta chunks a cada 100ms
     isRecording = true;
     const btn = document.getElementById('micBtn');
     btn.classList.add('recording');
     btn.title = 'Parar gravação';
     showToast('🔴 Gravando... clique no mic para parar');
   } catch(e) {
-    if (e.name === 'NotAllowedError') showToast('❌ Permissão de microfone negada');
+    if (e.name === 'NotAllowedError') showToast('❌ Permissão de microfone negada. Verifique as configurações do navegador.');
     else showToast('❌ Erro ao acessar microfone: ' + e.message);
   }
 }
