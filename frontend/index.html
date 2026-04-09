@@ -1272,7 +1272,7 @@ function showToast(msg){
   t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--green);border-radius:20px;padding:10px 20px;color:var(--green);font-size:.83rem;z-index:400;animation:fadeUp .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.3)';
   t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(()=>t.remove(),3000);
+  setTimeout(()=>t.remove(),msg.includes('pronto') ? 5000 : 3000);
 }
 
 // ── COPIAR / COMPARTILHAR ────────────────────────────────────
@@ -1355,10 +1355,14 @@ async function handleConvUpload(input){
       badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId})">✕</button>`;
       area.appendChild(badge);
     }
-    // Habilita o botão de envio e foca no input
+    // Habilita o botão de envio, preenche o input e foca
+    const chatInput = $('chatInput');
+    if(!chatInput.value.trim()){
+      chatInput.value = 'Analise este documento para mim';
+    }
     $('sendBtn').disabled = false;
-    $('chatInput').focus();
-    showToast('✅ ' + files.length + ' arquivo(s) anexado(s)! Digite sua pergunta.');
+    chatInput.focus();
+    showToast('✅ ' + files.length + ' arquivo(s) pronto(s)! Toque em Enviar para analisar.');
   }catch(e){showToast('❌ '+e.message);}
   // Reset do input para permitir selecionar o mesmo arquivo de novo
   input.value='';
