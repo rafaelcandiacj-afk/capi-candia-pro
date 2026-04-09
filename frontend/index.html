@@ -228,9 +228,12 @@
     .teses-btn:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee}
     .teses-btn .btn-icon{font-size:.88rem}
     /* Header actions (Perfil, Nova, Sair) */
-    .mobile-menu-btn{display:none}
-    .mobile-toolbar{display:none}
-    .mobile-menu-dropdown{display:none}
+    /* Elementos só mobile — ocultos no desktop */
+    @media(min-width:769px){
+      .mobile-menu-btn{display:none!important}
+      .mobile-toolbar{display:none!important}
+      .mobile-menu-dropdown{display:none!important}
+    }
     .header-action-btn{padding:7px 14px;background:transparent;border:1px solid transparent;border-radius:8px;color:#888;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px}
     .header-action-btn:hover{background:#f3f0eb;color:var(--text);border-color:#e0dbd4}
     .header-action-btn.danger:hover{color:#e53935;background:#fef2f2;border-color:#fecaca}
