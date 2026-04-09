@@ -52,13 +52,34 @@
       --border: #2a2a2a;
       --gold:   #d4a017;
     }
-    body.dark-mode .sidebar{background:#111;border-color:#222}
-    body.dark-mode .chat-header{background:#111;border-color:#222}
-    body.dark-mode .chat-input-area{background:#111;border-color:#222}
-    body.dark-mode .message.user .message-bubble{background:#1a1a1a;border-color:#333}
-    body.dark-mode .auth-card{background:#111;border-color:#222}
-    body.dark-mode .onboarding-screen{background:#0d0d0d}
-    body.dark-mode .mobile-toolbar{background:#111;border-color:#222}
+    body.dark-mode,
+    body.dark-mode .chat-wrapper,
+    body.dark-mode .chat-main,
+    body.dark-mode .chat-messages,
+    body.dark-mode .chat-welcome { background:#0d0d0d!important; color:#e8e4de }
+    body.dark-mode .sidebar { background:#111!important; border-color:#222!important }
+    body.dark-mode .chat-header { background:#111!important; border-color:#222!important }
+    body.dark-mode .chat-input-area { background:#111!important; border-color:#222!important }
+    body.dark-mode .chat-input { background:#1e1e1e!important; border-color:#333!important; color:#e8e4de!important }
+    body.dark-mode .conv-item { color:#e8e4de }
+    body.dark-mode .conv-item:hover, body.dark-mode .conv-item.active { background:#1e1e1e!important }
+    body.dark-mode .message-bubble { background:#1e1e1e!important; border-color:#2a2a2a!important; color:#e8e4de!important }
+    body.dark-mode .message.user .message-bubble { background:#1a2a1a!important; border-color:#2a3a2a!important }
+    body.dark-mode .welcome-suggestion { background:#1e1e1e!important; border-color:#2a2a2a!important; color:#e8e4de!important }
+    body.dark-mode .welcome-suggestion:hover { border-color:var(--gold)!important }
+    body.dark-mode .ctx-chip { background:#1e1e1e!important; border-color:#333!important; color:#e8e4de!important }
+    body.dark-mode .mobile-toolbar { background:#111!important; border-color:#222!important }
+    body.dark-mode .mobile-toolbar-btn { color:#e8e4de!important }
+    body.dark-mode .auth-card { background:#111!important; border-color:#222!important }
+    body.dark-mode .onboarding-screen { background:#0d0d0d!important }
+    body.dark-mode .new-conv-btn { background:#1e1e1e!important; border-color:#333!important; color:var(--gold)!important }
+    body.dark-mode .sidebar-footer { background:#111!important; border-color:#222!important }
+    body.dark-mode .user-name-s, body.dark-mode .conv-title, body.dark-mode .conv-time { color:#e8e4de }
+    body.dark-mode .mobile-menu-dropdown { background:#1e1e1e!important; border-color:#333!important }
+    body.dark-mode .mobile-menu-item { color:#e8e4de!important }
+    body.dark-mode .file-badge { background:#1e1e1e!important; border-color:#333!important; color:#e8e4de!important }
+    body.dark-mode .message-actions button { color:#a09890!important }
+    body.dark-mode #bannerFundadores { opacity:.85 }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;min-height:var(--app-height,100vh);overflow:hidden}
     #particles-bg{display:none}
