@@ -705,6 +705,7 @@
             <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)" multiple>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
           </label>
+          <button id="voiceModeBtn" onclick="toggleVoiceMode()" title="Modo Voz: Capi responde em áudio" style="margin-bottom:4px;padding:0 8px;height:38px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:.72rem;font-weight:600;white-space:nowrap;transition:all .2s">🔇 Voz</button>
           <button id="micBtn" class="mic-btn" title="Gravar áudio (clique para gravar, clique novamente para parar)" onclick="toggleRecording()" style="margin-bottom:4px">
             <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
           </button>
@@ -943,6 +944,25 @@ function showChat(user){
   loadFavorites();
   setTimeout(loadNotifications,1500);
 }
+// Modo Voz
+window._voiceModeEnabled = false;
+function toggleVoiceMode(){
+  window._voiceModeEnabled = !window._voiceModeEnabled;
+  const btn = document.getElementById('voiceModeBtn');
+  if(window._voiceModeEnabled){
+    btn.innerHTML = '🔊 Voz';
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.color = 'var(--gold)';
+    btn.style.background = 'rgba(184,134,11,.12)';
+    showToast('🔊 Modo voz ativado! Grave e a Capi responde em áudio.');
+  } else {
+    btn.innerHTML = '🔇 Voz';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    btn.style.background = '';
+  }
+}
+
 function toggleDarkMode(){
   const isDark = document.body.classList.toggle('dark-mode');
   localStorage.setItem('capi_dark_mode', isDark ? '1' : '0');
@@ -1152,6 +1172,10 @@ async function sendMessage(){
     }
     convHistory.push({role:'assistant',content:reply});
     removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);
+    // Loop de voz: se modo voz está ativo, reproduz automaticamente
+    if(window._voiceModeEnabled && window._lastAudioId){
+      setTimeout(()=>playTTS(reply.substring(0,2000),window._lastAudioId,true),400);
+    }
   }catch(err){
     removeTyping(typingEl);
     const errMsg = err.message || '';
@@ -1207,6 +1231,7 @@ function appendMessage(role,content,suggestions){
     ttsBtn.id='tts-btn-'+audioId;
     ttsBtn.innerHTML='🔊 Ouvir';
     ttsBtn.onclick=()=>playTTS(plainText,audioId);
+  window._lastAudioId = audioId; // Salva para loop de voz
     const favBtn=document.createElement('button');
     favBtn.className='msg-action-btn';
     favBtn.innerHTML='⭐ Favoritar';
@@ -1410,7 +1435,7 @@ function copyMessage(text, btn){
   });
 }
 
-async function playTTS(text, audioId){
+async function playTTS(text, audioId, autoplay=false){
   const btn=document.getElementById('tts-btn-'+audioId);
   const container=document.getElementById('audio-container-'+audioId);
   const audio=document.getElementById(audioId);
@@ -1558,11 +1583,13 @@ async function toggleRecording() {
         const text = (data.text || '').trim();
         if (!text) { showToast('⚠️ Não entendi o áudio, tente novamente'); return; }
         const inp = document.getElementById('chatInput');
-        inp.value = (inp.value ? inp.value + ' ' : '') + text;
+        inp.value = text;
         autoResize(inp);
-        inp.focus();
         document.getElementById('sendBtn').disabled = false;
-        showToast('✅ Áudio transcrito!');
+        showToast('✅ Enviando...');
+        // Envia automaticamente após transcrever
+        window._voiceModeActive = true;
+        await sendMessage();
       } catch(e) {
         showToast('❌ Erro ao transcrever: ' + e.message);
       }
