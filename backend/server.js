@@ -447,6 +447,16 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 
+  CREATE TABLE IF NOT EXISTS user_memory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    category TEXT NOT NULL,
+    insight TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
   CREATE TABLE IF NOT EXISTS message_analytics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -1070,8 +1080,17 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const userProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
   let profileCtx = '';
   const hasProfile = userProfile && userProfile.nome;
+  // Carrega memórias acumuladas do advogado
+  const userMemories = db.prepare('SELECT category, insight FROM user_memory WHERE user_id = ? ORDER BY updated_at DESC LIMIT 40').all(req.user.id);
   if (hasProfile) {
-    profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:\n- Nome: ${userProfile.nome}\n- Área: ${userProfile.area || 'não informada'}\n- Experiência: ${userProfile.anos_experiencia || 'não informada'}\n- Cidade: ${userProfile.cidade || 'não informada'}\n\nIMPORTANTE: Você JÁ SABE quem é este usuário. NÃO pergunte o nome nem a área dele. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão nas suas respostas.`;
+    let memoriesText = '';
+    if (userMemories.length > 0) {
+      const grouped = {};
+      userMemories.forEach(m => { if (!grouped[m.category]) grouped[m.category] = []; grouped[m.category].push(m.insight); });
+      memoriesText = '\n- Memórias acumuladas sobre este advogado:\n' +
+        Object.entries(grouped).map(([cat, items]) => `  [${cat}] ${items.slice(0,5).join(' | ')}`).join('\n');
+    }
+    profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:\n- Nome: ${userProfile.nome}\n- Área: ${userProfile.area || 'não informada'}\n- Experiência: ${userProfile.anos_experiencia || 'não informada'}\n- Cidade: ${userProfile.cidade || 'não informada'}${memoriesText}\n\nIMPORTANTE: Você JÁ SABE quem é este usuário. NÃO pergunte o nome nem a área dele. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias para personalizar respostas e demonstrar que lembra do advogado.`;
   }
   
   // Pega as últimas mensagens para enriquecer a busca semântica com contexto
@@ -1287,6 +1306,54 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     }
 
     res.json({ reply, tokens, conversation_id: convId, suggestions });
+
+    // MEMÓRIA DO ADVOGADO — extrai insights em background (não bloqueia a resposta)
+    if (hasProfile) {
+      setImmediate(async () => {
+        try {
+          const userMsg = messages[messages.length - 1]?.content || '';
+          const memResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: `Você é um sistema de memória para uma IA jurídica. Analise a conversa e extraia APENAS insights relevantes e duráveis sobre o advogado. Categorias possíveis: "casos" (tipos de caso que trabalha), "clientes" (perfil dos clientes), "preferencias" (como prefere trabalhar), "especialidade" (subáreas de atuação), "escritorio" (tamanho, localização, estrutura), "estilo" (como escreve petições, argumentação preferida), "desafios" (dificuldades recorrentes). Retorne APENAS um JSON array de objetos {category, insight} com no máximo 3 insights. Se não houver insights relevantes, retorne []. Exemplo: [{"category":"casos","insight":"Trabalha com ações de dano moral contra planos de saúde"},{"category":"clientes","insight":"Atende principalmente classe média"}]. NUNCA inclua informações já básicas como nome ou área principal.` },
+                { role: 'user', content: `Pergunta do advogado: "${userMsg.substring(0, 300)}"
+Resposta da Capi: "${reply.substring(0, 500)}"` }
+              ],
+              temperature: 0.3,
+              max_tokens: 300
+            })
+          });
+          if (memResponse.ok) {
+            const memData = await memResponse.json();
+            const memText = memData.choices[0]?.message?.content || '[]';
+            const insights = JSON.parse(memText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+            if (Array.isArray(insights) && insights.length > 0) {
+              const upsertMemory = db.prepare(`
+                INSERT INTO user_memory (user_id, category, insight, updated_at)
+                VALUES (?, ?, ?, datetime('now'))
+                ON CONFLICT DO NOTHING
+              `);
+              // Evita duplicatas verificando se insight similar já existe
+              const existing = db.prepare('SELECT insight FROM user_memory WHERE user_id = ?').all(userId).map(r => r.insight.toLowerCase());
+              insights.forEach(({ category, insight }) => {
+                if (category && insight && insight.length > 10) {
+                  const isDuplicate = existing.some(e => e.includes(insight.toLowerCase().substring(0, 20)));
+                  if (!isDuplicate) {
+                    db.prepare('INSERT INTO user_memory (user_id, category, insight) VALUES (?, ?, ?)').run(userId, category, insight);
+                  }
+                }
+              });
+            }
+          }
+        } catch (memErr) {
+          // Silencioso — memória é best-effort
+        }
+      });
+    }
+
   } catch (e) {
     console.error('Erro chat endpoint:', e.message, e.stack?.split('\n')[1]);
     res.status(500).json({ error: 'Erro interno: ' + (e.message || 'desconhecido') });
