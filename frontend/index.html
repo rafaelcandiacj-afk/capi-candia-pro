@@ -580,19 +580,22 @@
     </div>
 
     <div class="chat-input-area">
-      <div id="fileBadgeArea" style="max-width:860px;margin:0 auto 8px;"></div>
-      <div class="chat-input-container">
-        <textarea id="chatInput" class="chat-input" placeholder="Digite sua mensagem para a Capi..." rows="1"
-          onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <label class="upload-btn" title="Enviar documento (PDF, TXT, DOCX)">
-          <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)" multiple>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        </label>
-        <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
+      <div class="chat-input-container" style="flex-direction:column;align-items:stretch;gap:0">
+        <!-- Badges dos arquivos dentro da caixa de input -->
+        <div id="fileBadgeArea" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0;min-height:0"></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;padding:4px 8px 8px">
+          <label class="upload-btn" title="Anexar documento ou imagem (PDF, DOCX, JPG, PNG)" style="flex-shrink:0;margin-bottom:4px">
+            <input type="file" id="convFileInput" accept=".pdf,.txt,.md,.docx,.jpg,.jpeg,.png,.webp" style="display:none" onchange="handleConvUpload(this)" multiple>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </label>
+          <textarea id="chatInput" class="chat-input" placeholder="Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)" rows="1"
+            onkeydown="handleKey(event)" oninput="autoResize(this)" style="flex:1;min-width:0"></textarea>
+          <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled style="flex-shrink:0;margin-bottom:4px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1208,16 +1211,10 @@ async function handleConvUpload(input){
       badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId})">✕</button>`;
       area.appendChild(badge);
     }
-    // Auto-preenche o input com sugestão de pergunta
-    const inputEl = $('chatInput');
-    if (!inputEl.value.trim()) {
-      const sugestao = pendingUploadIds.length > 1 ? 'Analise estes documentos para mim' : 'Analise este documento para mim';
-      inputEl.value = sugestao;
-      $('sendBtn').disabled = false;
-      inputEl.focus();
-      inputEl.select();
-    }
-    showToast('✅ ' + files.length + ' arquivo(s) anexado(s)!');
+    // Habilita o botão de envio e foca no input
+    $('sendBtn').disabled = false;
+    $('chatInput').focus();
+    showToast('✅ ' + files.length + ' arquivo(s) anexado(s)! Digite sua pergunta.');
   }catch(e){showToast('❌ '+e.message);}
   // Reset completo do input para permitir selecionar o mesmo arquivo de novo
   input.value='';
