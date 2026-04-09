@@ -5,6 +5,15 @@
 <meta name="version" content="20260407015328">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capi Când-IA Pro</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#b8860b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Capi Pro">
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
+  <!-- /PWA -->
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -704,6 +713,17 @@ async function init(){
 
 // Garante que o botão habilita assim que o chatInput receber qualquer entrada
 // (fix para casos onde o listener do init não captura o primeiro input)
+// Registra Service Worker (PWA)
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      console.log('SW registrado:', reg.scope);
+    }).catch(function(err){
+      console.log('SW erro:', err);
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const inp = document.getElementById('chatInput');
   const btn = document.getElementById('sendBtn');
