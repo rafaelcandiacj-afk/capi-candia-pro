@@ -245,6 +245,8 @@
     .upload-btn{width:38px;height:38px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--trans);flex-shrink:0}
     .upload-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .upload-btn svg{width:16px;height:16px}
+    .conv-rename{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px;font-size:.75rem;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1}
+    .conv-item:hover .conv-rename{opacity:1}
     .mic-btn{width:38px;height:38px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--trans);flex-shrink:0}
     .mic-btn:hover{border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,.1)}
     .mic-btn.recording{background:rgba(231,76,60,.15);border-color:#e74c3c;color:#e74c3c;animation:micPulse 1s infinite}
@@ -803,9 +805,10 @@ function renderConvList(convs){
   list.innerHTML=convs.map(c=>`
     <div class="conv-item ${c.id===currentConvId?'active':''}" onclick="loadConversation(${c.id})" id="conv-${c.id}">
       <div class="conv-item-text">
-        <div class="conv-item-title" ondblclick="renameConversation(event,${c.id},this)" title="Clique duplo para renomear">${escapeHtml(c.title)}</div>
+        <div class="conv-item-title" id="conv-title-${c.id}">${escapeHtml(c.title)}</div>
         <div class="conv-item-date">${formatDate(c.updated_at)}</div>
       </div>
+      <button class="conv-rename" onclick="renameConversation(event,${c.id})" title="Renomear">✏️</button>
       <button class="conv-delete" onclick="deleteConversation(event,${c.id})" title="Apagar">✕</button>
     </div>
   `).join('');
@@ -815,8 +818,10 @@ function escapeHtml(s){
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-async function renameConversation(e, id, titleEl){
+async function renameConversation(e, id){
   e.stopPropagation();
+  const titleEl = document.getElementById('conv-title-'+id);
+  if (!titleEl) return;
   const currentTitle = titleEl.textContent.trim();
   const inp = document.createElement('input');
   inp.type = 'text';
@@ -826,7 +831,10 @@ async function renameConversation(e, id, titleEl){
   titleEl.replaceWith(inp);
   inp.focus();
   inp.select();
+  let saved = false;
   const save = async () => {
+    if (saved) return;
+    saved = true;
     const newTitle = inp.value.trim() || currentTitle;
     const token = localStorage.getItem('capi_token');
     try {
@@ -838,15 +846,14 @@ async function renameConversation(e, id, titleEl){
     } catch(err) { console.error(err); }
     const newEl = document.createElement('div');
     newEl.className = 'conv-item-title';
-    newEl.title = 'Clique duplo para renomear';
-    newEl.ondblclick = (ev) => renameConversation(ev, id, newEl);
+    newEl.id = 'conv-title-'+id;
     newEl.textContent = newTitle;
     inp.replaceWith(newEl);
   };
   inp.addEventListener('blur', save);
   inp.addEventListener('keydown', ev => {
     if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); }
-    if (ev.key === 'Escape') { inp.value = currentTitle; inp.blur(); }
+    if (ev.key === 'Escape') { saved=true; inp.value=currentTitle; const r=document.createElement('div'); r.className='conv-item-title'; r.id='conv-title-'+id; r.textContent=currentTitle; inp.replaceWith(r); }
   });
 }
 
