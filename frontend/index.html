@@ -2489,14 +2489,26 @@ init();
     });
   };
 
-  // iOS Safari: mostra instruções manuais
+  // iOS Safari: mostra instruções com seta animada
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   var isInStandalone = window.navigator.standalone;
   if(isIOS && !isInStandalone){
+    // Adiciona CSS da seta animada
+    var style = document.createElement('style');
+    style.textContent = '@keyframes bounce-down{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}} .pwa-arrow{animation:bounce-down 1s ease-in-out infinite;display:inline-block;font-size:2rem;color:#007AFF}';
+    document.head.appendChild(style);
     setTimeout(function(){
-      content.innerHTML = '<div style="text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><img src="/icons/icon-72x72.png" style="width:40px;height:40px;border-radius:10px;border:1px solid #e0dbd4"><div style="font-weight:700;font-size:.95rem;color:#1a1a1a">Instale o app da Capi!</div></div><div style="font-size:.82rem;color:#444;line-height:1.7">Toque em <strong style="color:#007AFF">⬆ Compartilhar</strong> na barra do Safari<br>depois em <strong>"Adicionar à Tela de Início"</strong> 📲</div></div>';
+      content.innerHTML = '<div style="text-align:center;padding:4px 0 6px">'+
+        '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px">'+
+        '<img src="/icons/icon-72x72.png" style="width:40px;height:40px;border-radius:10px;border:1px solid #e0dbd4">'+
+        '<div style="font-weight:700;font-size:1rem;color:#1a1a1a">Instale o app da Capi! 📲</div></div>'+
+        '<div style="font-size:.85rem;color:#444;line-height:2;background:#f3f0eb;border-radius:10px;padding:10px 14px">'+
+        '1️⃣ Toque no <strong style="color:#007AFF">botão de compartilhar</strong> abaixo<br>'+
+        '<span class="pwa-arrow">↓</span><br>'+
+        '2️⃣ Depois toque em <strong>"Adicionar à Tela de Início"</strong>'+
+        '</div></div>';
       banner.style.display = 'block';
-    }, 3000);
+    }, 2000);
   }
 })();
 </script>
