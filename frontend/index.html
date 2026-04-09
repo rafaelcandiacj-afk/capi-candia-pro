@@ -75,6 +75,15 @@
     body.dark-mode .new-conv-btn { background:#1e1e1e!important; border-color:#333!important; color:var(--gold)!important }
     body.dark-mode .sidebar-footer { background:#111!important; border-color:#222!important }
     body.dark-mode .user-name-s, body.dark-mode .conv-title, body.dark-mode .conv-time { color:#e8e4de }
+    body.dark-mode .conv-item { color:#e8e4de!important }
+    body.dark-mode .conv-item span, body.dark-mode .conv-item div, body.dark-mode .conv-item p { color:#e8e4de!important }
+    body.dark-mode .sidebar * { color:#e8e4de }
+    body.dark-mode .sidebar .conv-time { color:#a09890!important }
+    body.dark-mode .chat-input::placeholder { color:#666!important }
+    body.dark-mode .chat-input { color:#e8e4de!important }
+    body.dark-mode .message-actions button { color:#888!important }
+    body.dark-mode .chat-header * { color:#e8e4de }
+    body.dark-mode .status-badge { background:#1e3a1e!important; color:#4ade80!important }
     body.dark-mode .mobile-menu-dropdown { background:#1e1e1e!important; border-color:#333!important }
     body.dark-mode .mobile-menu-item { color:#e8e4de!important }
     body.dark-mode .file-badge { background:#1e1e1e!important; border-color:#333!important; color:#e8e4de!important }
@@ -609,7 +618,7 @@
           <div class="user-name-s" id="sidebarName">—</div>
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
-        <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px">🌙</button>
+        <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">🌙 Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
     </div>
@@ -940,12 +949,18 @@ function toggleDarkMode(){
   const btn = document.getElementById('darkModeBtn');
   if(btn) btn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Escuro';
   const sideBtn = document.getElementById('darkModeBtnSidebar');
-  if(sideBtn) sideBtn.textContent = isDark ? '☀️' : '🌙';
+  if(sideBtn) sideBtn.innerHTML = isDark ? '☀️ Claro' : '🌙 Escuro';
 }
 // Aplica dark mode salvo
 (function(){
   if(localStorage.getItem('capi_dark_mode') === '1'){
     document.body.classList.add('dark-mode');
+    document.addEventListener('DOMContentLoaded', function(){
+      const sb = document.getElementById('darkModeBtnSidebar');
+      if(sb) sb.innerHTML = '☀️ Claro';
+      const mb = document.getElementById('darkModeBtn');
+      if(mb) mb.textContent = '☀️ Modo Claro';
+    });
   }
 })();
 
