@@ -805,6 +805,8 @@ function renderConvList(convs){
 
 async function loadConversation(id){
   const token=localStorage.getItem('capi_token');
+  // Limpa uploads pendentes ao trocar de conversa
+  pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';
   try{
     const res=await fetch('/api/conversations/'+id+'/messages',{headers:{'Authorization':'Bearer '+token}});
     if(!res.ok) return;
@@ -908,8 +910,6 @@ async function sendMessage(){
     }
     convHistory.push({role:'assistant',content:reply});
     removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);
-    // Clear upload after sending
-    if(pendingUploadIds.length>0){pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';}
   }catch(err){
     removeTyping(typingEl);
     const errMsg = err.message || '';
@@ -918,6 +918,8 @@ async function sendMessage(){
       : '⚠️ Ocorreu um erro de conexão. Tente enviar a mensagem novamente.';
     appendMessage('assistant', msgErro);
   }finally{
+    // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
+    pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';
     isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='';
   }
 }
