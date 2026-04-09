@@ -1295,8 +1295,7 @@ As sugestões devem:
 - Máximo 9 palavras cada
 - Começar com um verbo de ação (ex: "Gerar", "Montar", "Calcular", "Analisar", "Criar")
 Retorne APENAS um JSON array de strings. Exemplo: ["Gerar os embargos de declaração agora", "Calcular honorários de sucumbência", "Criar script para apresentar ao cliente"]` },
-            { role: 'user', content: \`Pergunta do advogado: "\${messages[messages.length-1]?.content?.substring(0,200)||''}"
-Resposta da Capi: "\${reply.substring(0, 600)}"\` }
+            { role: 'user', content: 'Pergunta: ' + (messages[messages.length-1]?.content||'').substring(0,200) + ' / Resposta: ' + reply.substring(0,600) }
           ],
           temperature: 0.6,
           max_tokens: 200
