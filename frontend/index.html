@@ -1919,11 +1919,18 @@ function showOnboarding(user) {
   $('ob_nome').addEventListener('input', () => { obValidate(1); });
 }
 
+function toggleAreaChip(el){
+  el.classList.toggle('selected');
+  $('obNext2').disabled = document.querySelectorAll('.area-chip.selected').length === 0;
+}
+function getSelectedAreas(){
+  return Array.from(document.querySelectorAll('.area-chip.selected')).map(function(el){return el.dataset.value;});
+}
 function obValidate(step) {
   if (step === 1) {
     $('obNext1').disabled = !$('ob_nome').value.trim();
   } else if (step === 2) {
-    $('obNext2').disabled = !$('ob_area').value;
+    $('obNext2').disabled = document.querySelectorAll('.area-chip.selected').length === 0;
   } else if (step === 3) {
     $('obNext3').disabled = !$('ob_anos').value;
   }
