@@ -198,27 +198,24 @@
       .sidebar.open{left:0}
       .sidebar-toggle{display:block}
       .message{max-width:92%}
-      /* Input mobile: padding menor */
+      /* Input mobile */
       .chat-input-area{padding:10px 12px}
       .chat-input{font-size:.88rem;padding:10px 12px}
-      /* Header mobile: linha única com hamburger + status + menu */
-      .chat-header{flex-wrap:nowrap;gap:0;padding:8px 12px;align-items:center}
+      /* Header mobile: linha única */
+      .chat-header{flex-wrap:nowrap;padding:8px 12px;align-items:center;gap:8px}
       .chat-header-left{flex:1;min-width:0}
-      /* Toolbar de ferramentas: linha separada com scroll horizontal */
-      .chat-toolbar{width:100%;overflow-x:auto;flex-wrap:nowrap;padding:6px 12px 6px;border-top:1px solid #f0ece6;background:#fafaf8;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-      .chat-toolbar::-webkit-scrollbar{display:none}
-      .chat-toolbar-wrap{flex-wrap:nowrap;flex-shrink:0}
-      .chat-toolbar .teses-btn{white-space:nowrap;flex-shrink:0;font-size:.72rem;padding:6px 11px}
-      .chat-toolbar .header-divider{display:none}
-      /* Botões Perfil/Nova/Sair: ocultos no header, aparecem no dropdown */
-      .header-action-btn{display:none}
+      /* Esconde toolbar desktop no mobile */
+      .desktop-toolbar{display:none!important}
+      /* Mobile toolbar: faixa separada com scroll */
+      .mobile-toolbar{display:flex;gap:6px;overflow-x:auto;padding:7px 12px;background:#fafaf8;border-bottom:1px solid #ede9e3;scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0}
+      .mobile-toolbar::-webkit-scrollbar{display:none}
+      .mobile-toolbar .teses-btn{white-space:nowrap;flex-shrink:0;font-size:.73rem;padding:6px 12px}
       /* Botão menu mobile */
-      .mobile-menu-btn{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;font-size:1.3rem;color:#666;border-radius:8px;flex-shrink:0;padding:0}
-      .mobile-menu-btn:hover{background:#f3f0eb}
+      .mobile-menu-btn{display:flex!important;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;font-size:1.4rem;color:#555;border-radius:8px;flex-shrink:0;padding:0;line-height:1}
       /* Dropdown mobile */
-      .mobile-menu-dropdown{position:absolute;top:52px;right:12px;background:#fff;border:1px solid #e0dbd4;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:200;min-width:160px;overflow:hidden;display:none}
+      .mobile-menu-dropdown{position:absolute;top:56px;right:12px;background:#fff;border:1px solid #e0dbd4;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:300;min-width:170px;overflow:hidden;display:none}
       .mobile-menu-dropdown.open{display:block}
-      .mobile-menu-item{display:flex;align-items:center;gap:10px;padding:12px 16px;font-size:.85rem;font-weight:500;color:#333;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:background .15s}
+      .mobile-menu-item{display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:.87rem;font-weight:500;color:#333;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:background .15s}
       .mobile-menu-item:hover{background:#f3f0eb}
       .mobile-menu-item.danger{color:#e53935}
       .mobile-menu-item.danger:hover{background:#fef2f2}
@@ -232,6 +229,7 @@
     .teses-btn .btn-icon{font-size:.88rem}
     /* Header actions (Perfil, Nova, Sair) */
     .mobile-menu-btn{display:none}
+    .mobile-toolbar{display:none}
     .mobile-menu-dropdown{display:none}
     .header-action-btn{padding:7px 14px;background:transparent;border:1px solid transparent;border-radius:8px;color:#888;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px}
     .header-action-btn:hover{background:#f3f0eb;color:var(--text);border-color:#e0dbd4}
@@ -566,16 +564,17 @@
           <span class="header-status-txt">Online · Pronto para ajudar</span>
         </div>
       </div>
-      <div class="chat-toolbar" style="display:flex;gap:4px;align-items:center">
+      <!-- Desktop: toolbar inline no header -->
+      <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
-          <button class="teses-btn" onclick="openTesesModal()" title="Gerador de Teses Jurídicas">⚖️ Teses</button>
-          <button class="teses-btn" onclick="openConteudoModal()" title="Monte seu Conteúdo">✍️ Conteúdo</button>
-          <button class="teses-btn" onclick="openPeticaoModal()" title="Construtor de Petição">📄 Petição</button>
-          <button class="teses-btn" onclick="openCalculadoraModal()" title="Calculadora de Honorários">💰 Honorários</button>
-          <button class="teses-btn" onclick="openGame()" title="Simulador de Casos">🎮 Jogo</button>
+          <button class="teses-btn" onclick="openTesesModal()">⚖️ Teses</button>
+          <button class="teses-btn" onclick="openConteudoModal()">✍️ Conteúdo</button>
+          <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
+          <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
+          <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
         </div>
         <div class="header-divider"></div>
-        <button class="header-action-btn" onclick="openProfileModal()" title="Meu Perfil">
+        <button class="header-action-btn" onclick="openProfileModal()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Perfil
         </button>
@@ -583,21 +582,23 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nova
         </button>
-        <button class="header-action-btn danger" onclick="logout()" title="Sair">Sair</button>
-        <!-- Botão menu mobile (só aparece em telas pequenas) -->
-        <button class="mobile-menu-btn" onclick="toggleMobileMenu()" title="Menu">⋮</button>
+        <button class="header-action-btn danger" onclick="logout()">Sair</button>
       </div>
+      <!-- Mobile: botão ⋮ -->
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">⋮</button>
     </header>
+    <!-- Mobile toolbar: linha separada com scroll horizontal -->
+    <div class="mobile-toolbar">
+      <button class="teses-btn" onclick="openTesesModal()">⚖️ Teses</button>
+      <button class="teses-btn" onclick="openConteudoModal()">✍️ Conteúdo</button>
+      <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
+      <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
+      <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
+    </div>
     <!-- Dropdown menu mobile -->
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">👤 Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">✏️ Nova Conversa</button>
-      <div class="mobile-menu-divider"></div>
-      <button class="mobile-menu-item" onclick="openTesesModal();closeMobileMenu()">⚖️ Teses</button>
-      <button class="mobile-menu-item" onclick="openConteudoModal();closeMobileMenu()">✍️ Conteúdo</button>
-      <button class="mobile-menu-item" onclick="openPeticaoModal();closeMobileMenu()">📄 Petição</button>
-      <button class="mobile-menu-item" onclick="openCalculadoraModal();closeMobileMenu()">💰 Honorários</button>
-      <button class="mobile-menu-item" onclick="openGame();closeMobileMenu()">🎮 Jogo</button>
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">🚪 Sair</button>
     </div>
