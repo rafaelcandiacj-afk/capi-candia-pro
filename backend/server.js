@@ -1735,6 +1735,52 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
   }
 });
 
+// ─── TRANSCRIÇÃO DE ÁUDIO (WHISPER) ─────────────────────────
+const audioStorage = multer.diskStorage({
+  destination: UPLOADS_DIR,
+  filename: (req, file, cb) => cb(null, 'audio_' + Date.now() + path.extname(file.originalname))
+});
+const uploadAudio = multer({
+  storage: audioStorage,
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limite Whisper
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.webm', '.mp3', '.mp4', '.wav', '.ogg', '.m4a', '.flac'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext) || file.mimetype.startsWith('audio/') || file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Formato de áudio não suportado'));
+  }
+});
+
+app.post('/api/transcribe', authMiddleware, uploadAudio.single('audio'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Nenhum áudio enviado' });
+  try {
+    const FormData = require('form-data');
+    const fs = require('fs');
+    const form = new FormData();
+    form.append('file', fs.createReadStream(req.file.path), {
+      filename: req.file.originalname || 'audio.webm',
+      contentType: req.file.mimetype || 'audio/webm'
+    });
+    form.append('model', 'whisper-1');
+    form.append('language', 'pt');
+    form.append('response_format', 'json');
+    const axios = require('axios');
+    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', form, {
+      headers: { ...form.getHeaders(), 'Authorization': 'Bearer ' + OPENAI_API_KEY },
+      maxBodyLength: Infinity,
+      timeout: 30000
+    });
+    // Limpar arquivo temporário
+    fs.unlink(req.file.path, () => {});
+    res.json({ text: response.data.text || '' });
+  } catch (e) {
+    console.error('Erro Whisper:', e.response?.data || e.message);
+    // Tentar limpar arquivo mesmo em erro
+    if (req.file) require('fs').unlink(req.file.path, () => {});
+    res.status(500).json({ error: 'Erro ao transcrever áudio: ' + (e.response?.data?.error?.message || e.message) });
+  }
+});
+
 // ─── CHAT COM SUPORTE A DOCUMENTO ─────────────────────────────
 // Extensão do /api/chat para aceitar upload_id
 // (o upload_id é injetado no contexto como documento adicional)
