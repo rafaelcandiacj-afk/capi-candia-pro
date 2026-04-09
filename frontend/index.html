@@ -213,7 +213,7 @@
       /* Botão menu mobile */
       .mobile-menu-btn{display:flex!important;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;font-size:1.4rem;color:#555;border-radius:8px;flex-shrink:0;padding:0;line-height:1}
       /* Dropdown mobile */
-      .mobile-menu-dropdown{position:absolute;top:56px;right:12px;background:#fff;border:1px solid #e0dbd4;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);z-index:300;min-width:170px;overflow:hidden;display:none}
+      .mobile-menu-dropdown{position:fixed;top:56px;right:12px;background:#fff;border:1px solid #e0dbd4;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;min-width:170px;overflow:hidden;display:none}
       .mobile-menu-dropdown.open{display:block}
       .mobile-menu-item{display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:.87rem;font-weight:500;color:#333;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:background .15s}
       .mobile-menu-item:hover{background:#f3f0eb}
@@ -585,7 +585,7 @@
         <button class="header-action-btn danger" onclick="logout()">Sair</button>
       </div>
       <!-- Mobile: botão ⋮ -->
-      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">⋮</button>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu(event)">⋮</button>
     </header>
     <!-- Mobile toolbar: linha separada com scroll horizontal -->
     <div class="mobile-toolbar">
@@ -823,7 +823,7 @@ function logout(){
   convHistory=[];currentConvId=null;showAuth();
 }
 function toggleSidebar(){$('sidebar').classList.toggle('open');}
-function toggleMobileMenu(){var d=$('mobileMenuDropdown');d.classList.toggle('open');}
+function toggleMobileMenu(e){if(e)e.stopPropagation();var d=$('mobileMenuDropdown');d.classList.toggle('open');}
 function closeMobileMenu(){var d=$('mobileMenuDropdown');if(d)d.classList.remove('open');}
 document.addEventListener('click',function(e){var d=$('mobileMenuDropdown');if(d&&d.classList.contains('open')&&!d.contains(e.target)&&!e.target.closest('.mobile-menu-btn')){d.classList.remove('open');}});
 
