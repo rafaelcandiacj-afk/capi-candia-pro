@@ -183,8 +183,10 @@
 
     /* Contextual suggestion chips */
     .ctx-suggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;animation:fadeInUp .3s ease}
-    .ctx-chip{padding:8px 16px;background:#fff;border:1px solid #e0dbd4;border-radius:18px;color:var(--text2);font-size:.82rem;cursor:pointer;transition:var(--trans);box-shadow:0 1px 3px rgba(0,0,0,0.05)}
-    .ctx-chip:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee;transform:translateY(-1px)}
+    .ctx-chip{padding:8px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:18px;color:var(--text2);font-size:.82rem;cursor:pointer;transition:var(--trans);box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+    .ctx-chip:hover{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.08);transform:translateY(-1px)}
+    .ctx-chip.proativo{border-color:rgba(184,134,11,.35);background:rgba(184,134,11,.06);color:var(--text);font-weight:600}
+    .ctx-chip.proativo:hover{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold)}
 
     /* Favorites section in sidebar */
     .fav-section{padding:4px 8px;border-top:1px solid var(--border)}
@@ -1300,13 +1302,21 @@ function appendMessage(role,content,suggestions){
     if(suggestions&&suggestions.length){
       const chipsDiv=document.createElement('div');
       chipsDiv.className='ctx-suggestions';
+      chipsDiv.style.cssText='flex-direction:column;align-items:flex-start;gap:6px';
+      const label=document.createElement('div');
+      label.style.cssText='font-size:.7rem;color:var(--text2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px';
+      label.textContent='⚡ Próximos passos';
+      chipsDiv.appendChild(label);
+      const chipsRow=document.createElement('div');
+      chipsRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
       suggestions.forEach(s=>{
         const chip=document.createElement('button');
-        chip.className='ctx-chip';
+        chip.className='ctx-chip proativo';
         chip.textContent=s;
         chip.onclick=()=>sendSuggestion(chip);
-        chipsDiv.appendChild(chip);
+        chipsRow.appendChild(chip);
       });
+      chipsDiv.appendChild(chipsRow);
       msgContent.appendChild(chipsDiv);
     }
     // Chip "Continuar resposta" se parece cortada

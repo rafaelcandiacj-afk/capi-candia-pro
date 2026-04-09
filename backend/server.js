@@ -1288,11 +1288,18 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: 'Gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) relacionadas à resposta abaixo. Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Pergunta 1?","Pergunta 2?","Pergunta 3?"]' },
-            { role: 'user', content: reply.substring(0, 500) }
+            { role: 'system', content: `Você é a Capi, assistente jurídica estratégica. Analise a conversa jurídica abaixo e gere EXATAMENTE 3 sugestões PROATIVAS e ESTRATÉGICAS de próximos passos para o advogado. 
+As sugestões devem:
+- Antecipar o que ele vai precisar em seguida (ex: se gerou petição → sugerir embargos, recursos, intimação)
+- Ser ações concretas, não perguntas vazias
+- Máximo 9 palavras cada
+- Começar com um verbo de ação (ex: "Gerar", "Montar", "Calcular", "Analisar", "Criar")
+Retorne APENAS um JSON array de strings. Exemplo: ["Gerar os embargos de declaração agora", "Calcular honorários de sucumbência", "Criar script para apresentar ao cliente"]` },
+            { role: 'user', content: \`Pergunta do advogado: "\${messages[messages.length-1]?.content?.substring(0,200)||''}"
+Resposta da Capi: "\${reply.substring(0, 600)}"\` }
           ],
-          temperature: 0.7,
-          max_tokens: 150
+          temperature: 0.6,
+          max_tokens: 200
         })
       });
       if (sugResponse.ok) {
