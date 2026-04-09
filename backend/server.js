@@ -1192,7 +1192,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  const maxTok = isPeticao ? 12000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
+  const maxTok = isPeticao ? 40000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
@@ -1713,7 +1713,7 @@ async function processUploadedFile(file) {
     extractedText = visionData.choices?.[0]?.message?.content || '';
   }
 
-  return extractedText.substring(0, 40000);
+  return extractedText.substring(0, 100000);
 }
 
 // Endpoint único — aceita 1 arquivo (mantém compatibilidade) ou múltiplos via 'files'
