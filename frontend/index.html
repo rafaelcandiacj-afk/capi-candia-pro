@@ -2452,5 +2452,54 @@ init();
   </div>
 </div>
 
+<!-- Banner PWA -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#fff;border-top:2px solid #b8860b;padding:14px 16px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.15);font-family:'Inter',sans-serif">
+  <button onclick="document.getElementById('pwaInstallBanner').style.display='none';localStorage.setItem('pwa_banner_dismissed','1')" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#999;line-height:1">✕</button>
+  <div id="pwaBannerContent"></div>
+</div>
+
+<script>
+(function(){
+  // Não mostra se já instalado ou dispensado
+  if(window.matchMedia('(display-mode: standalone)').matches) return;
+  if(navigator.standalone) return;
+  if(localStorage.getItem('pwa_banner_dismissed')) return;
+
+  var banner = document.getElementById('pwaInstallBanner');
+  var content = document.getElementById('pwaBannerContent');
+  var deferredPrompt = null;
+
+  // Android: captura o evento beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    content.innerHTML = '<div style="display:flex;align-items:center;gap:12px"><img src="/icons/icon-72x72.png" style="width:44px;height:44px;border-radius:10px;border:1px solid #e0dbd4"><div><div style="font-weight:700;font-size:.95rem;color:#1a1a1a;margin-bottom:2px">Instale o app da Capi!</div><div style="font-size:.78rem;color:#666">Acesse mais rápido, sem abrir o browser</div></div><button onclick="installPWA()" style="margin-left:auto;background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap">Instalar</button></div>';
+    banner.style.display = 'block';
+  });
+
+  window.installPWA = function(){
+    if(!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(result){
+      if(result.outcome === 'accepted'){
+        banner.style.display = 'none';
+        localStorage.setItem('pwa_banner_dismissed','1');
+      }
+      deferredPrompt = null;
+    });
+  };
+
+  // iOS Safari: mostra instruções manuais
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isInStandalone = window.navigator.standalone;
+  if(isIOS && !isInStandalone){
+    setTimeout(function(){
+      content.innerHTML = '<div style="text-align:center"><div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px"><img src="/icons/icon-72x72.png" style="width:40px;height:40px;border-radius:10px;border:1px solid #e0dbd4"><div style="font-weight:700;font-size:.95rem;color:#1a1a1a">Instale o app da Capi!</div></div><div style="font-size:.82rem;color:#444;line-height:1.7">Toque em <strong style="color:#007AFF">⬆ Compartilhar</strong> na barra do Safari<br>depois em <strong>"Adicionar à Tela de Início"</strong> 📲</div></div>';
+      banner.style.display = 'block';
+    }, 3000);
+  }
+})();
+</script>
+
 </body>
 </html>
