@@ -1134,10 +1134,36 @@ function appendMessage(role,content,suggestions){
       });
       msgContent.appendChild(chipsDiv);
     }
+    // Chip "Continuar resposta" se parece cortada
+    if(pareceRespotaCortada(content)){
+      const contDiv=document.createElement('div');
+      contDiv.className='ctx-suggestions';
+      const contChip=document.createElement('button');
+      contChip.className='ctx-chip';
+      contChip.innerHTML='▶️ Continuar resposta';
+      contChip.onclick=()=>{
+        contDiv.remove();
+        $('chatInput').value='Continue a resposta do ponto onde parou, sem repetir o que já foi escrito.';
+        sendMessage();
+      };
+      contDiv.appendChild(contChip);
+      msgContent.appendChild(contDiv);
+    }
   }
   wrapper.appendChild(msgContent);
   $('chatMessages').appendChild(wrapper);
   scrollBottom();
+}
+
+function pareceRespotaCortada(text){
+  if(!text || text.length < 200) return false; // resposta curta, nao conta
+  const t = text.trim();
+  // Termina com pontuacao final = ok
+  if(/[.!?"»]$/.test(t)) return false;
+  // Termina com fechamento tipico de peça juridica
+  if(/(Nestes termos|Termos em que|Pede deferimento|respectosamente|Atenciosamente|pela procedencia)[\.\s]*$/i.test(t)) return false;
+  // Se é longa e não termina com pontuação final, provavelmente foi cortada
+  return t.length > 400;
 }
 
 function formatMsg(text){
