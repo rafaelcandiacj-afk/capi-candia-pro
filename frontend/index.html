@@ -1775,31 +1775,62 @@ function enviarPeticao() {
   const prompt =
 `📄 CONSTRUTOR DE PETIÇÃO — ${tipo}
 
-Atue como um estagiário experiente que vai construir esta peça jurídica completa do zero. Siga a estrutura técnica padrão.
+Atue como um estagiário experiente que vai construir esta peça jurídica completa e detalhada. Você é um estagiário sênior com domínio técnico — entregue a peça COMPLETA, sem resumir, sem cortar.
 
 📋 DADOS DO CASO:
 - Tipo de peça: ${tipo}
-- Vara/Juízo: ${vara || 'não informado — use genérico'}
+- Vara/Juízo: ${vara || 'use genérico adequado ao tipo de ação'}
 - Fatos: ${fatos}
 ${provas ? '- Provas disponíveis: ' + provas : ''}
-${pedidos ? '- Pedidos principais: ' + pedidos : ''}
-${obs ? '- Observações extras: ' + obs : ''}
+${pedidos ? '- Pedidos: ' + pedidos : ''}
+${obs ? '- Observações: ' + obs : ''}
 
 📍 DADOS DO ADVOGADO:
-- Local: ${cidade || 'informar cidade/UF'}
-- OAB: ${oab || 'informar número OAB'}
+- Local: ${cidade || '[Cidade/UF]'}
+- OAB: ${oab || '[OAB/UF número]'}
 - Data: ${dataFormatada}
 
-🎯 ENTREGUE a petição completa com:
-1. Endereçamento (Excelentíssimo Senhor Doutor Juiz...)
-2. Qualificação das partes (use [NOME DO CLIENTE], [CPF], [ENDEREÇO] como placeholder onde não informado)
-3. Dos Fatos — narrativa detalhada e persuasiva
-4. Do Direito — fundamentos jurídicos (arts. de lei + doutrina + jurisprudência)
-5. Dos Pedidos — lista numerada, clara e completa
-6. Do Valor da Causa: calcule e informe o valor estimado com base nos fatos
-7. Fechamento: ${cidade || '[Cidade/UF]'}, ${dataFormatada}. Assinatura: [Nome do Advogado] — ${oab || '[OAB/UF número]'}
+🎯 ESTRUTURA OBRIGATÓRIA — entregue TODAS as seções abaixo, sem pular nenhuma:
 
-⚠️ Tom técnico-profissional na peça. Ao finalizar, volte ao modo papi e me diga o que checar antes de protocolar.`;
+EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA [vara/juízo] DA COMARCA DE [cidade]
+
+[NOME DO CLIENTE], [qualificação completa: nacionalidade, estado civil, profissão, CPF: XXX.XXX.XXX-XX, RG: XXXXXX, endereço: [ENDEREÇO]], por seu advogado que esta subscreve, inscrito na OAB/${oab || 'XX'} sob o nº [número], vem respeitosamente perante Vossa Excelência propor a presente
+
+[NOME DA AÇÃO EM MAIÚSCULAS]
+
+em face de [NOME DO RÉU], [qualificação], pelos fatos e fundamentos a seguir expostos:
+
+I — DOS FATOS
+[Narrativa detalhada, cronológica e persuasiva dos fatos. Mínimo 3 parágrafos. Descreva datas, valores, circunstâncias. Mostre a injustiça sofrida pelo cliente de forma clara.]
+
+II — DO DIREITO
+[Fundamentação jurídica completa com:
+- Legislação aplicável (artigos específicos do código/lei)
+- Doutrina (cite autores e obras quando pertinente)
+- Jurisprudência (tendência dos tribunais, súmulas aplicáveis)
+- Cada pedido deve ter sua base legal própria]
+
+III — DOS PEDIDOS
+Diante do exposto, requer a Vossa Excelência:
+a) [primeiro pedido — específico e detalhado];
+b) [segundo pedido];
+c) A produção de todas as provas em direito admitidas, especialmente [liste provas específicas do caso];
+d) A condenação da parte ré ao pagamento das custas processuais e honorários advocatícios, nos termos do art. 85 do CPC;
+e) A concessão dos benefícios da justiça gratuita, caso aplicável.
+
+IV — DO VALOR DA CAUSA
+Dá-se à causa o valor de R$ [calcule com base nos fatos e pedidos], nos termos do art. 292 do CPC.
+
+Termos em que,
+Pede deferimento.
+
+${cidade || '[Cidade/UF]'}, ${dataFormatada}.
+
+[Nome do Advogado]
+OAB/${oab || '[UF número]'}
+
+---
+⚠️ ATENÇÃO: Esta petição foi gerada como base técnica. Ao finalizar, volte ao modo papi e aponte: o que revisar, quais dados preencher e qual é o prazo para protocolo.`;
 
   closePeticaoModal();
   $('chatInput').value = prompt;

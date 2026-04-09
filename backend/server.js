@@ -1183,7 +1183,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  const maxTok = isPeticao ? 4000 : isTese ? 1500 : temDocumento ? 2000 : 900;
+  const maxTok = isPeticao ? 6000 : isTese ? 1500 : temDocumento ? 2000 : 900;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
