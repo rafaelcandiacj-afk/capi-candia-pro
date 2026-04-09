@@ -803,12 +803,51 @@ function renderConvList(convs){
   list.innerHTML=convs.map(c=>`
     <div class="conv-item ${c.id===currentConvId?'active':''}" onclick="loadConversation(${c.id})" id="conv-${c.id}">
       <div class="conv-item-text">
-        <div class="conv-item-title">${c.title}</div>
+        <div class="conv-item-title" ondblclick="renameConversation(event,${c.id},this)" title="Clique duplo para renomear">${escapeHtml(c.title)}</div>
         <div class="conv-item-date">${formatDate(c.updated_at)}</div>
       </div>
       <button class="conv-delete" onclick="deleteConversation(event,${c.id})" title="Apagar">✕</button>
     </div>
   `).join('');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function renameConversation(e, id, titleEl){
+  e.stopPropagation();
+  const currentTitle = titleEl.textContent.trim();
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = currentTitle;
+  inp.maxLength = 80;
+  inp.style.cssText = 'width:100%;font-size:.82rem;font-weight:500;background:var(--bg3);border:1px solid var(--green);border-radius:4px;padding:2px 6px;color:var(--text);outline:none;';
+  titleEl.replaceWith(inp);
+  inp.focus();
+  inp.select();
+  const save = async () => {
+    const newTitle = inp.value.trim() || currentTitle;
+    const token = localStorage.getItem('capi_token');
+    try {
+      await fetch('/api/conversations/'+id+'/title', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+      });
+    } catch(err) { console.error(err); }
+    const newEl = document.createElement('div');
+    newEl.className = 'conv-item-title';
+    newEl.title = 'Clique duplo para renomear';
+    newEl.ondblclick = (ev) => renameConversation(ev, id, newEl);
+    newEl.textContent = newTitle;
+    inp.replaceWith(newEl);
+  };
+  inp.addEventListener('blur', save);
+  inp.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); }
+    if (ev.key === 'Escape') { inp.value = currentTitle; inp.blur(); }
+  });
 }
 
 async function loadConversation(id){
