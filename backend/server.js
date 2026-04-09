@@ -1049,6 +1049,15 @@ app.delete('/api/conversations/:id', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+app.patch('/api/conversations/:id/title', authMiddleware, (req, res) => {
+  const { title } = req.body;
+  if (!title || !title.trim()) return res.status(400).json({ error: 'Título inválido' });
+  const conv = db.prepare('SELECT * FROM conversations WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
+  db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(title.trim().substring(0, 80), req.params.id);
+  res.json({ success: true, title: title.trim().substring(0, 80) });
+});
+
 // ─── CHAT COM RAG ─────────────────────────────────────────────
 app.post('/api/chat', authMiddleware, async (req, res) => {
   const { messages, conversation_id, upload_id, upload_ids } = req.body;
@@ -2384,3 +2393,4 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
+
