@@ -1360,12 +1360,8 @@ async function handleConvUpload(input){
     $('chatInput').focus();
     showToast('✅ ' + files.length + ' arquivo(s) anexado(s)! Digite sua pergunta.');
   }catch(e){showToast('❌ '+e.message);}
-  // Reset completo do input para permitir selecionar o mesmo arquivo de novo
+  // Reset do input para permitir selecionar o mesmo arquivo de novo
   input.value='';
-  // Recria o input para garantir que o onchange dispare sempre
-  const newInput = input.cloneNode(true);
-  newInput.addEventListener('change', function(){ handleConvUpload(this); });
-  input.parentNode.replaceChild(newInput, input);
 }
 
 function removeUpload(btn, uploadId){
