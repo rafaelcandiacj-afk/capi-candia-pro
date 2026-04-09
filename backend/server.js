@@ -1263,16 +1263,18 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     // TAREFA 3 — Gerar sugestões contextuais de follow-up
     let suggestions = [];
     try {
+      // Montar mini-histórico recente para contexto das sugestões
+      const recentHistory = messages.slice(-4).map(m => `${m.role === 'user' ? 'Usuário' : 'Capi'}: ${m.content.substring(0, 200)}`).join('\n');
       const sugResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: 'Gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) relacionadas à resposta abaixo. Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Pergunta 1?","Pergunta 2?","Pergunta 3?"]' },
-            { role: 'user', content: reply.substring(0, 500) }
+            { role: 'system', content: `Você é assistente da Capi, IA jurídica para advogados brasileiros. Com base no histórico da conversa e na última resposta, gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) que façam sentido como próximo passo natural. REGRAS: 1) Nunca sugira perguntas sobre informações que o usuário já forneceu no histórico. 2) As sugestões devem ser ações concretas ou aprofundamentos do tema atual. 3) Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Como montar a estratégia processual?","Qual o prazo para entrar com o pedido?","Quero ver a tese completa"]` },
+            { role: 'user', content: `Histórico recente:\n${recentHistory}\n\nÚltima resposta da Capi:\n${reply.substring(0, 600)}` }
           ],
-          temperature: 0.7,
+          temperature: 0.6,
           max_tokens: 150
         })
       });
