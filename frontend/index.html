@@ -394,6 +394,8 @@
     .onboarding-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--trans);margin-top:16px}
     .onboarding-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
     .onboarding-btn:disabled{opacity:.5;cursor:not-allowed}
+    .area-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;user-select:none}
+    .area-chip.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:600}
 
     /* ── CONSTRUTOR DE PETIÇÃO MODAL ── */
     .pet-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(184,134,11,.12);border:1px solid rgba(184,134,11,.25);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--gold);font-weight:600;margin-bottom:16px}
@@ -504,18 +506,19 @@
     <div id="obStep2" class="onboarding-step hidden">
       <div class="onboarding-step-title">Pergunta <span>2/3</span></div>
       <div class="form-group">
-        <label>Em qual área do Direito você atua?</label>
-        <select id="ob_area" class="form-select" onchange="obValidate(2)">
-          <option value="">Selecione...</option>
-          <option value="Direito de Família">Direito de Família</option>
-          <option value="Previdenciário">Previdenciário</option>
-          <option value="Trabalhista">Trabalhista</option>
-          <option value="Criminal">Criminal</option>
-          <option value="Tributário">Tributário</option>
-          <option value="Empresarial">Empresarial</option>
-          <option value="Cível">Cível</option>
-          <option value="Outra">Outra</option>
-        </select>
+        <label style="display:block;margin-bottom:12px">Em qual área do Direito você atua? <span style="font-size:.78rem;opacity:.6">(pode marcar mais de uma)</span></label>
+        <div id="ob_area_chips" style="display:flex;flex-wrap:wrap;gap:8px">
+          <div class="area-chip" data-value="Direito de Família" onclick="toggleAreaChip(this)">👨‍👩‍👧 Família</div>
+          <div class="area-chip" data-value="Previdenciário" onclick="toggleAreaChip(this)">🏛️ Previdenciário</div>
+          <div class="area-chip" data-value="Trabalhista" onclick="toggleAreaChip(this)">⚖️ Trabalhista</div>
+          <div class="area-chip" data-value="Criminal" onclick="toggleAreaChip(this)">🔒 Criminal</div>
+          <div class="area-chip" data-value="Tributário" onclick="toggleAreaChip(this)">💰 Tributário</div>
+          <div class="area-chip" data-value="Empresarial" onclick="toggleAreaChip(this)">🏢 Empresarial</div>
+          <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">📋 Cível</div>
+          <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">🛒 Consumidor</div>
+          <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">🏠 Imobiliário</div>
+          <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">➕ Outra</div>
+        </div>
       </div>
       <button class="onboarding-btn" id="obNext2" onclick="obNext(2)" disabled>Próximo →</button>
     </div>
@@ -1905,18 +1908,24 @@ function obNext(step) {
 
 async function finishOnboarding() {
   const nome = $('ob_nome').value.trim();
-  const area = $('ob_area').value;
+  const area = getSelectedAreas().join(', ');
   const anos = $('ob_anos').value;
   $('obNext3').disabled = true;
   $('obNext3').textContent = 'Preparando...';
-  try {
-    const token = localStorage.getItem('capi_token');
-    await fetch('/api/profile', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ nome: nome, area: area, anos_experiencia: anos })
-    });
-  } catch (e) { console.error(e); }
+  // Tenta salvar no servidor até 3x para garantir que ficou salvo
+  const token = localStorage.getItem('capi_token');
+  let saved = false;
+  for(let i=0; i<3; i++){
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ nome: nome, area: area, anos_experiencia: anos })
+      });
+      if(res.ok){ saved = true; break; }
+    } catch (e) { await new Promise(r=>setTimeout(r,500)); }
+  }
+  // Marca localmente independente (servidor é a fonte de verdade)
   localStorage.setItem('capi_onboarded', '1');
   $('onboardingScreen').classList.add('hidden');
   showChat(onboardingUser);
