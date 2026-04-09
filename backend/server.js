@@ -820,7 +820,7 @@ function cosineSimilarity(a, b) {
 }
 
 // Busca os chunks mais relevantes para uma query
-async function searchKnowledge(query, topK = 5) {
+async function searchKnowledge(query, topK = 8) {
   const chunks = db.prepare('SELECT kc.id, kc.content, kc.embedding, kf.original_name FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id WHERE kf.status = ? AND kc.embedding IS NOT NULL').all('ready');
   
   if (chunks.length === 0) return [];
@@ -1192,7 +1192,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  const maxTok = isPeticao ? 6000 : isTese ? 1500 : temDocumento ? 2000 : 900;
+  const maxTok = isPeticao ? 12000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
@@ -1205,7 +1205,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4.1',
-          messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-10)],
+          messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
           temperature: 0.75,
           max_tokens: maxTok
         }),
@@ -1263,18 +1263,16 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
     // TAREFA 3 — Gerar sugestões contextuais de follow-up
     let suggestions = [];
     try {
-      // Montar mini-histórico recente para contexto das sugestões
-      const recentHistory = messages.slice(-4).map(m => `${m.role === 'user' ? 'Usuário' : 'Capi'}: ${m.content.substring(0, 200)}`).join('\n');
       const sugResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: `Você é assistente da Capi, IA jurídica para advogados brasileiros. Com base no histórico da conversa e na última resposta, gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) que façam sentido como próximo passo natural. REGRAS: 1) Nunca sugira perguntas sobre informações que o usuário já forneceu no histórico. 2) As sugestões devem ser ações concretas ou aprofundamentos do tema atual. 3) Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Como montar a estratégia processual?","Qual o prazo para entrar com o pedido?","Quero ver a tese completa"]` },
-            { role: 'user', content: `Histórico recente:\n${recentHistory}\n\nÚltima resposta da Capi:\n${reply.substring(0, 600)}` }
+            { role: 'system', content: 'Gere exatamente 3 perguntas curtas de follow-up (máximo 8 palavras cada) relacionadas à resposta abaixo. Retorne APENAS um JSON array de strings, sem markdown. Exemplo: ["Pergunta 1?","Pergunta 2?","Pergunta 3?"]' },
+            { role: 'user', content: reply.substring(0, 500) }
           ],
-          temperature: 0.6,
+          temperature: 0.7,
           max_tokens: 150
         })
       });
@@ -1662,7 +1660,7 @@ async function extractPdfText(filePath) {
             { type: 'text', text: 'Transcreva integralmente todo o texto deste documento jurídico. Mantenha a estrutura original, incluindo cabeçalhos, parágrafos, numerações e dados. Não omita nenhuma parte.' },
             { type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } }
           ]}],
-          max_tokens: 3000
+          max_tokens: 6000
         })
       });
       const vd = await visionResp.json();
@@ -1708,14 +1706,14 @@ async function processUploadedFile(file) {
           { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente.' },
           { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
         ]}],
-        max_tokens: 2000
+        max_tokens: 5000
       })
     });
     const visionData = await visionResp.json();
     extractedText = visionData.choices?.[0]?.message?.content || '';
   }
 
-  return extractedText.substring(0, 15000);
+  return extractedText.substring(0, 40000);
 }
 
 // Endpoint único — aceita 1 arquivo (mantém compatibilidade) ou múltiplos via 'files'

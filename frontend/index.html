@@ -42,6 +42,23 @@
       --green-dim:  rgba(184,134,11,0.10);
       --green-glow: rgba(184,134,11,0.18);
     }
+    /* MODO ESCURO */
+    body.dark-mode {
+      --bg:     #0d0d0d;
+      --bg2:    #161616;
+      --bg3:    #1e1e1e;
+      --text:   #e8e4de;
+      --text2:  #a09890;
+      --border: #2a2a2a;
+      --gold:   #d4a017;
+    }
+    body.dark-mode .sidebar{background:#111;border-color:#222}
+    body.dark-mode .chat-header{background:#111;border-color:#222}
+    body.dark-mode .chat-input-area{background:#111;border-color:#222}
+    body.dark-mode .message.user .message-bubble{background:#1a1a1a;border-color:#333}
+    body.dark-mode .auth-card{background:#111;border-color:#222}
+    body.dark-mode .onboarding-screen{background:#0d0d0d}
+    body.dark-mode .mobile-toolbar{background:#111;border-color:#222}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;min-height:var(--app-height,100vh);overflow:hidden}
     #particles-bg{display:none}
@@ -394,6 +411,9 @@
     .onboarding-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--trans);margin-top:16px}
     .onboarding-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
     .onboarding-btn:disabled{opacity:.5;cursor:not-allowed}
+    /* Drag & Drop */
+    .drag-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(184,134,11,.18);border:3px dashed var(--gold);pointer-events:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:1.3rem;font-weight:700;color:var(--gold);backdrop-filter:blur(2px)}
+    .drag-overlay.active{display:flex}
     .area-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;user-select:none}
     .area-chip.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:600}
 
@@ -568,6 +588,7 @@
           <div class="user-name-s" id="sidebarName">—</div>
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
+        <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px">🌙</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
     </div>
@@ -618,6 +639,7 @@
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">👤 Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">✏️ Nova Conversa</button>
+      <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">🚪 Sair</button>
     </div>
@@ -734,6 +756,33 @@ async function init(){
 
 // Garante que o botão habilita assim que o chatInput receber qualquer entrada
 // (fix para casos onde o listener do init não captura o primeiro input)
+// ── DRAG & DROP ──
+document.addEventListener('dragover', function(e){
+  e.preventDefault();
+  if(document.getElementById('chatMessages') && !document.getElementById('chatMessages').closest('.hidden')){
+    document.getElementById('dragOverlay').classList.add('active');
+  }
+});
+document.addEventListener('dragleave', function(e){
+  if(!e.relatedTarget || e.relatedTarget === document.documentElement){
+    document.getElementById('dragOverlay').classList.remove('active');
+  }
+});
+document.addEventListener('drop', function(e){
+  e.preventDefault();
+  document.getElementById('dragOverlay').classList.remove('active');
+  const files = e.dataTransfer.files;
+  if(!files.length) return;
+  // Cria um input file temporário e dispara o handler
+  const dt = new DataTransfer();
+  Array.from(files).forEach(f => dt.items.add(f));
+  const fakeInput = document.createElement('input');
+  fakeInput.type = 'file';
+  fakeInput.multiple = true;
+  Object.defineProperty(fakeInput, 'files', { value: dt.files });
+  handleConvUpload(fakeInput);
+});
+
 // Registra Service Worker (PWA)
 if('serviceWorker' in navigator){
   window.addEventListener('load', function(){
@@ -864,6 +913,21 @@ function showChat(user){
   loadFavorites();
   setTimeout(loadNotifications,1500);
 }
+function toggleDarkMode(){
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('capi_dark_mode', isDark ? '1' : '0');
+  const btn = document.getElementById('darkModeBtn');
+  if(btn) btn.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Escuro';
+  const sideBtn = document.getElementById('darkModeBtnSidebar');
+  if(sideBtn) sideBtn.textContent = isDark ? '☀️' : '🌙';
+}
+// Aplica dark mode salvo
+(function(){
+  if(localStorage.getItem('capi_dark_mode') === '1'){
+    document.body.classList.add('dark-mode');
+  }
+})();
+
 function logout(){
   localStorage.removeItem('capi_token');localStorage.removeItem('capi_user');
   convHistory=[];currentConvId=null;showAuth();
@@ -2516,6 +2580,11 @@ init();
       <button class="btn-primary" onclick="calcularHonorarios()">💰 Calcular Honorários</button>
     </div>
   </div>
+</div>
+
+<!-- Drag & Drop Overlay -->
+<div id="dragOverlay" class="drag-overlay">
+  📎 Solte o arquivo aqui para enviar
 </div>
 
 <!-- Banner PWA -->
