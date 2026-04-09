@@ -698,7 +698,22 @@ async function init(){
       const res=await fetch('/api/conversations',{headers:{'Authorization':'Bearer '+token}});
       if(res.ok){
         if(!localStorage.getItem('capi_onboarded')){
-          showOnboarding(user);
+          // Verifica no servidor se o usuário já tem perfil (novo dispositivo)
+          try{
+            const profileRes=await fetch('/api/profile',{headers:{'Authorization':'Bearer '+token}});
+            if(profileRes.ok){
+              const profileData=await profileRes.json();
+              // Se já tem perfil salvo no servidor, pula o onboarding
+              if(profileData && profileData.nome){
+                localStorage.setItem('capi_onboarded','1');
+                showChat(user); loadConversations();
+              } else {
+                showOnboarding(user);
+              }
+            } else {
+              showOnboarding(user);
+            }
+          }catch(e){ showOnboarding(user); }
         } else {
           showChat(user); loadConversations();
         }
