@@ -2911,7 +2911,8 @@ app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
 </body>
 </html>`;
 
-    return res.json({ html });
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(html);
   } catch (err) {
     console.error('Erro /api/peca/exportar:', err);
     return res.status(500).json({ error: 'Erro interno ao exportar peça' });
