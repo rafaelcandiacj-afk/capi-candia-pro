@@ -481,6 +481,37 @@
     .pet-hint{font-size:.78rem;color:var(--text2);margin-top:5px;opacity:.8;line-height:1.5}
 
     /* ── FEATURE 1: BUSCA DE CONVERSAS ── */
+    /* ── PROJETOS ── */
+    .projects-section{padding:4px 8px;border-bottom:1px solid var(--border)}
+    .projects-header{display:flex;align-items:center;justify-content:space-between;padding:6px 4px 4px}
+    .projects-label{font-size:.7rem;font-weight:700;color:var(--text2);letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:4px}
+    .btn-new-project{background:none;border:none;color:var(--gold);cursor:pointer;font-size:.85rem;padding:2px 6px;border-radius:4px;transition:var(--trans);line-height:1}
+    .btn-new-project:hover{background:rgba(184,134,11,.12)}
+    .project-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:var(--trans);margin-bottom:2px;position:relative}
+    .project-item:hover{background:var(--bg3)}
+    .project-item.active{background:rgba(184,134,11,.1);border:1px solid rgba(184,134,11,.25)}
+    .project-item .pi-icon{font-size:1.1rem;flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:6px}
+    .project-item.active .pi-icon{background:rgba(184,134,11,.15)}
+    .project-item .pi-info{flex:1;min-width:0}
+    .project-item .pi-name{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .project-item .pi-count{font-size:.65rem;color:var(--text-muted)}
+    .project-item .pi-actions{display:none;gap:2px}
+    .project-item:hover .pi-actions{display:flex}
+    .project-item .pi-actions button{background:none;border:none;cursor:pointer;font-size:.7rem;padding:2px 4px;color:var(--text-muted);border-radius:3px;transition:var(--trans)}
+    .project-item .pi-actions button:hover{background:var(--bg3);color:var(--text)}
+    .project-convs{padding-left:12px;margin-bottom:6px}
+    .project-conv-item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:var(--trans);margin-bottom:1px}
+    .project-conv-item:hover{background:var(--bg3);color:var(--text)}
+    .project-conv-item.active{background:rgba(184,134,11,.08);color:var(--gold);font-weight:600}
+    .project-conv-item .pci-dot{width:4px;height:4px;border-radius:50%;background:var(--border2);flex-shrink:0}
+    .project-conv-item.active .pci-dot{background:var(--gold)}
+    .project-conv-item .pci-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .project-conv-item .pci-del{display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.7rem;padding:0 2px}
+    .project-conv-item:hover .pci-del{display:block}
+    .project-back-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:.78rem;color:var(--gold);cursor:pointer;border:none;background:none;font-weight:600;transition:var(--trans);width:100%}
+    .project-back-btn:hover{background:rgba(184,134,11,.08);border-radius:6px}
+    body.dark-mode .project-item:hover{background:#1a1a1a}
+    body.dark-mode .project-item.active{background:rgba(184,134,11,.12);border-color:rgba(184,134,11,.3)}
     .conv-search-wrap{padding:0 8px 6px}
     .conv-search-input{width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans','Inter',sans-serif;font-size:.8rem;outline:none;transition:var(--trans)}
     .conv-search-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim)}
@@ -729,7 +760,16 @@ if(window.visualViewport){
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nova conversa
     </button>
+    <!-- Projetos -->
+    <div class="projects-section" id="projectsSection">
+      <div class="projects-header">
+        <span class="projects-label">📂 Projetos</span>
+        <button class="btn-new-project" onclick="openNewProjectModal()" title="Novo projeto">+</button>
+      </div>
+      <div id="projectsList"></div>
+    </div>
     <!-- Feature 1: Busca de conversas -->
+    <div id="convSectionHeader" style="padding:4px 12px 0;font-size:.65rem;font-weight:700;color:var(--text-muted);letter-spacing:.1em;text-transform:uppercase">💬 CONVERSAS</div>
     <div class="conv-search-wrap">
       <input type="text" id="convSearchInput" class="conv-search-input" placeholder="🔍 Buscar conversas..." oninput="filterConversations(this.value)">
     </div>
@@ -915,7 +955,7 @@ async function init(){
               // Se já tem perfil salvo no servidor, pula o onboarding
               if(profileData && profileData.nome){
                 localStorage.setItem('capi_onboarded','1');
-                showChat(user); loadConversations();
+                showChat(user); loadConversations(); loadProjects();
               } else {
                 showOnboarding(user);
               }
@@ -924,7 +964,7 @@ async function init(){
             }
           }catch(e){ showOnboarding(user); }
         } else {
-          showChat(user); loadConversations();
+          showChat(user); loadConversations(); loadProjects();
         }
       }
       else{ localStorage.removeItem('capi_token'); localStorage.removeItem('capi_user'); showAuth(); }
@@ -1019,7 +1059,7 @@ async function handleAuth(e){
     if(!localStorage.getItem('capi_onboarded')){
       showOnboarding(data.user);
     } else {
-      showChat(data.user); loadConversations();
+      showChat(data.user); loadConversations(); loadProjects();
     }
   }catch(err){showErr(err.message);}
   finally{$('authBtn').disabled=false;$('authBtn').textContent='Entrar';}
@@ -1715,6 +1755,189 @@ function handleKey(e){
 }
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
 
+
+// ── PROJETOS ──────────────────────────────────────────────────
+let _projects = [];
+let _activeProjectId = null;
+let _editingProjectId = null;
+let _expandedProjects = JSON.parse(localStorage.getItem('capi_expanded_projects')||'[]');
+
+async function loadProjects(){
+  const token = localStorage.getItem('capi_token');
+  try {
+    const res = await fetch('/api/projects', {headers:{'Authorization':'Bearer '+token}});
+    if(!res.ok) return;
+    _projects = await res.json();
+    renderProjects();
+  } catch(e){ console.error(e); }
+}
+
+function renderProjects(){
+  const list = $('projectsList');
+  if(!_projects.length){
+    list.innerHTML = '<div style="font-size:.72rem;color:var(--text-muted);padding:4px 10px 8px;opacity:.7">Nenhum projeto ainda</div>';
+    return;
+  }
+  list.innerHTML = _projects.map(p => {
+    const isExpanded = _expandedProjects.includes(p.id);
+    return `
+      <div class="project-item ${_activeProjectId===p.id?'active':''}" onclick="toggleProject(${p.id})" id="proj-${p.id}">
+        <div class="pi-icon">${p.icon||'📁'}</div>
+        <div class="pi-info">
+          <div class="pi-name">${escapeHtml(p.name)}</div>
+          <div class="pi-count">${p.conv_count||0} conversa${(p.conv_count||0)!==1?'s':''}</div>
+        </div>
+        <div class="pi-actions">
+          <button onclick="event.stopPropagation();editProject(${p.id})" title="Editar">✏️</button>
+          <button onclick="event.stopPropagation();deleteProject(${p.id})" title="Excluir">✕</button>
+        </div>
+      </div>
+      <div class="project-convs" id="proj-convs-${p.id}" style="display:${isExpanded?'block':'none'}"></div>
+    `;
+  }).join('');
+  _expandedProjects.forEach(pid => {
+    if(_projects.find(p=>p.id===pid)) loadProjectConvs(pid);
+  });
+}
+
+async function toggleProject(id){
+  const idx = _expandedProjects.indexOf(id);
+  if(idx >= 0){
+    _expandedProjects.splice(idx, 1);
+    const el = $('proj-convs-'+id);
+    if(el) el.style.display = 'none';
+  } else {
+    _expandedProjects.push(id);
+    const el = $('proj-convs-'+id);
+    if(el) el.style.display = 'block';
+    await loadProjectConvs(id);
+  }
+  localStorage.setItem('capi_expanded_projects', JSON.stringify(_expandedProjects));
+}
+
+async function loadProjectConvs(projectId){
+  const token = localStorage.getItem('capi_token');
+  try {
+    const res = await fetch('/api/projects/'+projectId+'/conversations', {headers:{'Authorization':'Bearer '+token}});
+    if(!res.ok) return;
+    const convs = await res.json();
+    const container = $('proj-convs-'+projectId);
+    if(!container) return;
+    let html = `<button class="project-conv-item" onclick="event.stopPropagation();newConversationInProject(${projectId})" style="color:var(--gold);font-weight:600">
+      <span style="font-size:.8rem">+</span> <span class="pci-title">Nova conversa</span>
+    </button>`;
+    html += convs.map(c => `
+      <div class="project-conv-item ${c.id===currentConvId?'active':''}" onclick="event.stopPropagation();loadConversation(${c.id})">
+        <span class="pci-dot"></span>
+        <span class="pci-title">${escapeHtml(c.title)}</span>
+        <button class="pci-del" onclick="event.stopPropagation();deleteConversation(event,${c.id})" title="Apagar">✕</button>
+      </div>
+    `).join('');
+    container.innerHTML = html;
+  } catch(e){ console.error(e); }
+}
+
+async function newConversationInProject(projectId){
+  const token = localStorage.getItem('capi_token');
+  try {
+    const res = await fetch('/api/projects/'+projectId+'/conversations', {
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+      body: JSON.stringify({title:'Nova conversa'})
+    });
+    const data = await res.json();
+    currentConvId = data.id;
+    _activeProjectId = projectId;
+    convHistory = [];
+    newConversationUI();
+    if(!_expandedProjects.includes(projectId)){
+      _expandedProjects.push(projectId);
+      localStorage.setItem('capi_expanded_projects', JSON.stringify(_expandedProjects));
+    }
+    await loadProjectConvs(projectId);
+    await loadProjects();
+    if(window.innerWidth<=768) $('sidebar').classList.remove('open');
+  } catch(e){ showToast('❌ Erro ao criar conversa'); }
+}
+
+function pickProjIcon(btn){
+  document.querySelectorAll('.proj-icon-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function openNewProjectModal(){
+  _editingProjectId = null;
+  $('projectModalTitle').textContent = '📂 Novo Projeto';
+  $('projName').value = '';
+  $('projDesc').value = '';
+  $('projContext').value = '';
+  document.querySelectorAll('.proj-icon-opt').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.proj-icon-opt[data-icon="📁"]').classList.add('selected');
+  $('projSaveBtn').textContent = 'Criar Projeto';
+  $('projectModal').classList.remove('hidden');
+  setTimeout(()=>$('projName').focus(), 200);
+}
+
+function editProject(id){
+  const p = _projects.find(pr => pr.id === id);
+  if(!p) return;
+  _editingProjectId = id;
+  $('projectModalTitle').textContent = '✏️ Editar Projeto';
+  $('projName').value = p.name;
+  $('projDesc').value = p.description || '';
+  $('projContext').value = p.context_note || '';
+  document.querySelectorAll('.proj-icon-opt').forEach(b => {
+    b.classList.toggle('selected', b.dataset.icon === (p.icon||'📁'));
+  });
+  $('projSaveBtn').textContent = 'Salvar Alterações';
+  $('projectModal').classList.remove('hidden');
+  setTimeout(()=>$('projName').focus(), 200);
+}
+
+async function saveProject(){
+  const name = $('projName').value.trim();
+  if(!name){ showToast('⚠️ Digite um nome para o projeto'); return; }
+  const icon = document.querySelector('.proj-icon-opt.selected')?.dataset?.icon || '📁';
+  const description = $('projDesc').value.trim();
+  const context_note = $('projContext').value.trim();
+  const token = localStorage.getItem('capi_token');
+  
+  try {
+    if(_editingProjectId){
+      await fetch('/api/projects/'+_editingProjectId, {
+        method:'PATCH',
+        headers:{'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+        body: JSON.stringify({name, icon, description, context_note})
+      });
+      showToast('✅ Projeto atualizado!');
+    } else {
+      await fetch('/api/projects', {
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token, 'Content-Type':'application/json'},
+        body: JSON.stringify({name, icon, description, context_note})
+      });
+      showToast('✅ Projeto criado!');
+    }
+    $('projectModal').classList.add('hidden');
+    await loadProjects();
+  } catch(e){ showToast('❌ Erro: '+e.message); }
+}
+
+async function deleteProject(id){
+  const p = _projects.find(pr => pr.id === id);
+  if(!p) return;
+  if(!confirm('Excluir o projeto "'+p.name+'"?\nAs conversas NÃO serão apagadas, apenas desvinculadas.')) return;
+  const token = localStorage.getItem('capi_token');
+  try {
+    await fetch('/api/projects/'+id, {method:'DELETE', headers:{'Authorization':'Bearer '+token}});
+    if(_activeProjectId === id) _activeProjectId = null;
+    _expandedProjects = _expandedProjects.filter(pid => pid !== id);
+    localStorage.setItem('capi_expanded_projects', JSON.stringify(_expandedProjects));
+    showToast('✅ Projeto excluído');
+    await loadProjects();
+    await loadConversations();
+  } catch(e){ showToast('❌ Erro ao excluir'); }
+}
 
 // ── ESTADO GLOBAL EXTRA ──────────────────────────────────────
 let pendingUploadIds = [];
@@ -3838,6 +4061,46 @@ init();
     </div>
     <div id="minhasPecasBody" style="overflow-y:auto;padding:20px;flex:1;display:flex;flex-direction:column;gap:12px">
       <div style="text-align:center;color:var(--text2);padding:40px 0">⏳ Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Projeto -->
+<div class="modal-overlay hidden" id="projectModal">
+  <div class="modal-box" style="max-width:440px">
+    <button class="modal-close" onclick="$('projectModal').classList.add('hidden')">✕</button>
+    <div class="modal-title" id="projectModalTitle">📂 Novo Projeto</div>
+    <div class="form-group">
+      <label>NOME DO PROJETO</label>
+      <input type="text" class="form-input" id="projName" placeholder="Ex: Escritório Silva & Associados" maxlength="80">
+    </div>
+    <div class="form-group">
+      <label>ÍCONE (emoji)</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="projIconPicker">
+        <button type="button" class="area-chip proj-icon-opt selected" data-icon="📁" onclick="pickProjIcon(this)">📁</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="⚖️" onclick="pickProjIcon(this)">⚖️</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="🏢" onclick="pickProjIcon(this)">🏢</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="👤" onclick="pickProjIcon(this)">👤</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="💼" onclick="pickProjIcon(this)">💼</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="📚" onclick="pickProjIcon(this)">📚</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="🛡️" onclick="pickProjIcon(this)">🛡️</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="📈" onclick="pickProjIcon(this)">📈</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="🎯" onclick="pickProjIcon(this)">🎯</button>
+        <button type="button" class="area-chip proj-icon-opt" data-icon="⭐" onclick="pickProjIcon(this)">⭐</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>DESCRIÇÃO (opcional)</label>
+      <input type="text" class="form-input" id="projDesc" placeholder="Ex: Casos trabalhistas do cliente X" maxlength="500">
+    </div>
+    <div class="form-group">
+      <label>INSTRUÇÕES PARA A CAPI (opcional)</label>
+      <textarea class="form-input" id="projContext" rows="3" placeholder="Ex: Foque em direito trabalhista. O cliente é empregador, use linguagem formal." maxlength="2000" style="resize:vertical"></textarea>
+      <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px">💡 A Capi usará este contexto em todas as conversas deste projeto</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn-sm" onclick="$('projectModal').classList.add('hidden')" style="flex:1">Cancelar</button>
+      <button class="onboarding-btn" id="projSaveBtn" onclick="saveProject()" style="flex:2;margin:0;padding:10px">Criar Projeto</button>
     </div>
   </div>
 </div>

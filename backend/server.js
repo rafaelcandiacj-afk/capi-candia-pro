@@ -1086,12 +1086,14 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 // ─── CONVERSAS ────────────────────────────────────────────────
 app.get('/api/conversations', authMiddleware, (req, res) => {
+  // Se ?all=1, retorna todas; senão só as soltas (sem projeto)
+  const includeAll = req.query.all === '1';
   const convs = db.prepare(`
-    SELECT c.id, c.title, c.created_at, c.updated_at,
+    SELECT c.id, c.title, c.created_at, c.updated_at, c.project_id,
            COUNT(m.id) as message_count
     FROM conversations c
     LEFT JOIN messages m ON m.conversation_id = c.id
-    WHERE c.user_id = ?
+    WHERE c.user_id = ? ${includeAll ? '' : 'AND (c.project_id IS NULL OR c.project_id = 0)'}
     GROUP BY c.id
     ORDER BY c.updated_at DESC
     LIMIT 50
@@ -1127,6 +1129,88 @@ app.patch('/api/conversations/:id/title', authMiddleware, (req, res) => {
   if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
   db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(title.trim().substring(0, 80), req.params.id);
   res.json({ success: true, title: title.trim().substring(0, 80) });
+});
+
+// ─── PROJETOS ─────────────────────────────────────────────────
+app.get('/api/projects', authMiddleware, (req, res) => {
+  const projects = db.prepare(`
+    SELECT p.*, 
+           (SELECT COUNT(*) FROM conversations c WHERE c.project_id = p.id AND c.user_id = ?) as conv_count
+    FROM projects p 
+    WHERE p.user_id = ? 
+    ORDER BY p.updated_at DESC
+  `).all(req.user.id, req.user.id);
+  res.json(projects);
+});
+
+app.post('/api/projects', authMiddleware, (req, res) => {
+  const { name, description, icon, context_note } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Nome do projeto é obrigatório' });
+  const result = db.prepare(
+    'INSERT INTO projects (user_id, name, description, icon, context_note) VALUES (?, ?, ?, ?, ?)'
+  ).run(req.user.id, name.trim(), description || '', icon || '📁', context_note || '');
+  res.json({ id: result.lastInsertRowid, name: name.trim(), description: description || '', icon: icon || '📁', context_note: context_note || '' });
+});
+
+app.patch('/api/projects/:id', authMiddleware, (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+  const { name, description, icon, context_note } = req.body;
+  if (name !== undefined) db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(name.trim().substring(0, 80), req.params.id);
+  if (description !== undefined) db.prepare('UPDATE projects SET description = ? WHERE id = ?').run(description.substring(0, 500), req.params.id);
+  if (icon !== undefined) db.prepare('UPDATE projects SET icon = ? WHERE id = ?').run(icon, req.params.id);
+  if (context_note !== undefined) db.prepare('UPDATE projects SET context_note = ? WHERE id = ?').run(context_note.substring(0, 2000), req.params.id);
+  db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+app.delete('/api/projects/:id', authMiddleware, (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+  // Desvincula conversas (não apaga, só remove o vínculo)
+  db.prepare('UPDATE conversations SET project_id = NULL WHERE project_id = ? AND user_id = ?').run(req.params.id, req.user.id);
+  db.prepare('DELETE FROM projects WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Mover conversa para dentro/fora de um projeto
+app.patch('/api/conversations/:id/project', authMiddleware, (req, res) => {
+  const conv = db.prepare('SELECT * FROM conversations WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
+  const { project_id } = req.body;
+  // project_id = null para remover do projeto
+  if (project_id) {
+    const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(project_id, req.user.id);
+    if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+  }
+  db.prepare('UPDATE conversations SET project_id = ? WHERE id = ?').run(project_id || null, req.params.id);
+  res.json({ success: true });
+});
+
+// Criar conversa já dentro de um projeto
+app.post('/api/projects/:id/conversations', authMiddleware, (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+  const { title } = req.body;
+  const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, title || 'Nova conversa', req.params.id);
+  db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(req.params.id);
+  res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa', project_id: parseInt(req.params.id) });
+});
+
+// Listar conversas de um projeto
+app.get('/api/projects/:id/conversations', authMiddleware, (req, res) => {
+  const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+  const convs = db.prepare(`
+    SELECT c.id, c.title, c.created_at, c.updated_at, c.project_id,
+           COUNT(m.id) as message_count
+    FROM conversations c
+    LEFT JOIN messages m ON m.conversation_id = c.id
+    WHERE c.user_id = ? AND c.project_id = ?
+    GROUP BY c.id
+    ORDER BY c.updated_at DESC
+  `).all(req.user.id, req.params.id);
+  res.json(convs);
 });
 
 // ─── CHAT COM RAG ─────────────────────────────────────────────
@@ -1226,6 +1310,21 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   
   // Contexto de personalização: NUNCA pede nome/área — REGRA ABSOLUTA (ver profileCtx)
   let personalizationCtx = '';
+
+  // Injeta contexto do projeto (se a conversa pertence a um projeto)
+  let projectCtx = '';
+  if (conversation_id) {
+    const conv = db.prepare('SELECT project_id FROM conversations WHERE id = ? AND user_id = ?').get(conversation_id, req.user.id);
+    if (conv && conv.project_id) {
+      const project = db.prepare('SELECT name, description, context_note FROM projects WHERE id = ?').get(conv.project_id);
+      if (project && (project.context_note || project.description)) {
+        projectCtx = '\n\n━━━ CONTEXTO DO PROJETO: ' + project.name + ' ━━━\n';
+        if (project.description) projectCtx += 'Descrição: ' + project.description + '\n';
+        if (project.context_note) projectCtx += 'Instruções específicas: ' + project.context_note + '\n';
+        projectCtx += '━━━ FIM DO CONTEXTO DO PROJETO ━━━\nUse estas informações como contexto ao responder.';
+      }
+    }
+  }
 
   // Injeta documento(s) enviado(s) na conversa
   let docCtx = '';
@@ -1376,7 +1475,7 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
     formatoCtx = `\n\n📌 REGRA JURISPRUDÊNCIA: Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(confirme no JusBrasil antes de protocolar)" ao lado da citação.\n\n🧠 AUTONOMIA INTELECTUAL: Você não deve simplesmente concordar com as premissas do usuário. Sua função é ser um parceiro intelectual crítico. Se o advogado apresentar uma ideia, analise as premissas, aponte pontos frágeis, ofereça contrapontos quando pertinente, e priorize a verdade. Corrija-o com respeito se a lógica estiver fraca. Proibido ser preguicoso ou dar conclusões genéricas — profundidade e precisão são obrigatórias.`;
   }
 
-  const fullSystemPrompt = systemPrompt + ragContext + profileCtx + docCtx + personalizationCtx + honorariosCtx + regrasCodigo + formatoCtx;
+  const fullSystemPrompt = systemPrompt + ragContext + profileCtx + projectCtx + docCtx + personalizationCtx + honorariosCtx + regrasCodigo + formatoCtx;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
@@ -2308,9 +2407,22 @@ try { db.prepare("ALTER TABLE user_profiles ADD COLUMN bio TEXT").run(); } catch
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE conversations ADD COLUMN project_id INTEGER REFERENCES projects(id)").run(); } catch(e) {}
 
 // ─── TABELA: templates salvos do usuário ─────
 db.exec(`
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    icon TEXT DEFAULT '📁',
+    context_note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
   CREATE TABLE IF NOT EXISTS user_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
