@@ -2779,14 +2779,14 @@ IMPORTANTE: Escreva a peça COMPLETA usando os fatos acima. Não use placeholder
       return res.status(502).json({ error: 'Resposta inválida da OpenAI (JSON malformado)', raw });
     }
 
-    const sections = (parsed.sections || []).map(s => ({
+    const secoes = (parsed.sections || []).map(s => ({
       id: s.id,
-      title: s.title,
-      content: s.content
+      titulo: s.title,
+      conteudo: s.content
     }));
 
     return res.json({
-      sections,
+      secoes,
       tipo_peca: parsed.tipo_peca || '',
       alertas: parsed.alertas || [],
       plano_b: parsed.plano_b || '',
@@ -2847,7 +2847,7 @@ app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
     const data = await openaiRes.json();
     const content = data.choices?.[0]?.message?.content || '';
 
-    return res.json({ content: content.trim() });
+    return res.json({ conteudo: content.trim() });
   } catch (err) {
     if (err.name === 'AbortError') {
       return res.status(504).json({ error: 'Timeout na regeneração da seção (120s)' });
@@ -2860,17 +2860,18 @@ app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
 // POST /api/peca/exportar — exporta peça como HTML formatado
 app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
   try {
-    const { sections, tipo_peca } = req.body;
-    if (!sections || !Array.isArray(sections) || sections.length === 0) {
-      return res.status(400).json({ error: 'sections é obrigatório e deve ser um array' });
+    const { secoes, sections: sectionsAlt, tipo_peca } = req.body;
+    const secs = secoes || sectionsAlt;
+    if (!secs || !Array.isArray(secs) || secs.length === 0) {
+      return res.status(400).json({ error: 'secoes é obrigatório e deve ser um array' });
     }
 
     const dataAtual = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit', month: 'long', year: 'numeric'
     });
 
-    const sectionsHtml = sections.map(s => {
-      const contentHtml = (s.content || '')
+    const sectionsHtml = secs.map(s => {
+      const contentHtml = (s.conteudo || s.content || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
