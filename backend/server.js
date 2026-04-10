@@ -1674,13 +1674,13 @@ app.put('/api/profile', authMiddleware, (req, res) => {
   const tomValido = ['descontraido', 'equilibrado', 'formal'].includes(tom_preferido) ? tom_preferido : 'equilibrado';
   db.prepare(`
     INSERT OR REPLACE INTO user_profiles
-      (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria, bio, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `).run(
     userId,
     nome || null, area || null, cidade || null, estado || null,
     anos_experiencia || null, tomValido,
-    oab || null, escritorio || null, especialidade_secundaria || null
+    oab || null, escritorio || null, especialidade_secundaria || null, bio || null
   );
   res.json({ success: true });
 });
