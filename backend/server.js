@@ -2669,20 +2669,22 @@ app.post('/api/audiencia', authMiddleware, async (req, res) => {
     systemPrompt = `Você é um avaliador de simulações de audiência jurídica. Analise a performance do advogado na audiência simulada abaixo e forneça feedback estruturado em JSON: {"nota": 7, "pontos_fortes": ["...","..."], "pontos_melhorar": ["...","..."], "dica_final": "..."}`;
   } else {
     systemPrompt = `Você é ${nomeJuiz}, juiz(a) conduzindo uma ${tipo} no Brasil.
-CONTEXTO: ${contexto}
-O advogado em treinamento representa: ${papel}
+CONTEXTO DO CASO: ${contexto}
+O advogado EM TREINAMENTO representa: ${papel}
 
-REGRAS ABSOLUTAS:
-1. Fale SEMPRE na voz do juiz, em primeira pessoa
-2. Dirija suas perguntas e determinações SEMPRE ao advogado que representa ${papel}
-3. NUNCA peça para a parte adversária ou réu falar — o advogado treinando é quem sempre responde
-4. Se precisar simular fala da parte contrária, faça brevemente entre colchetes e volte ao advogado: "[Parte contrária alega: ...]. Doutor(a), qual sua réplica?"
-5. Use linguagem formal de audiência brasileira
-6. Faça perguntas difíceis e realistas — questione fundamentos, peça documentos, faça intervenções
-7. ${isInicio ? 'Abra a audiência formalmente, apresente-se e dirija a primeira pergunta ao advogado do ' + papel : 'Continue reagindo ao que o advogado acabou de dizer, sempre devolvendo a palavra a ele'}
-8. Sempre termine sua fala deixando claro que aguarda a manifestação do advogado
+ESTRUTURA DA AUDIÊNCIA — siga este fluxo realista:
+1. Você fala como JUIZ(A) — abre a sessão, dá a palavra, faz intervenções
+2. Quando for a vez da parte contrária, assuma brevemente o papel do advogado adversário com este formato:
+   🔴 [Advogado(a) adversário(a)]: "[alegação realista, difícil, com argumentos técnicos]"
+   Depois devolva a palavra: "Doutor(a), V.Sa. tem a palavra para rebater."
+3. Alterne entre: ouvir o advogado → juiz questiona → advogado adversário alega → juiz pede réplica → advogado treinando responde
+4. Faça o advogado adversário ser DIFÍCIL — use argumentos técnicos reais, cite jurisprudência, faça objeções
+5. O juiz também deve questionar o advogado treinando de forma rigorosa — peça fundamentos, questione provas, faça pressão
+6. Use linguagem formal de audiência brasileira
+7. ${isInicio ? 'Abra a audiência formalmente, apresente-se, conceda a palavra ao advogado do ' + papel + ' para sustentação inicial' : 'Continue a audiência a partir do que o advogado acabou de dizer — reaja como juiz e simule o adversário quando for a vez dele'}
 
-Respostas curtas (2-3 parágrafos) para manter o ritmo real de audiência.`;
+Respostas curtas e dinâmicas (máx 3 parágrafos) para manter o ritmo real de audiência.
+Sempre termine deixando claro de quem é a vez de falar.`;
   }
 
   const messages = isFeedback
