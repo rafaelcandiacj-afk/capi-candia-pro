@@ -90,13 +90,14 @@
     body.dark-mode .message-actions button { color:#a09890!important }
     body.dark-mode #bannerFundadores { opacity:.85 }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'DM Sans','Inter',sans-serif;font-size:var(--base-font,14px);min-height:100vh;min-height:var(--app-height,100vh);overflow:hidden}
+    html{height:100%;overflow:hidden;position:fixed;width:100%}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans','Inter',sans-serif;font-size:var(--base-font,14px);height:100%;height:var(--app-height,100%);overflow:hidden;position:fixed;width:100%;overscroll-behavior:none}
     #particles-bg{display:none}
     .particle{display:none}
     .hidden{display:none!important}
 
     /* ── AUTH ── */
-    .auth-wrapper{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+    .auth-wrapper{position:relative;z-index:10;display:flex;align-items:center;justify-content:center;min-height:100%;min-height:var(--app-height,100vh);padding:20px;overflow-y:auto}
     .auth-container{width:100%;max-width:440px;animation:fadeUp .5s ease}
     @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
     .auth-logo{text-align:center;margin-bottom:28px}
@@ -122,7 +123,7 @@
     .alert-error.visible{display:block}
 
     /* ── CHAT LAYOUT ── */
-    .chat-wrapper{position:relative;z-index:10;display:flex;height:100vh;height:var(--app-height,100vh)}
+    .chat-wrapper{position:relative;z-index:10;display:flex;height:100%;height:var(--app-height,100vh);overflow:hidden}
 
     /* ── SIDEBAR ── */
     .sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid #e8e4de;display:flex;flex-direction:column;flex-shrink:0;transition:var(--trans)}
@@ -156,7 +157,7 @@
     .btn-logout:hover{color:#ef5350;background:rgba(239,83,80,.1)}
 
     /* ── MAIN CHAT ── */
-    .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+    .chat-main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg);overflow:hidden}
     .chat-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
     .chat-header-left{display:flex;align-items:center;gap:8px}
     .status-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite}
@@ -166,7 +167,7 @@
     .btn-sm:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee}
 
     /* ── MESSAGES ── */
-    .chat-messages{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:16px}
+    .chat-messages{flex:1;overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
     .chat-messages::-webkit-scrollbar{width:4px}
     .chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
@@ -553,7 +554,19 @@
     body.dark-mode .template-chip{background:rgba(184,134,11,.12);border-color:rgba(184,134,11,.35)}
 
   </style>
-<script>/* Fix iOS Safari: usa height real sem causar reflow */document.documentElement.style.setProperty('--app-height',window.innerHeight+'px');window.addEventListener('resize',function(){document.documentElement.style.setProperty('--app-height',window.innerHeight+'px')});</script>
+<script>
+/* Fix mobile viewport: usa visualViewport para altura real (lida com teclado virtual) */
+function setAppHeight(){
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+}
+setAppHeight();
+window.addEventListener('resize', setAppHeight);
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', setAppHeight);
+  window.visualViewport.addEventListener('scroll', function(e){ e.preventDefault(); });
+}
+</script>
 </head>
 <body>
 <div id="particles-bg"></div>
