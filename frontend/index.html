@@ -63,7 +63,7 @@
     body.dark-mode .chat-input { background:#1e1e1e!important; border-color:#333!important; color:#e8e4de!important }
     body.dark-mode .conv-item { color:#e8e4de }
     body.dark-mode .conv-item:hover, body.dark-mode .conv-item.active { background:#1e1e1e!important }
-    body.dark-mode .message-bubble { background:#1e1e1e!important; border-color:#2a2a2a!important; color:#e8e4de!important }
+    body.dark-mode .message-assistant .message-bubble { background:#1C1B19!important; border:none!important; color:#e8e4de!important }
     body.dark-mode .message.user .message-bubble { background:#1a2a1a!important; border-color:#2a3a2a!important }
     body.dark-mode .welcome-suggestion { background:#1e1e1e!important; border-color:#2a2a2a!important; color:#e8e4de!important }
     body.dark-mode .welcome-suggestion:hover { border-color:var(--gold)!important }
@@ -218,7 +218,7 @@
     .message-assistant .message-avatar img{width:100%;height:100%;object-fit:cover}
     .message-bubble{padding:14px 18px;border-radius:12px;line-height:1.75;font-size:1rem;word-wrap:break-word;max-width:100%}
     .message-user .message-bubble{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border:none;border-top-right-radius:4px}
-    .message-assistant .message-bubble{background:var(--bg2);border:1px solid var(--border);border-top-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+    .message-assistant .message-bubble{background:#F7F6F3;border:none;box-shadow:none;padding:16px 20px;border-radius:12px}
 
     /* Rich text in messages */
     .message-bubble strong{color:inherit;font-weight:700}
@@ -285,6 +285,8 @@
     .chat-toolbar-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
     .teses-btn{padding:7px 15px;background:transparent;border:1px solid #e0dbd4;border-radius:20px;color:#555;font-family:'DM Sans','Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px;white-space:nowrap}
     .teses-btn:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee}
+    .nav-mais-item{display:block;width:100%;padding:11px 16px;background:none;border:none;text-align:left;font-family:'DM Sans','Inter',sans-serif;font-size:.82rem;color:var(--text2);cursor:pointer;transition:var(--trans)}
+    .nav-mais-item:hover{background:var(--bg3);color:var(--text)}
     .teses-btn .btn-icon{font-size:.88rem}
     /* Header actions (Perfil, Nova, Sair) */
     /* Elementos só mobile — ocultos no desktop */
@@ -740,21 +742,24 @@
       <!-- Desktop: toolbar inline no header -->
       <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
-          <button class="teses-btn" onclick="openTesesModal()">Teses</button>
-          <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
           <button class="teses-btn" onclick="openPeticaoModal()">Petição</button>
-          <button class="teses-btn" onclick="openCalculadoraModal()">Honorários</button>
-          <button class="teses-btn" onclick="openGame()">Jogo</button>
+          <button class="teses-btn" onclick="openTesesModal()">Teses</button>
           <button class="teses-btn" onclick="openAudienciaModal()">Audiência</button>
-          <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
-          <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
+          <button class="teses-btn nav-mais-btn" onclick="toggleNavMais(event)" id="navMaisBtn">Mais ▾</button>
+          <div id="navMaisDropdown" style="display:none;position:fixed;background:var(--bg2);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:9999;min-width:160px;overflow:hidden">
+            <button class="nav-mais-item" onclick="openConteudoModal();closeNavMais()">Conteúdo</button>
+            <button class="nav-mais-item" onclick="openCalculadoraModal();closeNavMais()">Honorários</button>
+            <button class="nav-mais-item" onclick="openGame();closeNavMais()">Jogo</button>
+            <button class="nav-mais-item" onclick="openPrescricaoModal();closeNavMais()">Prescrição</button>
+            <button class="nav-mais-item" onclick="openMinhasPecas();closeNavMais()">Minhas Peças</button>
+          </div>
         </div>
         <div class="header-divider"></div>
         <button class="header-action-btn" onclick="openProfileModal()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Perfil
         </button>
-        <button class="tom-termometro-btn" id="tomTermometroBtn" onclick="cycleTom()" title="Alternar tom de comunicação">⚖️ Tom</button>
+        <!-- tom movido para perfil -->
         <button class="header-action-btn" onclick="newConversation()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nova
@@ -796,22 +801,22 @@
 
     <!-- BANNER FUNDADORES -->
     <div id="bannerFundadores" style="background:#1A1917;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">
-      <span style="color:#fff;font-size:.85rem;font-weight:600">🚀 Você está entre os primeiros fundadores da Capi Când-IA Pro!</span>
-      <a href="https://chat.whatsapp.com/Ec1krVkUHE3FBeSQB9fSWO?mode=gi_t" target="_blank" style="background:#fff;color:#b8860b;padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0">Entrar no grupo →</a>
+      <span style="color:#fff;font-size:.85rem;font-weight:600">Você está entre os primeiros fundadores da Capi Când-IA Pro</span>
+      <a href="https://chat.whatsapp.com/Ec1krVkUHE3FBeSQB9fSWO?mode=gi_t" target="_blank" style="background:#fff;color:#b8860b;padding:6px 16px;border-radius:20px;font-size:.8rem;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0">Entrar no grupo</a>
     </div>
 
     <div id="chatMessages" class="chat-messages">
       <div id="welcomeScreen" class="chat-welcome">
         <img src="/capi-logo.png" alt="Capi" class="welcome-avatar">
-        <h3>AUUU! Sou a <span class="hl">CAPI</span></h3>
-        <p>Sua assistente estratégica para advocacia. Histórico salvo automaticamente!</p>
+        <h3>Capi <span class="hl">Când-IA</span> Pro</h3>
+        <p>Assistente jurídica com IA treinada pelo método Cândia. Teses, petições e estratégia — tudo em um lugar.</p>
         <div class="suggestion-chips">
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">🧠 O que o Cândia ensina na comunidade?</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">⚖️ Como essa IA vai ajudar minha advocacia?</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">💸 Me ajuda a cobrar mais sem perder cliente</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">📋 Gera uma tese para eu anunciar no Instagram</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">🎯 Script para fechar o cliente difícil</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">⚡ Monta uma petição para mim agora</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">O que o Cândia ensina na comunidade?</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">Como essa IA vai ajudar minha advocacia?</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">Me ajuda a cobrar mais sem perder cliente</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">Gera uma tese para eu anunciar no Instagram</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">Script para fechar o cliente difícil</button>
+          <button class="suggestion-chip" onclick="sendSuggestion(this)">Monta uma petição para mim agora</button>
         </div>
         <div class="templates-section" id="welcomeTemplates" style="display:none">
           <div class="templates-section-title">⭐ Meus Atalhos <span style="font-size:.7rem;font-weight:400;opacity:.6">(prompts que você salvou para reusar)</span></div>
@@ -1144,6 +1149,28 @@ document.getElementById('minhasPecasModal')?.addEventListener('click',function(e
   if(e.target===this) closeMinhasPecas();
 });
 
+function toggleNavMais(e){
+  e.stopPropagation();
+  const dd = document.getElementById('navMaisDropdown');
+  const btn = document.getElementById('navMaisBtn');
+  const rect = btn.getBoundingClientRect();
+  if(dd.style.display==='none'){
+    dd.style.display='block';
+    dd.style.top=(rect.bottom+4)+'px';
+    dd.style.left=rect.left+'px';
+  } else {
+    dd.style.display='none';
+  }
+}
+function closeNavMais(){
+  const dd=document.getElementById('navMaisDropdown');
+  if(dd) dd.style.display='none';
+}
+document.addEventListener('click',function(e){
+  const dd=document.getElementById('navMaisDropdown');
+  if(dd&&!dd.contains(e.target)&&e.target.id!=='navMaisBtn') dd.style.display='none';
+});
+
 function toggleDarkMode(){
   const isDark = document.body.classList.toggle('dark-mode');
   localStorage.setItem('capi_dark_mode', isDark ? '1' : '0');
@@ -1346,15 +1373,15 @@ function newConversationUI(){
   div.id='welcomeScreen';div.className='chat-welcome';
   div.innerHTML=`
     <img src="${imgSrc}" alt="Capi" class="welcome-avatar">
-    <h3>AUUU! Sou a <span class="hl">CAPI</span></h3>
-    <p>Sua assistente estratégica para advocacia. Histórico salvo automaticamente!</p>
+    <h3>Capi <span class="hl">Când-IA</span> Pro</h3>
+    <p>Assistente jurídica com IA treinada pelo método Cândia. Teses, petições e estratégia — tudo em um lugar.</p>
     <div class="suggestion-chips">
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">🧠 O que o Cândia ensina na comunidade?</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">⚖️ Como essa IA vai ajudar minha advocacia?</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">💸 Me ajuda a cobrar mais sem perder cliente</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">📋 Gera uma tese para eu anunciar no Instagram</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">🎯 Script para fechar o cliente difícil</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">⚡ Monta uma petição para mim agora</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">O que o Cândia ensina na comunidade?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">Como essa IA vai ajudar minha advocacia?</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">Me ajuda a cobrar mais sem perder cliente</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">Gera uma tese para eu anunciar no Instagram</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">Script para fechar o cliente difícil</button>
+      <button class="suggestion-chip" onclick="sendSuggestion(this)">Monta uma petição para mim agora</button>
     </div>`;
   $('chatMessages').appendChild(div);
   $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;
