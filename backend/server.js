@@ -2407,9 +2407,7 @@ try { db.prepare("ALTER TABLE user_profiles ADD COLUMN bio TEXT").run(); } catch
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
-try { db.prepare("ALTER TABLE conversations ADD COLUMN project_id INTEGER REFERENCES projects(id)").run(); } catch(e) {}
-
-// ─── TABELA: templates salvos do usuário ─────
+// ─── TABELA: projetos ─────
 db.exec(`
   CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2422,7 +2420,12 @@ db.exec(`
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+`);
 
+try { db.prepare("ALTER TABLE conversations ADD COLUMN project_id INTEGER").run(); } catch(e) {}
+
+// ─── TABELA: templates salvos do usuário ─────
+db.exec(`
   CREATE TABLE IF NOT EXISTS user_templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
