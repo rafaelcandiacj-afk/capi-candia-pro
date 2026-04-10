@@ -1189,12 +1189,18 @@ app.patch('/api/conversations/:id/project', authMiddleware, (req, res) => {
 
 // Criar conversa já dentro de um projeto
 app.post('/api/projects/:id/conversations', authMiddleware, (req, res) => {
-  const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
-  const { title } = req.body;
-  const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, title || 'Nova conversa', req.params.id);
-  db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(req.params.id);
-  res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa', project_id: parseInt(req.params.id) });
+  try {
+    const pid = parseInt(req.params.id);
+    const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(pid, req.user.id);
+    if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
+    const { title } = req.body;
+    const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, title || 'Nova conversa', pid);
+    db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(pid);
+    res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa', project_id: pid });
+  } catch(e) {
+    console.error('Erro ao criar conversa no projeto:', e.message);
+    res.status(500).json({ error: 'Erro ao criar conversa: ' + e.message });
+  }
 });
 
 // Listar conversas de um projeto
