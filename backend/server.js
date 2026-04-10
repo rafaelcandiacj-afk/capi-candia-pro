@@ -2934,6 +2934,11 @@ app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
+// Editor de Peça Jurídica
+app.get('/editor-peca.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/editor-peca.html'));
+});
+
 // Serve arquivos estáticos do app (CSS, JS) — após todas as rotas
 app.use(express.static(path.join(__dirname, '../frontend')));
 
