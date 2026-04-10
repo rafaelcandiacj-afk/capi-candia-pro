@@ -442,7 +442,11 @@ db.exec(`
     nome TEXT,
     area TEXT,
     cidade TEXT,
+    estado TEXT,
     anos_experiencia TEXT,
+    tom_preferido TEXT DEFAULT 'equilibrado',
+    oab TEXT,
+    escritorio TEXT,
     updated_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
@@ -493,6 +497,13 @@ db.exec(`
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
 `);
+
+// Migração: adiciona colunas novas à tabela user_profiles se ainda não existirem
+const userProfileCols = db.prepare("PRAGMA table_info(user_profiles)").all().map(c => c.name);
+if (!userProfileCols.includes('estado')) db.prepare('ALTER TABLE user_profiles ADD COLUMN estado TEXT').run();
+if (!userProfileCols.includes('tom_preferido')) db.prepare("ALTER TABLE user_profiles ADD COLUMN tom_preferido TEXT DEFAULT 'equilibrado'").run();
+if (!userProfileCols.includes('oab')) db.prepare('ALTER TABLE user_profiles ADD COLUMN oab TEXT').run();
+if (!userProfileCols.includes('escritorio')) db.prepare('ALTER TABLE user_profiles ADD COLUMN escritorio TEXT').run();
 
 // Inserir prompt padrão se não existir
 const existingPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get();
@@ -1076,7 +1087,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 
   const systemPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get()?.value || '';
   
-  // Injeta memória do usuário (nome, área, cidade)
+  // Injeta memória do usuário (nome, área, cidade, estado, tom, experiência, oab, escritório)
   const userProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
   let profileCtx = '';
   const hasProfile = userProfile && userProfile.nome;
@@ -1090,7 +1101,51 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       memoriesText = '\n- Memórias acumuladas sobre este advogado:\n' +
         Object.entries(grouped).map(([cat, items]) => `  [${cat}] ${items.slice(0,5).join(' | ')}`).join('\n');
     }
-    profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:\n- Nome: ${userProfile.nome}\n- Área: ${userProfile.area || 'não informada'}\n- Experiência: ${userProfile.anos_experiencia || 'não informada'}\n- Cidade: ${userProfile.cidade || 'não informada'}${memoriesText}\n\nIMPORTANTE: Você JÁ SABE quem é este usuário. NÃO pergunte o nome nem a área dele. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias para personalizar respostas e demonstrar que lembra do advogado.`;
+
+    // ── TERMÔMETRO DE TOM (item 1) ──
+    const tom = userProfile.tom_preferido || 'equilibrado';
+    let tomInstrucao = '';
+    if (tom === 'descontraido') {
+      tomInstrucao = '\n\n🌡️ TOM DE COMUNICAÇÃO: DESCONTRAÍDO — Use papi, AUUU!, humor capivarístico, expressões do Rafael Cândia. Seja leve, divertido e humano. Emojis liberados com propósito.';
+    } else if (tom === 'formal') {
+      tomInstrucao = '\n\n🌡️ TOM DE COMUNICAÇÃO: FORMAL — Tom completamente formal e técnico. Sem "papi", sem "AUUU", sem emojis, sem expressões informais. Linguagem forense e profissional em todo momento.';
+    } else {
+      tomInstrucao = '\n\n🌡️ TOM DE COMUNICAÇÃO: EQUILIBRADO — Tom amigável mas profissional. Pode usar "papi" com moderação (1x por resposta no máximo). Evite excesso de informalidade.';
+    }
+
+    // ── TOM POR EXPERIÊNCIA (item 5) ──
+    let expInstrucao = '';
+    const anosExp = parseInt(userProfile.anos_experiencia) || 0;
+    if (anosExp >= 1 && anosExp <= 3) {
+      expInstrucao = '\n\n📚 NÍVEL DE EXPERIÊNCIA: INICIANTE (1-3 anos) — Explique o "porquê" dos fundamentos jurídicos. Seja mais didático, contextualize a teoria por trás das estratégias. Não assuma que ele conhece todos os institutos.';
+    } else if (anosExp >= 4 && anosExp <= 9) {
+      expInstrucao = '\n\n📚 NÍVEL DE EXPERIÊNCIA: INTERMEDIÁRIO (4-9 anos) — Tom equilibrado. Explique apenas quando necessário ou quando o tema for complexo. Pode usar termos técnicos sem excessiva contextualização.';
+    } else if (anosExp >= 10) {
+      expInstrucao = '\n\n📚 NÍVEL DE EXPERIÊNCIA: SÊNIOR (10+ anos) — Vá direto ao ponto. Sem explicações básicas. Use linguagem técnica avançada, citações doutrinárias e terminologia forense sem simplificações.';
+    }
+
+    // ── VERIFICAÇÃO GEOGRÁFICA (item 9) ──
+    let geoInstrucao = '';
+    if (userProfile.estado) {
+      geoInstrucao = `\n\n📍 LOCALIZAÇÃO: O advogado atua no estado de ${userProfile.estado}. Adapte quando relevante: tabela de custas estaduais, competência dos TJs/TRTs locais, legislação estadual específica (ex: ITCMD do ${userProfile.estado}, lei estadual aplicável, jurisprudência do TJ${userProfile.estado}).`;
+    }
+
+    profileCtx = `\n\n👤 PERFIL DO USUÁRIO ATUAL:
+- Nome: ${userProfile.nome}
+- Área: ${userProfile.area || 'não informada'}
+- Experiência: ${userProfile.anos_experiencia ? userProfile.anos_experiencia + ' anos' : 'não informada'}
+- Cidade: ${userProfile.cidade || 'não informada'}
+- Estado: ${userProfile.estado || 'não informado'}
+- OAB: ${userProfile.oab || 'não informado'}
+- Escritório: ${userProfile.escritorio || 'não informado'}${memoriesText}
+
+REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias para personalizar respostas e demonstrar que lembra do advogado.${tomInstrucao}${expInstrucao}${geoInstrucao}${
+      (userProfile.oab || userProfile.escritorio) ?
+        `\n\n✍️ RODAPÉ DE PETIÇÕES: Quando gerar qualquer petição, inclua SEMPRE ao final o seguinte rodapé:\n${userProfile.cidade || ''}${userProfile.estado ? (userProfile.cidade ? ' - ' : '') + userProfile.estado : ''}, [DATA].\n${userProfile.nome}\n${userProfile.oab ? 'OAB/' + (userProfile.estado||'') + ' Nº ' + userProfile.oab : ''}${userProfile.escritorio ? '\n' + userProfile.escritorio : ''}` : ''
+    }`;
+  } else {
+    // Sem perfil: NUNCA perguntar nome/área diretamente
+    profileCtx = '\n\nREGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar.';
   }
   
   // Pega as últimas mensagens para enriquecer a busca semântica com contexto
@@ -1120,11 +1175,8 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const hasAssistantHistory = messages.some(m => m.role === 'assistant');
   const isFirstMessage = !hasAssistantHistory;
   
-  // Contexto de personalização: só pergunta nome/área se NÃO tiver perfil salvo
+  // Contexto de personalização: NUNCA pede nome/área — REGRA ABSOLUTA (ver profileCtx)
   let personalizationCtx = '';
-  if (isFirstMessage && !hasProfile) {
-    personalizationCtx = '\n\nINSTRUÇÃO ESPECIAL (APENAS NESTA RESPOSTA): O usuário acabou de iniciar a conversa e AINDA NÃO tem perfil salvo. Ao final da sua resposta, faça UMA pergunta curta e amigável perguntando o nome do advogado e em qual área do Direito ele atua (ex: Família, Previdenciário, Trabalhista, Criminal, etc). Exemplo: \'Antes de continuar, me conta: qual é o seu nome e em qual área você atua?\'';
-  }
 
   // Injeta documento(s) enviado(s) na conversa
   let docCtx = '';
@@ -1202,16 +1254,37 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 - Teto INSS/RGPS: R$ 8.475,55
 - Salário maternidade sem carência: Empregada CLT, doméstica e avulsa NÃO precisam de carência desde março/2024 (Lei 14.811/2024). Apenas contribuinte individual e facultativa precisam de 10 contribuições.
 - BPC/LOAS: R$ 1.621,00\n\n⚠️ REGRA SOBRE JURISPRUDÊNCIA: Use seu conhecimento sobre tendências jurisprudenciais, valores médios e súmulas. MAS NUNCA cite número de processo específico, nome de relator ou data exata de julgamento — esses dados são verificáveis e um erro expõe o advogado. Diga "o TJMS tem entendimento consolidado de que..." sem inventar número. Se precisar de decisões específicas, oriente a buscar no JusBrasil ou no site do tribunal.\n\n⚡ TAMANHO DAS RESPOSTAS: Seja direto e objetivo. No chat normal, máximo 3 parágrafos curtos + tópicos se necessário. Não dê textao. Se o usuário quiser mais detalhes, ele pede. Apenas petições e teses completas devem ser longas.`;
-  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx + regrasCodigo;
-
   // Detecta se é petição/tese (precisa de mais tokens) ou chat normal
   const lastMsgContent = messages[messages.length-1]?.content || '';
+  const lastMsgLower = lastMsgContent.toLowerCase();
   // Petição e tese precisam de mais tokens (são peças completas)
-  // Calculadora e chat normal usam 900 (respostas mais concisas)
-  const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa');
-  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE');
+  const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao');
+  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
   const maxTok = isPeticao ? 40000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
+
+  // ── FORMATO LIMPO: instrução por tipo de peça (itens 3, 4, 6, 7) ──
+  let formatoCtx = '';
+  if (isPeticao) {
+    formatoCtx = `\n\n📄 MODO PETIÇÃO ATIVADO:
+- Entregue APENAS a petição. Sem comentários extras, sugestões de reels, hashtags ou scripts de atendimento não solicitados.
+- Ao final da petição, adicione obrigatoriamente o bloco:
+  ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, campos que precisam ser preenchidos pelo advogado, documentos que precisam ser anexados]
+- Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
+  } else if (isTese) {
+    formatoCtx = `\n\n⚖️ MODO TESE JURÍDICA ATIVADO:
+- Entregue APENAS a tese jurídica. NÃO adicione sugestões de reels, hashtags ou scripts de atendimento a menos que explicitamente solicitado.
+- Ao final da tese, adicione obrigatoriamente o bloco:
+  ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, orientações práticas para aplicar a tese]
+- Após apresentar a tese principal, adicione um parágrafo:
+  Plano B: Se esta abordagem não funcionar, uma alternativa seria...
+- Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
+  } else {
+    // Chat normal: só a regra de jurisprudência
+    formatoCtx = `\n\n📌 REGRA JURISPRUDÊNCIA: Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
+  }
+
+  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx + regrasCodigo + formatoCtx;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
@@ -1275,7 +1348,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       if (nomeMatch || areaMatch) {
         const nome = nomeMatch ? nomeMatch[1] : existingProfile?.nome;
         const area = areaMatch ? areaMatch[1].trim() : existingProfile?.area;
-        db.prepare('INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, anos_experiencia, updated_at) VALUES (?, ?, ?, ?, ?, datetime("now"))').run(userId, nome || null, area || null, existingProfile?.cidade || null, existingProfile?.anos_experiencia || null);
+        db.prepare('INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))').run(userId, nome || null, area || null, existingProfile?.cidade || null, existingProfile?.estado || null, existingProfile?.anos_experiencia || null, existingProfile?.tom_preferido || 'equilibrado', existingProfile?.oab || null, existingProfile?.escritorio || null);
       }
     }
 
@@ -1574,12 +1647,19 @@ app.post('/api/admin/knowledge/ingest-server-files', adminMiddleware, async (req
 
 // Salvar/atualizar perfil
 app.put('/api/profile', authMiddleware, (req, res) => {
-  const { nome, area, cidade, anos_experiencia } = req.body;
+  const { nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria } = req.body;
   const userId = req.user.id;
+  const tomValido = ['descontraido', 'equilibrado', 'formal'].includes(tom_preferido) ? tom_preferido : 'equilibrado';
   db.prepare(`
-    INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, anos_experiencia, updated_at)
-    VALUES (?, ?, ?, ?, ?, datetime('now'))
-  `).run(userId, nome || null, area || null, cidade || null, anos_experiencia || null);
+    INSERT OR REPLACE INTO user_profiles
+      (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `).run(
+    userId,
+    nome || null, area || null, cidade || null, estado || null,
+    anos_experiencia || null, tomValido,
+    oab || null, escritorio || null, especialidade_secundaria || null
+  );
   res.json({ success: true });
 });
 
@@ -1587,6 +1667,106 @@ app.put('/api/profile', authMiddleware, (req, res) => {
 app.get('/api/profile', authMiddleware, (req, res) => {
   const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
   res.json(profile || {});
+});
+
+// ─── TEMPLATES SALVOS DO USUÁRIO ────────────────────────────
+
+// Listar templates
+app.get('/api/templates', authMiddleware, (req, res) => {
+  const templates = db.prepare('SELECT * FROM user_templates WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+  res.json(templates);
+});
+
+// Criar template
+app.post('/api/templates', authMiddleware, (req, res) => {
+  const { titulo, prompt } = req.body;
+  if (!titulo || !prompt) return res.status(400).json({ error: 'titulo e prompt são obrigatórios' });
+  const result = db.prepare('INSERT INTO user_templates (user_id, titulo, prompt) VALUES (?, ?, ?)').run(req.user.id, titulo.trim().substring(0, 100), prompt.trim());
+  res.json({ success: true, id: result.lastInsertRowid });
+});
+
+// Apagar template
+app.delete('/api/templates/:id', authMiddleware, (req, res) => {
+  const tpl = db.prepare('SELECT * FROM user_templates WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!tpl) return res.status(404).json({ error: 'Template não encontrado' });
+  db.prepare('DELETE FROM user_templates WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ─── TAG MANUAL DE CONVERSA ────────────────────────────
+app.patch('/api/conversations/:id/tag', authMiddleware, (req, res) => {
+  const { tag } = req.body;
+  const conv = db.prepare('SELECT * FROM conversations WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
+  db.prepare('UPDATE conversations SET tags = ? WHERE id = ?').run(tag || null, req.params.id);
+  res.json({ success: true });
+});
+
+// ─── RELATÓRIO MENSAL DO USUÁRIO ──────────────────────────
+app.get('/api/user/relatorio-mensal', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const agora = new Date();
+  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
+
+  // Peças geradas = mensagens de assistant no mês
+  const pecasGeradas = db.prepare(`
+    SELECT COUNT(*) as c FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'assistant'
+    AND strftime('%Y-%m', m.created_at) = ?
+  `).get(userId, mesAtual)?.c || 0;
+
+  // Dias ativos = dias distintos com mensagens do usuário no mês
+  const diasAtivosRows = db.prepare(`
+    SELECT DISTINCT date(m.created_at) as dia FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    AND strftime('%Y-%m', m.created_at) = ?
+    ORDER BY dia
+  `).all(userId, mesAtual);
+  const diasAtivos = diasAtivosRows.length;
+
+  // Streak: dias consecutivos até hoje
+  const todosDias = db.prepare(`
+    SELECT DISTINCT date(m.created_at) as dia FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    ORDER BY dia DESC
+  `).all(userId).map(r => r.dia);
+  let streak = 0;
+  const hoje = new Date();
+  for (let i = 0; i < todosDias.length; i++) {
+    const esperado = new Date(hoje);
+    esperado.setDate(hoje.getDate() - i);
+    const esperadoStr = esperado.toISOString().substring(0,10);
+    if (todosDias[i] === esperadoStr) streak++;
+    else break;
+  }
+
+  // Áreas mais usadas: analisa títulos das conversas do mês
+  const conversasMes = db.prepare(`
+    SELECT title FROM conversations
+    WHERE user_id = ? AND strftime('%Y-%m', updated_at) = ?
+  `).all(userId, mesAtual);
+  const areaCount = {};
+  const areaPatterns = [
+    { area: 'Petição', re: /petição|petic|inicial|contest|recurso|embargos|habeas|mandado|agravo/i },
+    { area: 'Tese', re: /tese|teses|fundament|argumento/i },
+    { area: 'Honorários', re: /honorário|honora|tabela oab|cobrar|valor/i },
+    { area: 'Trabalhista', re: /trabalhist|trabalh|clt|demiss|rescis/i },
+    { area: 'Família', re: /família|divor|alimento|guar|herança|invent/i },
+    { area: 'Criminal', re: /criminal|crime|preso|réu|acusado|inquérito/i },
+  ];
+  conversasMes.forEach(c => {
+    areaPatterns.forEach(({ area, re }) => {
+      if (re.test(c.title || '')) areaCount[area] = (areaCount[area] || 0) + 1;
+    });
+  });
+  const areasMaisUsadas = Object.entries(areaCount)
+    .sort((a,b) => b[1]-a[1])
+    .map(([area, count]) => ({ area, count }));
+
+  res.json({ pecas_geradas: pecasGeradas, areas_mais_usadas: areasMaisUsadas, dias_ativos: diasAtivos, streak });
 });
 
 // ─── ANALYTICS ────────────────────────────────────────────────
@@ -1985,6 +2165,27 @@ try {
 try {
   db.exec(`ALTER TABLE users ADD COLUMN welcome_email_sent INTEGER DEFAULT 0`);
 } catch(e) { /* coluna já existe */ }
+
+// ─── MIGRATION: colunas extras de perfil do advogado ─────
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN estado TEXT").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN oab TEXT").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN escritorio TEXT").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN tom_preferido TEXT DEFAULT 'equilibrado'").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN especialidade_secundaria TEXT").run(); } catch(e) {}
+
+// ─── MIGRATION: campo tags em conversations ─────
+try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
+
+// ─── TABELA: templates salvos do usuário ─────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS user_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    titulo TEXT NOT NULL,
+    prompt TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+`);
 
 // ─── HELPER: verificar se usuário tem acesso ativo ─────────────
 function hasActiveAccess(user) {
@@ -2426,6 +2627,79 @@ app.get('/{*path}', (req, res) => {
 });
 
 // ─── TEXT-TO-SPEECH (ElevenLabs) ─────────────────────────────
+// ─── SIMULADOR DE AUDIÊNCIA ──────────────────────────────
+app.post('/api/audiencia', authMiddleware, async (req, res) => {
+  const { mensagem, config, history } = req.body;
+  if (!config) return res.status(400).json({ error: 'Config ausente' });
+  const { tipo, papel, contexto } = config;
+
+  const isInicio = mensagem === 'INICIAR';
+  const isFeedback = mensagem === 'ENCERRAR';
+
+  const nomeJuiz = ['Dra. Ana Beatriz Santos', 'Dr. Carlos Mendonça', 'Dra. Fernanda Lima', 'Dr. Roberto Alves'][Math.floor(Math.random() * 4)];
+
+  let systemPrompt = '';
+
+  if (isFeedback) {
+    systemPrompt = `Você é um avaliador de simulações de audiência jurídica. Analise a performance do advogado na audiência simulada abaixo e forneça feedback estruturado em JSON: {"nota": 7, "pontos_fortes": ["...","..."], "pontos_melhorar": ["...","..."], "dica_final": "..."}`;
+  } else {
+    systemPrompt = `Você é ${nomeJuiz}, juiz(a) em uma audiência de ${tipo} no Brasil.
+O contexto do caso: ${contexto}
+O advogado que está sendo treinado está atuando como: ${papel}
+
+REGRAS DA SIMULAÇÃO:
+- Conduza a audiência de forma realista, como um juiz brasileiro faria
+- Faça perguntas difíceis, coloque pressão quando apropriado
+- Simule também a parte contrária quando necessário (advogado adversário, testemunhas)
+- Use linguagem formal de audiência
+- Após cada interação do advogado, reaja como o juiz reagiria
+- Varie entre momentos de pressão e momentos de neutralidade
+- ${isInicio ? 'Abra a audiência formalmente, se apresente e faça a primeira pergunta/determinação' : 'Continue a audiência reagindo à última fala do advogado'}
+
+Mantenha respostas curtas (2-4 parágrafos) para simular o ritmo real de uma audiência.`;
+  }
+
+  const messages = isFeedback
+    ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Avalie a performance: ' + JSON.stringify(history) }]
+    : [{ role: 'system', content: systemPrompt }, ...(history || []).slice(-10), ...(isInicio ? [] : [{ role: 'user', content: mensagem }])];
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+      body: JSON.stringify({ model: 'gpt-4.1', messages, temperature: 0.8, max_tokens: 800 })
+    });
+    const data = await response.json();
+    if (!response.ok) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
+    const reply = data.choices[0]?.message?.content || '';
+
+    if (isFeedback) {
+      try {
+        const feedback = JSON.parse(reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+        res.json({ feedback });
+      } catch (e) {
+        res.json({ feedback: { nota: 7, pontos_fortes: ['Boa participação'], pontos_melhorar: ['Continue praticando'], dica_final: reply } });
+      }
+    } else {
+      res.json({ reply });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── USER STATS ───────────────────────────────────────────
+app.get('/api/user/stats', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+  const msgs = db.prepare("SELECT COUNT(*) as c FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = ?) AND role = 'assistant' AND created_at >= ?").get(userId, inicioMes.toISOString());
+  const totalMsgs = msgs?.c || 0;
+  const horasEconomizadas = Math.round(totalMsgs * 0.5);
+  res.json({ pecas: totalMsgs, horas: horasEconomizadas });
+});
+
 app.post('/api/tts', authMiddleware, async (req, res) => {
   const { text } = req.body;
   if (!text) return res.status(400).json({ error: 'Texto ausente' });

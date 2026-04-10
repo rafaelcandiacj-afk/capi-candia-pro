@@ -15,6 +15,8 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
   <!-- /PWA -->
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- DOCX CDN para exportar peças -->
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
   <style>
     :root {
       /* Paleta: fundo claro/neutro + dourado Cândia */
@@ -459,6 +461,96 @@
     .pet-progress-dot.done{background:var(--gold)}
     .pet-hint{font-size:.78rem;color:var(--text2);margin-top:5px;opacity:.8;line-height:1.5}
 
+    /* ── FEATURE 1: BUSCA DE CONVERSAS ── */
+    .conv-search-wrap{padding:0 8px 6px}
+    .conv-search-input{width:100%;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Inter',sans-serif;font-size:.8rem;outline:none;transition:var(--trans)}
+    .conv-search-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px var(--gold-dim)}
+    .conv-search-input::placeholder{color:var(--text-muted)}
+    body.dark-mode .conv-search-input{background:#1e1e1e;border-color:#333;color:#e8e4de}
+
+    /* ── FEATURE 2: PIN DE CONVERSAS ── */
+    .conv-pin{opacity:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.78rem;padding:2px 4px;border-radius:4px;transition:var(--trans);flex-shrink:0;line-height:1}
+    .conv-item:hover .conv-pin{opacity:1}
+    .conv-pin.pinned{opacity:1;color:var(--gold)}
+    .conv-item.pinned-conv{border-left:2px solid var(--gold)!important;background:rgba(184,134,11,.04)}
+    .conv-item.pinned-conv.active{border-left:2px solid var(--gold)!important}
+    .pinned-section-label{font-size:.64rem;font-weight:700;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;padding:6px 4px 2px;opacity:.8}
+    body.dark-mode .conv-item.pinned-conv{background:rgba(184,134,11,.07)!important}
+
+    /* ── FEATURE 4: FONTE AJUSTÁVEL ── */
+    .font-size-ctrl{display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px}
+    .font-size-ctrl span{font-size:.68rem;color:var(--text-muted);white-space:nowrap;letter-spacing:.04em}
+    .font-size-btn{background:none;border:none;color:var(--text2);cursor:pointer;font-size:.8rem;font-weight:700;padding:2px 6px;border-radius:4px;transition:var(--trans);font-family:'Inter',sans-serif;line-height:1}
+    .font-size-btn:hover{background:var(--gold-dim);color:var(--gold)}
+    body.dark-mode .font-size-ctrl{background:#1e1e1e;border-color:#333}
+
+    /* ── FEATURE 9: CAMPOS MARCADOS EM PETIÇÕES ── */
+    .field-placeholder{
+      background:#fff3cd;
+      color:#7a5800;
+      border:1px solid #f0c040;
+      border-radius:3px;
+      padding:1px 4px;
+      font-weight:600;
+      font-style:italic;
+      white-space:nowrap;
+    }
+    body.dark-mode .field-placeholder{
+      background:rgba(184,134,11,.25);
+      color:#ffd740;
+      border-color:rgba(184,134,11,.5);
+    }
+
+    /* ── FEATURE 10: TAGS DE CONVERSAS ── */
+    .conv-tag{display:inline-block;font-size:.57rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 5px;border-radius:10px;white-space:nowrap;margin-right:3px;vertical-align:middle}
+    .conv-tag-peticao{background:#dbeafe;color:#1d4ed8}
+    .conv-tag-tese{background:#dcfce7;color:#15803d}
+    .conv-tag-honorarios{background:#fef9c3;color:#854d0e}
+    .conv-tag-trabalhista{background:#ede9fe;color:#6d28d9}
+    .conv-tag-familia{background:#fce7f3;color:#9d174d}
+    .conv-tag-criminal{background:#fee2e2;color:#991b1b}
+    body.dark-mode .conv-tag-peticao{background:rgba(29,78,216,.25);color:#93c5fd}
+    body.dark-mode .conv-tag-tese{background:rgba(21,128,61,.25);color:#86efac}
+    body.dark-mode .conv-tag-honorarios{background:rgba(133,77,14,.25);color:#fde68a}
+    body.dark-mode .conv-tag-trabalhista{background:rgba(109,40,217,.25);color:#c4b5fd}
+    body.dark-mode .conv-tag-familia{background:rgba(157,23,77,.25);color:#f9a8d4}
+    body.dark-mode .conv-tag-criminal{background:rgba(153,27,27,.25);color:#fca5a5}
+
+    /* Tom buttons no modal de perfil */
+    .tom-btn{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text2);font-size:.82rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;font-weight:500}
+    .tom-btn:hover{border-color:var(--gold);color:var(--gold)}
+    .tom-btn.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:700}
+    body.dark-mode .tom-btn{background:#1e1e1e;border-color:#333;color:#aaa}
+    body.dark-mode .tom-btn.selected{border-color:var(--gold);background:rgba(184,134,11,.2);color:var(--gold)}
+
+    /* Terpômetro de tom no header */
+    .tom-termometro-btn{padding:5px 10px;background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.8rem;color:#888;transition:var(--trans);font-family:'Inter',sans-serif;font-weight:500;display:flex;align-items:center;gap:4px;white-space:nowrap}
+    .tom-termometro-btn:hover{background:#f3f0eb;border-color:#e0dbd4;color:var(--text)}
+    body.dark-mode .tom-termometro-btn:hover{background:#1e1e1e;border-color:#333}
+
+    /* Campos marcados em petições */
+    .campo-marcado{background:rgba(184,134,11,0.25);border:1px dashed var(--gold);border-radius:4px;padding:1px 4px;cursor:pointer;user-select:all;transition:background .15s}
+    .campo-marcado:hover{background:rgba(184,134,11,0.45)}
+
+    /* Mini-modal de salvar template */
+    .template-mini-modal{position:fixed;bottom:90px;right:20px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.18);padding:16px;z-index:500;min-width:280px;max-width:340px;animation:fadeUp .2s ease}
+    .template-mini-modal input{width:100%;box-sizing:border-box;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;background:var(--bg3);color:var(--text);margin-bottom:10px}
+    .template-mini-modal input:focus{border-color:var(--gold)}
+    .template-mini-modal .tm-title{font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:8px}
+    .template-mini-modal .tm-btns{display:flex;gap:8px;justify-content:flex-end}
+    .template-mini-modal .tm-save{padding:6px 14px;background:var(--gold);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.8rem;font-weight:700;font-family:'Inter',sans-serif}
+    .template-mini-modal .tm-cancel{padding:6px 14px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:.8rem;font-family:'Inter',sans-serif}
+
+    /* Seção de templates na welcome screen */
+    .templates-section{margin-top:24px;width:100%;max-width:580px}
+    .templates-section-title{font-size:.78rem;font-weight:700;color:var(--text2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+    .templates-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+    .template-chip{padding:8px 14px;background:rgba(184,134,11,.08);border:1.5px solid rgba(184,134,11,.3);border-radius:18px;color:var(--gold);font-size:.8rem;cursor:pointer;transition:var(--trans);font-family:'Inter',sans-serif;font-weight:500;display:flex;align-items:center;gap:5px}
+    .template-chip:hover{background:rgba(184,134,11,.18);border-color:var(--gold)}
+    .template-chip .chip-del{opacity:0;font-size:.72rem;color:rgba(239,83,80,.8);margin-left:2px;transition:opacity .15s;background:none;border:none;cursor:pointer;padding:0;line-height:1}
+    .template-chip:hover .chip-del{opacity:1}
+    body.dark-mode .template-chip{background:rgba(184,134,11,.12);border-color:rgba(184,134,11,.35)}
+
   </style>
 <script>/* Fix iOS Safari: usa height real sem causar reflow */document.documentElement.style.setProperty('--app-height',window.innerHeight+'px');window.addEventListener('resize',function(){document.documentElement.style.setProperty('--app-height',window.innerHeight+'px')});</script>
 </head>
@@ -606,6 +698,10 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nova conversa
     </button>
+    <!-- Feature 1: Busca de conversas -->
+    <div class="conv-search-wrap">
+      <input type="text" id="convSearchInput" class="conv-search-input" placeholder="🔍 Buscar conversas..." oninput="filterConversations(this.value)">
+    </div>
     <div class="conv-list" id="convList">
       <div class="conv-empty">Nenhuma conversa ainda.<br>Comece digitando sua primeira pergunta!</div>
     </div>
@@ -619,6 +715,12 @@
         <div class="user-details">
           <div class="user-name-s" id="sidebarName">—</div>
           <div class="user-email-s" id="sidebarEmail">—</div>
+        </div>
+        <!-- Feature 4: Controle de fonte (sidebar desktop) -->
+        <div class="font-size-ctrl" title="Tamanho da fonte">
+          <button class="font-size-btn" onclick="changeFontSize(-1)" title="Diminuir fonte">A-</button>
+          <span>Aa</span>
+          <button class="font-size-btn" onclick="changeFontSize(1)" title="Aumentar fonte">A+</button>
         </div>
         <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">🌙 Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
@@ -644,6 +746,8 @@
           <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
           <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
           <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
+          <button class="teses-btn" onclick="openAudienciaModal()">🎭 Audiência</button>
+          <button class="teses-btn" onclick="openPrescricaoModal()">⏱️ Prescrição</button>
           <button class="teses-btn" onclick="openMinhasPecas()">📁 Minhas Peças</button>
         </div>
         <div class="header-divider"></div>
@@ -651,6 +755,7 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           Perfil
         </button>
+        <button class="tom-termometro-btn" id="tomTermometroBtn" onclick="cycleTom()" title="Alternar tom de comunicação">⚖️ Tom</button>
         <button class="header-action-btn" onclick="newConversation()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Nova
@@ -667,6 +772,8 @@
       <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
       <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
       <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
+      <button class="teses-btn" onclick="openAudienciaModal()">🎭 Audiência</button>
+      <button class="teses-btn" onclick="openPrescricaoModal()">⏱️ Prescrição</button>
       <button class="teses-btn" onclick="openMinhasPecas()">📁 Minhas Peças</button>
     </div>
     <!-- Dropdown menu mobile -->
@@ -674,8 +781,21 @@
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">👤 Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">✏️ Nova Conversa</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
+      <!-- Feature 4: Controle de fonte (mobile) -->
+      <div class="mobile-menu-item" style="justify-content:space-between;cursor:default">
+        <span>🔤 Tamanho da fonte</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="changeFontSize(-1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Inter',sans-serif">A-</button>
+          <button onclick="changeFontSize(1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Inter',sans-serif">A+</button>
+        </div>
+      </div>
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">🚪 Sair</button>
+    </div>
+
+    <!-- DASHBOARD DE USO -->
+    <div id="dashboardUso" style="display:none;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0">
+      <div style="font-size:.78rem;color:var(--text2);text-align:center" id="dashboardUsoText">📊 Este mês: carregando...</div>
     </div>
 
     <!-- BANNER FUNDADORES -->
@@ -697,6 +817,10 @@
           <button class="suggestion-chip" onclick="sendSuggestion(this)">🎯 Script para fechar o cliente difícil</button>
           <button class="suggestion-chip" onclick="sendSuggestion(this)">⚡ Monta uma petição para mim agora</button>
         </div>
+        <div class="templates-section" id="welcomeTemplates" style="display:none">
+          <div class="templates-section-title">⭐ Meus Templates</div>
+          <div class="templates-chips" id="welcomeTemplatesChips"></div>
+        </div>
       </div>
     </div>
 
@@ -714,6 +838,7 @@
           </button>
           <textarea id="chatInput" class="chat-input" placeholder="Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)" rows="1"
             onkeydown="handleKey(event)" oninput="autoResize(this)" style="flex:1;min-width:0"></textarea>
+          <button id="saveTemplateBtn" class="header-action-btn" onclick="openSaveTemplateModal()" title="Salvar como template" style="flex-shrink:0;margin-bottom:4px;padding:8px 10px;font-size:.85rem">⭐</button>
           <button id="sendBtn" class="btn-send" onclick="sendMessage()" disabled style="flex-shrink:0;margin-bottom:4px">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -751,6 +876,9 @@ const $ = id => document.getElementById(id);
 
 // ── INIT ──
 async function init(){
+  // Inicializa termômetro de tom com valor do localStorage
+  const tomInicial=localStorage.getItem('capi_tom')||'equilibrado';
+  updateTomBtn(tomInicial);
   checkResetToken();
   const token=localStorage.getItem('capi_token');
   const user=JSON.parse(localStorage.getItem('capi_user')||'null');
@@ -945,7 +1073,9 @@ function showChat(user){
   $('chatInput').focus();
   loadProfile();
   loadFavorites();
+  loadTemplates();
   setTimeout(loadNotifications,1500);
+  setTimeout(loadDashboardUso,2000);
 }
 // ── MINHAS PEÇAS ──────────────────────────────────────────
 async function openMinhasPecas(){
@@ -1060,22 +1190,78 @@ async function loadConversations(){
   }catch(e){console.error(e);}
 }
 
+// Feature 2: Pinned convs state
+function getPinnedConvs(){return JSON.parse(localStorage.getItem('capi_pinned_convs')||'[]');}
+function savePinnedConvs(arr){localStorage.setItem('capi_pinned_convs',JSON.stringify(arr));}
+function togglePinConv(e,id){
+  e.stopPropagation();
+  const pinned=getPinnedConvs();
+  const idx=pinned.indexOf(id);
+  if(idx>=0) pinned.splice(idx,1);
+  else pinned.push(id);
+  savePinnedConvs(pinned);
+  loadConversations();
+}
+
+// Feature 10: Tags de conversas
+function getConvTag(title){
+  const t=(title||'').toLowerCase();
+  if(/petição|petic|inicial|contest|recurso|embargos|habeas|mandado|agravo/.test(t)) return '<span class="conv-tag conv-tag-peticao">Petição</span>';
+  if(/tese|teses|fundament|argumento/.test(t)) return '<span class="conv-tag conv-tag-tese">Tese</span>';
+  if(/honorário|honora|tabela oab|cobrar|valor/.test(t)) return '<span class="conv-tag conv-tag-honorarios">Honorários</span>';
+  if(/trabalhist|trabalh|clt|demiss|rescis/.test(t)) return '<span class="conv-tag conv-tag-trabalhista">Trabalhista</span>';
+  if(/família|divor|alimento|guar|herança|invent/.test(t)) return '<span class="conv-tag conv-tag-familia">Família</span>';
+  if(/criminal|crime|preso|réu|acusado|inquérito|b.o/.test(t)) return '<span class="conv-tag conv-tag-criminal">Criminal</span>';
+  return '';
+}
+
+// Global conv list cache for search filtering
+let _cachedConvs = [];
+
 function renderConvList(convs){
+  _cachedConvs = convs;
+  _renderConvListFiltered(convs);
+}
+
+function filterConversations(query){
+  if(!query.trim()){_renderConvListFiltered(_cachedConvs);return;}
+  const q=query.toLowerCase();
+  _renderConvListFiltered(_cachedConvs.filter(c=>(c.title||'').toLowerCase().includes(q)));
+}
+
+function _renderConvListFiltered(convs){
   const list=$('convList');
   if(!convs.length){
     list.innerHTML='<div class="conv-empty">Nenhuma conversa ainda.<br>Comece digitando sua primeira pergunta!</div>';
     return;
   }
-  list.innerHTML=convs.map(c=>`
-    <div class="conv-item ${c.id===currentConvId?'active':''}" onclick="loadConversation(${c.id})" id="conv-${c.id}">
+  const pinned=getPinnedConvs();
+  const pinnedConvs=convs.filter(c=>pinned.includes(c.id));
+  const normalConvs=convs.filter(c=>!pinned.includes(c.id));
+  let html='';
+  if(pinnedConvs.length){
+    html+='<div class="pinned-section-label">📌 Fixadas</div>';
+    html+=pinnedConvs.map(c=>buildConvItem(c,pinned)).join('');
+    if(normalConvs.length) html+='<div class="pinned-section-label" style="margin-top:4px">Recentes</div>';
+  }
+  html+=normalConvs.map(c=>buildConvItem(c,pinned)).join('');
+  list.innerHTML=html;
+}
+
+function buildConvItem(c,pinned){
+  const isPinned=pinned.includes(c.id);
+  const tag=getConvTag(c.title);
+  return `
+    <div class="conv-item ${c.id===currentConvId?'active':''} ${isPinned?'pinned-conv':''}" onclick="loadConversation(${c.id})" id="conv-${c.id}">
       <div class="conv-item-text">
-        <div class="conv-item-title" id="conv-title-${c.id}">${escapeHtml(c.title)}</div>
+        <div class="conv-item-title" id="conv-title-${c.id}">${tag}${escapeHtml(c.title)}</div>
         <div class="conv-item-date">${formatDate(c.updated_at)}</div>
       </div>
+      <button class="conv-pin ${isPinned?'pinned':''}" onclick="togglePinConv(event,${c.id})" title="${isPinned?'Desafixar':'Fixar no topo'}">📌</button>
       <button class="conv-rename" onclick="renameConversation(event,${c.id})" title="Renomear">✏️</button>
       <button class="conv-delete" onclick="deleteConversation(event,${c.id})" title="Apagar">✕</button>
     </div>
-  `).join('');
+  `;
 }
 
 function escapeHtml(s){
@@ -1288,10 +1474,21 @@ function appendMessage(role,content,suggestions){
     favBtn.className='msg-action-btn';
     favBtn.innerHTML='⭐ Favoritar';
     favBtn.onclick=()=>addFavorite(content,favBtn);
+    // Feature 3: Botão Baixar DOCX
+    const docxBtn=document.createElement('button');
+    docxBtn.className='msg-action-btn';
+    docxBtn.innerHTML='💾 Baixar DOCX';
+    docxBtn.onclick=()=>downloadDocx(content);
+    const pecaLimpaBtn=document.createElement('button');
+    pecaLimpaBtn.className='msg-action-btn';
+    pecaLimpaBtn.innerHTML='📄 Peça Limpa';
+    pecaLimpaBtn.onclick=()=>pecaLimpa(content,pecaLimpaBtn);
     actions.appendChild(copyBtn);
     actions.appendChild(waBtn);
     actions.appendChild(ttsBtn);
     actions.appendChild(favBtn);
+    actions.appendChild(docxBtn);
+    actions.appendChild(pecaLimpaBtn);
     const audioContainer=document.createElement('div');
     audioContainer.id='audio-container-'+audioId;
     audioContainer.style.cssText='display:none;margin-top:8px;';
@@ -1316,6 +1513,16 @@ function appendMessage(role,content,suggestions){
         chip.onclick=()=>sendSuggestion(chip);
         chipsRow.appendChild(chip);
       });
+      // Feature 8: Chip "Versão para o cliente"
+      const clientChip=document.createElement('button');
+      clientChip.className='ctx-chip proativo';
+      clientChip.textContent='📋 Explicar para o cliente em linguagem simples';
+      clientChip.onclick=()=>{
+        $('chatInput').value='Explique a resposta anterior para o cliente de forma simples, sem juridiqueses, como se estivesse conversando com uma pessoa leiga.';
+        $('sendBtn').disabled=false;
+        sendMessage();
+      };
+      chipsRow.appendChild(clientChip);
       chipsDiv.appendChild(chipsRow);
       msgContent.appendChild(chipsDiv);
     }
@@ -1373,6 +1580,8 @@ function formatMsg(text){
   t=t.replace(/(<li>.*<\/li>)/s,'<ul>$1</ul>');
   // Numbered list
   t=t.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
+  // Campos marcados em petições: [NOME DO RÉU], [DATA DO FATO], [COMARCA], etc.
+  t=t.replace(/\[([A-ZÀ-Ü][A-ZÀ-Ü\s\/\-\.0-9]{1,60})\]/g,'<span class="campo-marcado" onclick="selecionarCampo(this)" title="Clique para selecionar e substituir">[$1]</span>');
   // Line breaks to paragraphs
   const lines=t.split('\n');
   const paras=[];let buf=[];
@@ -1382,6 +1591,13 @@ function formatMsg(text){
   }
   if(buf.length) paras.push('<p>'+buf.join('<br>')+'</p>');
   return paras.join('');
+}
+
+function selecionarCampo(span){
+  const range=document.createRange();
+  range.selectNodeContents(span);
+  const sel=window.getSelection();
+  if(sel){sel.removeAllRanges();sel.addRange(range);}
 }
 
 function showTyping(){
@@ -1443,7 +1659,21 @@ function openProfileModal(){
   if(userProfile.area) document.getElementById('profile_area').value=userProfile.area;
   if(userProfile.cidade) document.getElementById('profile_cidade').value=userProfile.cidade;
   if(userProfile.anos_experiencia) document.getElementById('profile_anos').value=userProfile.anos_experiencia;
+  if(userProfile.estado) document.getElementById('profile_estado').value=userProfile.estado;
+  if(userProfile.oab) document.getElementById('profile_oab').value=userProfile.oab;
+  if(userProfile.escritorio) document.getElementById('profile_escritorio').value=userProfile.escritorio;
+  if(userProfile.especialidade_secundaria) document.getElementById('profile_especialidade2').value=userProfile.especialidade_secundaria;
+  // Tom preferido
+  const tomAtual=userProfile.tom_preferido||localStorage.getItem('capi_tom')||'equilibrado';
+  document.querySelectorAll('.tom-btn').forEach(b=>{
+    b.classList.toggle('selected', b.dataset.tom===tomAtual);
+  });
   document.getElementById('profileModal').classList.remove('hidden');
+}
+
+function selectTom(btn){
+  document.querySelectorAll('.tom-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
 }
 
 function closeProfileModal(){document.getElementById('profileModal').classList.add('hidden');}
@@ -1453,17 +1683,24 @@ async function saveProfile(){
   const area=document.getElementById('profile_area').value;
   const cidade=document.getElementById('profile_cidade').value.trim();
   const anos_experiencia=document.getElementById('profile_anos').value;
+  const estado=document.getElementById('profile_estado').value;
+  const oab=document.getElementById('profile_oab').value.trim();
+  const escritorio=document.getElementById('profile_escritorio').value.trim();
+  const especialidade_secundaria=document.getElementById('profile_especialidade2').value.trim();
+  const tomBtn=document.querySelector('.tom-btn.selected');
+  const tom_preferido=tomBtn?tomBtn.dataset.tom:'equilibrado';
   const token=localStorage.getItem('capi_token');
   try{
     const r=await fetch('/api/profile',{
       method:'PUT',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({nome,area,cidade,anos_experiencia})
+      body:JSON.stringify({nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido})
     });
     if(r.ok){
-      userProfile={nome,area,cidade,anos_experiencia};
+      userProfile={nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido};
+      localStorage.setItem('capi_tom',tom_preferido);
+      updateTomBtn(tom_preferido);
       closeProfileModal();
-      // Mostra confirmação
       showToast('✅ Perfil salvo! Vou personalizar suas respostas.');
     }
   }catch(e){showToast('Erro ao salvar perfil.');}
@@ -1473,8 +1710,154 @@ async function loadProfile(){
   try{
     const token=localStorage.getItem('capi_token');
     const r=await fetch('/api/profile',{headers:{'Authorization':'Bearer '+token}});
-    if(r.ok) userProfile=await r.json();
+    if(r.ok){
+      userProfile=await r.json();
+      // Atualiza termômetro com o tom do servidor
+      if(userProfile.tom_preferido){
+        localStorage.setItem('capi_tom',userProfile.tom_preferido);
+        updateTomBtn(userProfile.tom_preferido);
+      }
+    }
   }catch(e){}
+}
+
+// ── TERMÔMETRO DE TOM ──────────────────────────────────
+const TOM_CICLO=[['descontraido','🤙'],['equilibrado','⚖️'],['formal','👔']];
+
+function updateTomBtn(tom){
+  const btn=document.getElementById('tomTermometroBtn');
+  if(!btn) return;
+  const entry=TOM_CICLO.find(e=>e[0]===tom)||TOM_CICLO[1];
+  btn.textContent=entry[1]+' Tom';
+  btn.title='Tom: '+tom.charAt(0).toUpperCase()+tom.slice(1)+' — clique para alternar';
+}
+
+async function cycleTom(){
+  const toms=TOM_CICLO.map(e=>e[0]);
+  const atual=localStorage.getItem('capi_tom')||userProfile.tom_preferido||'equilibrado';
+  const idx=(toms.indexOf(atual)+1)%toms.length;
+  const novo=toms[idx];
+  localStorage.setItem('capi_tom',novo);
+  updateTomBtn(novo);
+  userProfile.tom_preferido=novo;
+  // Persiste no servidor em background
+  const token=localStorage.getItem('capi_token');
+  try{
+    await fetch('/api/profile',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({...userProfile,tom_preferido:novo})
+    });
+  }catch(e){}
+  const labels={'descontraido':'🤙 Descontraído','equilibrado':'⚖️ Equilibrado','formal':'👔 Formal'};
+  showToast('Tom alterado para '+labels[novo]);
+}
+
+// ── TEMPLATES ──────────────────────────────────────────
+let _templates=[];
+
+async function loadTemplates(){
+  try{
+    const token=localStorage.getItem('capi_token');
+    const r=await fetch('/api/templates',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    _templates=await r.json();
+    renderWelcomeTemplates();
+  }catch(e){}
+}
+
+function renderWelcomeTemplates(){
+  const sec=document.getElementById('welcomeTemplates');
+  const chips=document.getElementById('welcomeTemplatesChips');
+  if(!sec||!chips) return;
+  if(!_templates.length){sec.style.display='none';return;}
+  sec.style.display='';
+  chips.innerHTML=_templates.map(t=>`
+    <div class="template-chip" onclick="useTemplate(${t.id})">
+      ⭐ ${escapeHtml(t.titulo)}
+      <button class="chip-del" onclick="deleteTemplate(event,${t.id})" title="Apagar">✖</button>
+    </div>
+  `).join('');
+}
+
+function useTemplate(id){
+  const tpl=_templates.find(t=>t.id===id);
+  if(!tpl) return;
+  const inp=document.getElementById('chatInput');
+  if(!inp) return;
+  inp.value=tpl.prompt;
+  inp.dispatchEvent(new Event('input'));
+  inp.focus();
+  // Se a welcome screen ainda está visível, scroll até o input
+  inp.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+async function deleteTemplate(e,id){
+  e.stopPropagation();
+  const token=localStorage.getItem('capi_token');
+  try{
+    const r=await fetch('/api/templates/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+    if(r.ok){
+      _templates=_templates.filter(t=>t.id!==id);
+      renderWelcomeTemplates();
+    }
+  }catch(e2){}
+}
+
+let _templateMiniModal=null;
+
+function openSaveTemplateModal(){
+  const inp=document.getElementById('chatInput');
+  const texto=(inp?inp.value:'').trim();
+  if(!texto){showToast('Digite algo no input antes de salvar como template.');return;}
+  // Fecha se já aberto
+  if(_templateMiniModal){_templateMiniModal.remove();_templateMiniModal=null;return;}
+  const modal=document.createElement('div');
+  modal.className='template-mini-modal';
+  modal.id='templateMiniModal';
+  modal.innerHTML=`
+    <div class="tm-title">⭐ Salvar como template</div>
+    <input type="text" id="tmTituloInput" placeholder="Nome do template (ex: Petição Inicial INSS)" maxlength="100" autofocus>
+    <div class="tm-btns">
+      <button class="tm-cancel" onclick="closeSaveTemplateModal()">Cancelar</button>
+      <button class="tm-save" onclick="confirmSaveTemplate()">Salvar</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  _templateMiniModal=modal;
+  setTimeout(()=>{
+    const inp2=document.getElementById('tmTituloInput');
+    if(inp2){inp2.focus();
+      inp2.addEventListener('keydown',e=>{if(e.key==='Enter')confirmSaveTemplate();if(e.key==='Escape')closeSaveTemplateModal();});}
+  },50);
+}
+
+function closeSaveTemplateModal(){
+  if(_templateMiniModal){_templateMiniModal.remove();_templateMiniModal=null;}
+}
+
+async function confirmSaveTemplate(){
+  const tituloEl=document.getElementById('tmTituloInput');
+  const titulo=(tituloEl?tituloEl.value:'').trim();
+  if(!titulo){showToast('Informe um nome para o template.');return;}
+  const inp=document.getElementById('chatInput');
+  const prompt=(inp?inp.value:'').trim();
+  if(!prompt){showToast('Nenhum texto no input para salvar.');return;}
+  const token=localStorage.getItem('capi_token');
+  try{
+    const r=await fetch('/api/templates',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({titulo,prompt})
+    });
+    if(r.ok){
+      const data=await r.json();
+      _templates.unshift({id:data.id,titulo,prompt});
+      renderWelcomeTemplates();
+      closeSaveTemplateModal();
+      showToast('⭐ Template salvo com sucesso!');
+    }
+  }catch(e2){showToast('Erro ao salvar template.');}
 }
 
 // ── TOAST ────────────────────────────────────────────────────
@@ -1541,6 +1924,133 @@ function shareWhatsApp(text){
   const msg=encodeURIComponent('💬 Resposta do Capi Cândia:\n\n'+text.substring(0,500)+(text.length>500?'...':''));
   window.open('https://wa.me/?text='+msg,'_blank');
 }
+
+// ── FEATURE 3: EXPORTAR PEÇA COMO DOCX ──
+function downloadDocx(content){
+  try{
+    // Remove markdown symbols
+    const plainText = content
+      .replace(/\*\*/g,'')
+      .replace(/[*_#`]/g,'')
+      .trim();
+    const hoje = new Date();
+    const dataStr = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    // Check if docx library is loaded
+    if(typeof docx === 'undefined'){
+      showToast('❌ Biblioteca DOCX ainda carregando. Tente novamente em instantes.');
+      return;
+    }
+    const {
+      Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle
+    } = docx;
+    const lines = plainText.split('\n');
+    const docChildren = [
+      new Paragraph({
+        text: 'Peça Jurídica — Capi Când-IA Pro',
+        heading: HeadingLevel.HEADING_1,
+        alignment: AlignmentType.CENTER,
+      }),
+      new Paragraph({
+        children:[
+          new TextRun({
+            text: 'Gerado em: ' + dataStr,
+            italics: true,
+            color: '888888',
+            size: 20
+          })
+        ],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 400 }
+      }),
+      ...lines.map(line => new Paragraph({
+        children: [new TextRun({
+          text: line || ' ',
+          size: 24
+        })],
+        spacing: { after: line.trim() ? 80 : 160 }
+      }))
+    ];
+    const doc = new Document({
+      sections:[{ children: docChildren }],
+      creator: 'Capi Când-IA Pro',
+      title: 'Peça Jurídica'
+    });
+    Packer.toBlob(doc).then(blob=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'peca-juridica-capi-' + Date.now() + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+      showToast('✅ Peça baixada como DOCX!');
+    }).catch(err=>{
+      console.error(err);
+      showToast('❌ Erro ao gerar DOCX: ' + err.message);
+    });
+  } catch(err){
+    console.error(err);
+    showToast('❌ Erro ao gerar DOCX: ' + err.message);
+  }
+}
+
+// ── FEATURE 4: TAMANHO DE FONTE AJUSTÁVEL ──
+const FONT_SIZES = [12, 14, 16, 18];
+function getFontSizeIdx(){
+  const saved = parseInt(localStorage.getItem('capi_font_size') || '14');
+  const idx = FONT_SIZES.indexOf(saved);
+  return idx >= 0 ? idx : 1; // default = 14px (idx 1)
+}
+function applyFontSize(px){
+  document.body.style.fontSize = px + 'px';
+  localStorage.setItem('capi_font_size', px);
+  showToast('Fonte: ' + px + 'px');
+}
+function changeFontSize(dir){
+  const cur = getFontSizeIdx();
+  const next = Math.max(0, Math.min(FONT_SIZES.length - 1, cur + dir));
+  applyFontSize(FONT_SIZES[next]);
+}
+// Aplica tamanho de fonte salvo ao carregar
+(function(){
+  const saved = localStorage.getItem('capi_font_size');
+  if(saved) document.body.style.fontSize = parseInt(saved) + 'px';
+})();
+
+// ── FEATURE 7: ATALHOS DE TECLADO ──
+document.addEventListener('keydown', function(e){
+  const isMac = navigator.platform.toUpperCase().includes('MAC');
+  const ctrl = isMac ? e.metaKey : e.ctrlKey;
+  // Ctrl/Cmd+Enter: envia mensagem
+  if(ctrl && e.key === 'Enter'){
+    e.preventDefault();
+    const sendBtn = document.getElementById('sendBtn');
+    if(sendBtn && !sendBtn.disabled) sendMessage();
+    return;
+  }
+  // Ctrl/Cmd+N: nova conversa
+  if(ctrl && e.key === 'n'){
+    e.preventDefault();
+    // Só ativa se o chat estiver visível
+    const chatScreen = document.getElementById('chatScreen');
+    if(chatScreen && !chatScreen.classList.contains('hidden')) newConversation();
+    return;
+  }
+  // Escape: fecha qualquer modal aberto
+  if(e.key === 'Escape'){
+    // Fecha modais com classe modal-overlay
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m=>m.classList.add('hidden'));
+    // Fecha game overlay
+    const game = document.getElementById('gameOverlay');
+    if(game) closeGame();
+    // Fecha dropdown mobile
+    closeMobileMenu();
+    // Fecha sidebar mobile
+    const sidebar = document.getElementById('sidebar');
+    if(sidebar && sidebar.classList.contains('open')) sidebar.classList.remove('open');
+    return;
+  }
+});
 
 // ── UPLOAD NA CONVERSA ───────────────────────────────────────
 async function handleConvUpload(input){
@@ -2372,6 +2882,317 @@ Storytelling: [copy com narrativa]
 }
 
 
+// ── DASHBOARD DE USO ──────────────────────────────────
+async function loadDashboardUso(){
+  try{
+    const token=localStorage.getItem('capi_token');
+    const r=await fetch('/api/user/stats',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    const data=await r.json();
+    if(data.pecas>5){
+      document.getElementById('dashboardUsoText').textContent=`📊 Este mês: ${data.pecas} peças geradas · ~${data.horas}h economizadas`;
+      document.getElementById('dashboardUso').style.display='block';
+    }
+  }catch(e){/* silencioso */}
+}
+
+// ── PEÇA LIMPA ─────────────────────────────────────────
+function pecaLimpa(content,btn){
+  // Remove emojis e linhas que começam com emojis especiais de seções
+  let limpo=content
+    .split('\n')
+    .filter(line=>!line.match(/^[🎯#️⃣💬📋📣⚡💡🔵🔴🟡]/u))
+    .join('\n');
+  // Remove emojis do texto
+  limpo=limpo.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}\u{1F300}-\u{1F9FF}]/gu,' ');
+  // Remove markdown
+  limpo=limpo.replace(/\*\*/g,'').replace(/[*_#`~>]/g,'');
+  // Remove linhas vazias múltiplas
+  limpo=limpo.replace(/\n{3,}/g,'\n\n').trim();
+  navigator.clipboard.writeText(limpo).then(()=>{
+    const orig=btn.innerHTML;
+    btn.innerHTML='✅ Copiado!';
+    setTimeout(()=>btn.innerHTML=orig,2000);
+  });
+}
+
+// ── CALCULADORA DE PRESCRIÇÃO ───────────────────────────
+const PRAZOS_PRESCRICAO=[
+  {label:'Dano moral trabalhista',anos:2,base:'TST Súmula 291/CLT art. 7º XXIX'},
+  {label:'Ação trabalhista geral',anos:2,base:'CF art. 7º XXIX'},
+  {label:'Dano moral cível',anos:3,base:'CC art. 206 § 3º V'},
+  {label:'Cobrança de dívida (geral)',anos:3,base:'CC art. 206 § 3º VIII'},
+  {label:'Responsabilidade civil extracontratual',anos:3,base:'CC art. 206 § 3º V'},
+  {label:'Indenização CDC (consumidor)',anos:5,base:'CDC art. 27'},
+  {label:'Ação previdenciária (INSS)',anos:5,base:'Decreto 3048/99 art. 103'},
+  {label:'Ação de alimentos',anos:2,base:'CC art. 206 § 2º'},
+  {label:'Cobrança de aluguéis',anos:3,base:'CC art. 206 § 3º I'},
+  {label:'Ação de divisionamento/viz.',anos:10,base:'CC art. 205'},
+  {label:'Ação petitória (propriedade)',anos:10,base:'CC art. 205'},
+  {label:'Ação penal pública (homicídio simples)',anos:20,base:'CP art. 109 I'},
+  {label:'Nulidade de ato jurídico (geral)',anos:4,base:'CC art. 178 I'},
+  {label:'Responsabilidade por vícios do produto',anos:5,base:'CDC art. 27'},
+  {label:'Ação de cobrança (seguro)',anos:1,base:'CC art. 206 § 1º II'}
+];
+
+function openPrescricaoModal(){
+  let existingModal=document.getElementById('prescricaoModal');
+  if(existingModal){existingModal.style.display='flex';return;}
+  const modal=document.createElement('div');
+  modal.id='prescricaoModal';
+  modal.style.cssText='display:flex;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:min(480px,95vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+      <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-size:1.05rem;font-weight:700;color:var(--text)">⏱️ Calculadora de Prescrição</div>
+        <button onclick="document.getElementById('prescricaoModal').style.display='none'" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+      </div>
+      <div style="padding:20px;overflow-y:auto;flex:1">
+        <div class="form-group">
+          <label class="form-label">Tipo de ação</label>
+          <select id="prescTipo" class="form-select" onchange="calcularPrescricao()">
+            <option value="">Selecione...</option>
+            ${PRAZOS_PRESCRICAO.map((p,i)=>`<option value="${i}">${p.label} — ${p.anos} ${p.anos===1?'ano':'anos'}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data do fato / lesão</label>
+          <input type="date" id="prescData" class="form-input" onchange="calcularPrescricao()">
+        </div>
+        <div id="prescResultado" style="display:none;margin-top:16px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:12px">
+          <div id="prescTexto" style="font-size:.95rem;color:var(--text);line-height:1.8"></div>
+          <div id="prescBase" style="font-size:.75rem;color:var(--text2);margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function calcularPrescricao(){
+  const tipoIdx=document.getElementById('prescTipo').value;
+  const dataStr=document.getElementById('prescData').value;
+  const res=document.getElementById('prescResultado');
+  if(tipoIdx===''||!dataStr){res.style.display='none';return;}
+  const prazo=PRAZOS_PRESCRICAO[parseInt(tipoIdx)];
+  const dataFato=new Date(dataStr+'T12:00:00');
+  const dataVenc=new Date(dataFato);
+  dataVenc.setFullYear(dataVenc.getFullYear()+prazo.anos);
+  const hoje=new Date();
+  const diffMs=dataVenc-hoje;
+  const diffDias=Math.ceil(diffMs/(1000*60*60*24));
+  const vencStr=dataVenc.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const prescrito=diffDias<0;
+  const texto=prescrito
+    ? `⚠️ Prazo: ${prazo.anos} ${prazo.anos===1?'ano':'anos'} | Venceu em: ${vencStr} | Há ${Math.abs(diffDias)} dias (PRESCRITO)`
+    : `✅ Prazo: ${prazo.anos} ${prazo.anos===1?'ano':'anos'} | Vence em: ${vencStr} | Faltam: ${diffDias} dias`;
+  document.getElementById('prescTexto').textContent=texto;
+  document.getElementById('prescTexto').style.color=prescrito?'#ef5350':'var(--text)';
+  document.getElementById('prescBase').textContent='Base legal: '+prazo.base;
+  res.style.display='block';
+}
+
+// ── SIMULADOR DE AUDIÊNCIA ────────────────────────────────
+let audienciaAtiva=false;
+let audienciaHistory=[];
+let audienciaConfig={};
+let audienciaJuiz='';
+let audienciaRodada=0;
+
+function openAudienciaModal(){
+  let m=document.getElementById('audienciaModal');
+  if(!m) createAudienciaModal();
+  document.getElementById('audienciaModal').style.display='flex';
+  // Reset para tela inicial
+  document.getElementById('audSetup').style.display='block';
+  document.getElementById('audSimulacao').style.display='none';
+  document.getElementById('audFeedback').style.display='none';
+}
+
+function closeAudienciaModal(){
+  document.getElementById('audienciaModal').style.display='none';
+  audienciaAtiva=false;
+  audienciaHistory=[];
+}
+
+function createAudienciaModal(){
+  const modal=document.createElement('div');
+  modal.id='audienciaModal';
+  modal.style.cssText='display:none;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);align-items:center;justify-content:center';
+  modal.innerHTML=`
+<div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:min(620px,97vw);max-height:93vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5)">
+  <!-- Header -->
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,rgba(184,134,11,.12),transparent)">
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text)">🎭 Simulador de Audiência</div>
+    <button onclick="closeAudienciaModal()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
+  </div>
+
+  <!-- TELA SETUP -->
+  <div id="audSetup" style="padding:24px;overflow-y:auto;flex:1">
+    <div style="font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:4px;text-align:center">⚖️ Prepare sua audiência</div>
+    <div style="font-size:.8rem;color:var(--text2);text-align:center;margin-bottom:20px">Simule uma audiência jurídica real com IA</div>
+    <div class="form-group">
+      <label class="form-label">Tipo de audiência</label>
+      <select id="audTipo" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="Trabalhista">Trabalhista</option>
+        <option value="Família/Divórcio">Família/Divórcio</option>
+        <option value="Cível/Indenização">Cível/Indenização</option>
+        <option value="Previdenciário">Previdenciário</option>
+        <option value="Criminal">Criminal</option>
+        <option value="Consumidor">Consumidor</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Seu papel</label>
+      <select id="audPapel" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="Autor">Autor</option>
+        <option value="Réu">Réu</option>
+        <option value="MP">Ministério Público (MP)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contexto do caso</label>
+      <textarea id="audContexto" class="form-select" style="height:90px;resize:none;font-family:inherit" placeholder="Resuma os fatos em 2-3 linhas. Ex: Rescisão sem justa causa após 5 anos de serviço, cliente não recebeu verbas rescisórias..."></textarea>
+    </div>
+    <button onclick="iniciarSimulacaoAudiencia()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),#b8860b);color:#fff;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:4px">🎭 Iniciar Simulação</button>
+  </div>
+
+  <!-- TELA SIMULACAO -->
+  <div id="audSimulacao" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div id="audSimHeader" style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--bg3)">
+      <div style="font-size:.85rem;font-weight:700;color:var(--gold)" id="audJuizNome">⚖️ Juiz(a)</div>
+      <div style="font-size:.78rem;color:var(--text2)" id="audRodada">Rodada 1</div>
+    </div>
+    <div id="audMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:200px;max-height:340px"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0">
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <textarea id="audInput" style="flex:1;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:.88rem;resize:none;height:60px;outline:none" placeholder="Sua manifestação como advogado..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarRespostaAudiencia()}"></textarea>
+        <button onclick="enviarRespostaAudiencia()" style="padding:0 16px;background:var(--gold);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:1.2rem;font-weight:700">→</button>
+      </div>
+      <button onclick="encerrarAudiencia()" style="width:100%;padding:8px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.82rem;cursor:pointer">📊 Encerrar e receber feedback</button>
+    </div>
+  </div>
+
+  <!-- TELA FEEDBACK -->
+  <div id="audFeedback" style="display:none;padding:24px;overflow-y:auto;flex:1">
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:2rem" id="audNota">--</div>
+      <div style="font-size:.8rem;color:var(--text2)">Nota geral</div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:.8rem;font-weight:700;color:#00c853;margin-bottom:6px">✅ Pontos fortes</div>
+      <ul id="audFortes" style="margin:0;padding-left:18px;font-size:.85rem;color:var(--text);line-height:1.7"></ul>
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:.8rem;font-weight:700;color:#ff9800;margin-bottom:6px">📌 Pontos a melhorar</div>
+      <ul id="audMelhorar" style="margin:0;padding-left:18px;font-size:.85rem;color:var(--text);line-height:1.7"></ul>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:.75rem;font-weight:700;color:var(--gold);margin-bottom:6px">💡 DICA FINAL</div>
+      <div id="audDica" style="font-size:.85rem;color:var(--text);line-height:1.6"></div>
+    </div>
+    <button onclick="openAudienciaModal()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),#b8860b);color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer">🔄 Jogar novamente</button>
+  </div>
+</div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function appendAudienciaMensagem(role, texto){
+  const container=document.getElementById('audMessages');
+  const div=document.createElement('div');
+  const isJuiz=role==='juiz';
+  div.style.cssText=`display:flex;gap:8px;align-items:flex-start;${isJuiz?'':'flex-direction:row-reverse'}`;
+  const avatar=document.createElement('div');
+  avatar.style.cssText=`width:32px;height:32px;border-radius:50%;background:${isJuiz?'var(--gold)':'var(--primary)'};display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;color:#fff;font-weight:700`;
+  avatar.textContent=isJuiz?'⚖️':'👤';
+  const bubble=document.createElement('div');
+  bubble.style.cssText=`background:${isJuiz?'var(--bg3)':'rgba(184,134,11,.12)'};border:1px solid var(--border);border-radius:12px;padding:10px 14px;max-width:80%;font-size:.85rem;color:var(--text);line-height:1.6`;
+  bubble.textContent=texto;
+  div.appendChild(avatar);
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+}
+
+async function iniciarSimulacaoAudiencia(){
+  const tipo=document.getElementById('audTipo').value;
+  const papel=document.getElementById('audPapel').value;
+  const contexto=document.getElementById('audContexto').value;
+  if(!tipo||!papel||!contexto.trim()){showToast('Preencha todos os campos');return;}
+  audienciaConfig={tipo,papel,contexto};
+  audienciaAtiva=true;
+  audienciaHistory=[];
+  audienciaRodada=0;
+  document.getElementById('audSetup').style.display='none';
+  document.getElementById('audSimulacao').style.display='flex';
+  document.getElementById('audMessages').innerHTML='';
+  // Mostra loading
+  appendAudienciaMensagem('juiz','...');
+  await enviarMsgAudiencia('INICIAR');
+}
+
+async function enviarMsgAudiencia(msg){
+  const token=localStorage.getItem('capi_token');
+  // Remove loading placeholder
+  const msgs=document.getElementById('audMessages');
+  if(msgs.lastChild && msgs.lastChild.textContent.includes('...')){msgs.removeChild(msgs.lastChild);}
+  try{
+    const r=await fetch('/api/audiencia',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({mensagem:msg,config:audienciaConfig,history:audienciaHistory})
+    });
+    const data=await r.json();
+    if(data.reply){
+      if(msg!=='INICIAR') audienciaHistory.push({role:'user',content:msg});
+      audienciaHistory.push({role:'assistant',content:data.reply});
+      audienciaRodada++;
+      document.getElementById('audRodada').textContent='Rodada '+audienciaRodada;
+      // Extrai nome do juiz da primeira mensagem
+      if(audienciaRodada===1){
+        const match=data.reply.match(/(Dra?\. [A-Za-zà-ü ]+ [A-Za-z]+)/);
+        if(match) document.getElementById('audJuizNome').textContent='⚖️ '+match[1];
+      }
+      appendAudienciaMensagem('juiz',data.reply);
+    }
+    if(data.feedback) mostrarFeedbackAudiencia(data.feedback);
+  }catch(e){
+    appendAudienciaMensagem('juiz','Erro de conexão. Tente novamente.');
+  }
+}
+
+async function enviarRespostaAudiencia(){
+  const input=document.getElementById('audInput');
+  const msg=input.value.trim();
+  if(!msg) return;
+  input.value='';
+  appendAudienciaMensagem('advogado',msg);
+  appendAudienciaMensagem('juiz','...');
+  await enviarMsgAudiencia(msg);
+}
+
+async function encerrarAudiencia(){
+  appendAudienciaMensagem('juiz','Gerando feedback...');
+  await enviarMsgAudiencia('ENCERRAR');
+}
+
+function mostrarFeedbackAudiencia(feedback){
+  document.getElementById('audSimulacao').style.display='none';
+  document.getElementById('audFeedback').style.display='block';
+  const nota=feedback.nota||7;
+  document.getElementById('audNota').textContent=nota+'/10 '+(nota>=8?'🏆':nota>=6?'👍':'💪');
+  const fortes=document.getElementById('audFortes');
+  fortes.innerHTML='';
+  (feedback.pontos_fortes||[]).forEach(p=>{const li=document.createElement('li');li.textContent=p;fortes.appendChild(li);});
+  const melhorar=document.getElementById('audMelhorar');
+  melhorar.innerHTML='';
+  (feedback.pontos_melhorar||[]).forEach(p=>{const li=document.createElement('li');li.textContent=p;melhorar.appendChild(li);});
+  document.getElementById('audDica').textContent=feedback.dica_final||'';
+}
+
 init();
 </script>
 
@@ -2466,6 +3287,59 @@ init();
         <option value="5-10 anos">5-10 anos</option>
         <option value="Mais de 10 anos">Mais de 10 anos</option>
       </select>
+    </div>
+    <div class="form-group">
+      <label>Estado de atuação</label>
+      <select id="profile_estado" class="form-select">
+        <option value="">Selecione...</option>
+        <option value="AC">Acre (AC)</option>
+        <option value="AL">Alagoas (AL)</option>
+        <option value="AP">Amapá (AP)</option>
+        <option value="AM">Amazonas (AM)</option>
+        <option value="BA">Bahia (BA)</option>
+        <option value="CE">Ceará (CE)</option>
+        <option value="DF">Distrito Federal (DF)</option>
+        <option value="ES">Espírito Santo (ES)</option>
+        <option value="GO">Goiás (GO)</option>
+        <option value="MA">Maranhão (MA)</option>
+        <option value="MT">Mato Grosso (MT)</option>
+        <option value="MS">Mato Grosso do Sul (MS)</option>
+        <option value="MG">Minas Gerais (MG)</option>
+        <option value="PA">Pará (PA)</option>
+        <option value="PB">Paraíba (PB)</option>
+        <option value="PR">Paraná (PR)</option>
+        <option value="PE">Pernambuco (PE)</option>
+        <option value="PI">Piauí (PI)</option>
+        <option value="RJ">Rio de Janeiro (RJ)</option>
+        <option value="RN">Rio Grande do Norte (RN)</option>
+        <option value="RS">Rio Grande do Sul (RS)</option>
+        <option value="RO">Rondônia (RO)</option>
+        <option value="RR">Roraima (RR)</option>
+        <option value="SC">Santa Catarina (SC)</option>
+        <option value="SP">São Paulo (SP)</option>
+        <option value="SE">Sergipe (SE)</option>
+        <option value="TO">Tocantins (TO)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Número OAB <span style="color:var(--text2);font-weight:400;font-size:.78rem">(ex: MS 23.215)</span></label>
+      <input type="text" id="profile_oab" class="form-input" placeholder="MS 23.215">
+    </div>
+    <div class="form-group">
+      <label>Nome do escritório</label>
+      <input type="text" id="profile_escritorio" class="form-input" placeholder="Ex: Silva &amp; Associados Advocacia">
+    </div>
+    <div class="form-group">
+      <label>Especialidade secundária</label>
+      <input type="text" id="profile_especialidade2" class="form-input" placeholder="Ex: Direito Digital, Imobiliário...">
+    </div>
+    <div class="form-group">
+      <label>Tom preferido de comunicação</label>
+      <div style="display:flex;gap:8px;margin-top:6px" id="tom_btns">
+        <button type="button" class="tom-btn" data-tom="descontraido" onclick="selectTom(this)">🤙 Descontraído</button>
+        <button type="button" class="tom-btn" data-tom="equilibrado" onclick="selectTom(this)">⚖️ Equilibrado</button>
+        <button type="button" class="tom-btn" data-tom="formal" onclick="selectTom(this)">👔 Formal</button>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeProfileModal()">Cancelar</button>
