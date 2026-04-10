@@ -1156,14 +1156,14 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
       // Constrói query enriquecida: última msg + contexto das 3 msgs anteriores
       const recentMsgs = messages.slice(-6);
       const contextQuery = recentMsgs.map(m => m.content).join(' ') + ' ' + lastUserMsg.content;
-      const relevantChunks = await searchKnowledge(contextQuery, 3);
+      const relevantChunks = await searchKnowledge(contextQuery, 10);
       if (relevantChunks.length > 0) {
-        ragContext = '\n\n━━━ CONHECIMENTO DO RAFAEL CÂNDIA (use isto para responder) ━━━\n';
+        ragContext = '\n\n━━━ BASE DE CONHECIMENTO DO RAFAEL CÂNDIA (PRIORIDADE MÁXIMA) ━━━\n';
+        ragContext += 'REGRA: Estes trechos são da base real do Rafael Cândia. PRIORIZE este conteúdo acima de qualquer conhecimento genérico. Cite explicitamente: "Na base do Rafael...", "Como o Rafael ensina...", "A base mostra que...". Use as palavras e conceitos DELE, não parafraseie com linguagem genérica.\n';
         relevantChunks.forEach((chunk, i) => {
           ragContext += `\n[${i+1}] Fonte: ${chunk.original_name}\n${chunk.content}\n`;
         });
-        ragContext += '\n━━━ FIM DO CONHECIMENTO ━━━\n';
-        ragContext += '\nIMPORTANTE: Use os trechos acima como base para a resposta. Seja específico, cite exemplos e metodologias do Rafael quando relevante.';
+        ragContext += '\n━━━ FIM DA BASE ━━━\n';
       }
     } catch (e) {
       console.error('Erro RAG (continuando sem contexto):', e.message);
@@ -1293,7 +1293,7 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
     formatoCtx = `\n\n📌 REGRA JURISPRUDÊNCIA: Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
   }
 
-  const fullSystemPrompt = systemPrompt + profileCtx + ragContext + docCtx + personalizationCtx + honorariosCtx + regrasCodigo + formatoCtx;
+  const fullSystemPrompt = systemPrompt + ragContext + profileCtx + docCtx + personalizationCtx + honorariosCtx + regrasCodigo + formatoCtx;
 
   // Tenta a chamada OpenAI com retry automático (até 2 tentativas)
   let response, data;
