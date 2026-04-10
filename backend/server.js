@@ -2092,16 +2092,34 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
     const results = [];
     for (const file of files) {
       const extractedText = await processUploadedFile(file);
+      const ext = require('path').extname(file.originalname).toLowerCase();
+      // Conta páginas do PDF
+      let pageCount = null;
+      if (ext === '.pdf') {
+        try {
+          const pdfMod = require('pdf-parse');
+          const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+          const buf = fs.readFileSync(file.path);
+          const info = await pdfParse(buf);
+          pageCount = info.numpages || null;
+        } catch(e) {}
+      }
       const result = db.prepare(
         'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, extracted_text) VALUES (?, ?, ?, ?, ?, ?)'
       ).run(req.body.conversation_id || null, req.user.id, file.filename, file.originalname, file.path, extractedText);
+      const fileSizeKB = Math.round(file.size / 1024);
+      const fileSizeStr = fileSizeKB > 1024 ? (fileSizeKB / 1024).toFixed(1) + ' MB' : fileSizeKB + ' KB';
       results.push({
         upload_id: result.lastInsertRowid,
         id: result.lastInsertRowid,
         name: file.originalname,
         original_name: file.originalname,
+        file_size: fileSizeStr,
+        file_type: ext.replace('.', '').toUpperCase(),
+        page_count: pageCount,
         extracted_length: extractedText.length,
-        preview: extractedText.substring(0, 200) + '...'
+        extracted_ok: extractedText.length > 50,
+        preview: extractedText.substring(0, 300)
       });
     }
     // Retorna array de resultados (ou objeto único se foi 1 arquivo — compatibilidade)

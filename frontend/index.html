@@ -338,9 +338,22 @@
     .mic-btn.recording{background:rgba(231,76,60,.15);border-color:#e74c3c;color:#e74c3c;animation:micPulse 1s infinite}
     .mic-btn svg{width:16px;height:16px}
     @keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
-    .file-badge{display:inline-flex;align-items:center;gap:6px;background:var(--green-dim);border:1px solid var(--border2);border-radius:20px;padding:5px 12px;font-size:.78rem;color:var(--green);margin-bottom:8px;animation:fadeUp .3s ease}
-    .file-badge button{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.9rem;line-height:1;padding:0 2px}
-    .file-badge button:hover{color:#ef5350}
+    .file-badge{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:10px 14px;font-size:.82rem;color:var(--text);margin-bottom:6px;animation:fadeUp .3s ease;position:relative;min-width:220px;max-width:100%}
+    .file-badge .fb-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;font-weight:700}
+    .file-badge .fb-icon.pdf{background:rgba(239,68,68,.15);color:#ef4444}
+    .file-badge .fb-icon.docx{background:rgba(59,130,246,.15);color:#3b82f6}
+    .file-badge .fb-icon.img{background:rgba(168,85,247,.15);color:#a855f7}
+    .file-badge .fb-icon.txt{background:rgba(107,114,128,.15);color:#6b7280}
+    .file-badge .fb-info{flex:1;min-width:0}
+    .file-badge .fb-name{font-weight:600;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .file-badge .fb-meta{font-size:.7rem;color:var(--text-muted);margin-top:2px;display:flex;align-items:center;gap:6px}
+    .file-badge .fb-status{display:flex;align-items:center;gap:4px;font-size:.7rem}
+    .file-badge .fb-status.ok{color:#22c55e}
+    .file-badge .fb-status.err{color:#ef4444}
+    .file-badge .fb-remove{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;line-height:1;padding:2px 4px;border-radius:4px;transition:var(--trans)}
+    .file-badge .fb-remove:hover{color:#ef5350;background:rgba(239,83,80,.1)}
+    .file-badge .fb-progress{position:absolute;bottom:0;left:0;height:3px;background:var(--gold);border-radius:0 0 12px 12px;transition:width .3s ease}
+    body.dark-mode .file-badge{background:#1a1a1a;border-color:#333}
 
     /* ── COPIAR/COMPARTILHAR ── */
     .msg-actions{display:flex;gap:6px;margin-top:8px;opacity:.75;transition:opacity .2s ease}
@@ -448,8 +461,12 @@
     .onboarding-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
     .onboarding-btn:disabled{opacity:.5;cursor:not-allowed}
     /* Drag & Drop */
-    .drag-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(184,134,11,.18);border:3px dashed var(--gold);pointer-events:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;font-size:1.3rem;font-weight:700;color:var(--gold);backdrop-filter:blur(2px)}
+    .drag-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);pointer-events:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(6px)}
     .drag-overlay.active{display:flex}
+    .drag-overlay-box{border:2px dashed var(--gold);border-radius:20px;padding:40px 60px;background:rgba(184,134,11,.08);display:flex;flex-direction:column;align-items:center;gap:12px}
+    .drag-overlay-box .drag-icon{font-size:2.5rem}
+    .drag-overlay-box .drag-title{font-size:1.1rem;font-weight:700;color:var(--gold)}
+    .drag-overlay-box .drag-sub{font-size:.82rem;color:rgba(255,255,255,.6)}
     .area-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;user-select:none}
     .area-chip.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:600}
 
@@ -1457,7 +1474,7 @@ async function sendMessage(){
     appendMessage('assistant', msgErro);
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
-    pendingUploadIds=[];pendingUploadNames=[];document.getElementById('fileBadgeArea').innerHTML='';
+    pendingUploadIds=[];pendingUploadNames=[];window._uploadMeta={};document.getElementById('fileBadgeArea').innerHTML='';
     isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='' && pendingUploadIds.length===0;
     // Restaura placeholder original
     $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
@@ -1478,14 +1495,32 @@ function appendMessage(role,content,suggestions,uploadFiles){
   // Card de documento anexado (para mensagens do usuário com upload)
   if(role==='user' && uploadFiles && uploadFiles.length > 0){
     const cardsHtml = uploadFiles.map(fname => {
-      const ext = fname.split('.').pop().toUpperCase();
-      const icon = ext === 'PDF' ? '📄' : ext === 'DOCX' ? '📝' : ext === 'PNG' || ext === 'JPG' || ext === 'JPEG' || ext === 'WEBP' ? '🖼️' : '📎';
+      const ext = fname.split('.').pop().toLowerCase();
+      const extUp = ext.toUpperCase();
+      const iconCls = typeof getFileIconClass==='function' ? getFileIconClass(ext) : 'pdf';
+      const iconLbl = typeof getFileIconLabel==='function' ? getFileIconLabel(ext) : extUp;
+      // Tenta pegar metadados ricos
+      let metaInfo = extUp + ' · Documento enviado';
+      if(window._uploadMeta){
+        const meta = Object.values(window._uploadMeta).find(m => m.original_name === fname || m.name === fname);
+        if(meta){
+          let parts = [extUp];
+          if(meta.page_count) parts.push(meta.page_count + (meta.page_count>1?' págs':' pág'));
+          if(meta.file_size) parts.push(meta.file_size);
+          parts.push(meta.extracted_ok ? '✅ Lido' : '⚠️ Erro na leitura');
+          metaInfo = parts.join(' · ');
+        }
+      }
       const shortName = fname.length > 35 ? fname.substring(0,32) + '...' : fname;
-      return `<div style="display:flex;align-items:center;gap:10px;background:rgba(184,134,11,.12);border:1px solid rgba(184,134,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:8px">
-        <div style="width:40px;height:40px;border-radius:8px;background:rgba(184,134,11,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">${icon}</div>
+      const bgMap = {pdf:'rgba(239,68,68,.15)',docx:'rgba(59,130,246,.15)',img:'rgba(168,85,247,.15)',txt:'rgba(107,114,128,.15)'};
+      const colorMap = {pdf:'#ef4444',docx:'#3b82f6',img:'#a855f7',txt:'#6b7280'};
+      const bg = bgMap[iconCls]||bgMap.txt;
+      const clr = colorMap[iconCls]||colorMap.txt;
+      return `<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+        <div style="width:40px;height:40px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;color:${clr}">${iconLbl}</div>
         <div style="min-width:0">
-          <div style="font-size:.85rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
-          <div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px">${ext} • Documento enviado</div>
+          <div style="font-size:.83rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.55);margin-top:2px">${metaInfo}</div>
         </div>
       </div>`;
     }).join('');
@@ -2133,50 +2168,142 @@ document.addEventListener('keydown', function(e){
 });
 
 // ── UPLOAD NA CONVERSA ───────────────────────────────────────
+
+function getFileIconClass(ext){
+  ext = (ext||'').toLowerCase();
+  if(ext==='pdf') return 'pdf';
+  if(ext==='docx'||ext==='doc') return 'docx';
+  if(['jpg','jpeg','png','webp'].includes(ext)) return 'img';
+  return 'txt';
+}
+function getFileIconLabel(ext){
+  ext = (ext||'').toLowerCase();
+  if(ext==='pdf') return 'PDF';
+  if(ext==='docx'||ext==='doc') return 'DOC';
+  if(['jpg','jpeg','png','webp'].includes(ext)) return 'IMG';
+  return 'TXT';
+}
+function formatFileSize(bytes){
+  if(!bytes) return '';
+  if(bytes > 1048576) return (bytes/1048576).toFixed(1)+' MB';
+  return Math.round(bytes/1024)+' KB';
+}
+function createFileBadge(file){
+  const ext = file.name.split('.').pop();
+  const badge = document.createElement('div');
+  badge.className = 'file-badge';
+  badge.dataset.fileName = file.name;
+  const shortName = file.name.length > 30 ? file.name.substring(0,27)+'...'+ext : file.name;
+  badge.innerHTML = `
+    <div class="fb-icon ${getFileIconClass(ext)}">${getFileIconLabel(ext)}</div>
+    <div class="fb-info">
+      <div class="fb-name" title="${file.name}">${shortName}</div>
+      <div class="fb-meta">
+        <span>${formatFileSize(file.size)}</span>
+        <span class="fb-status-text">⏳ Enviando e lendo...</span>
+      </div>
+    </div>
+    <div class="fb-progress" style="width:0%"></div>
+  `;
+  return badge;
+}
+function updateBadgeSuccess(badge, data){
+  const statusEl = badge.querySelector('.fb-status-text');
+  const progressEl = badge.querySelector('.fb-progress');
+  if(data.extracted_ok){
+    let meta = '✅ Lido com sucesso';
+    if(data.page_count) meta += ' · '+data.page_count+(data.page_count>1?' págs':' pág');
+    if(data.file_size) meta += ' · '+data.file_size;
+    statusEl.innerHTML = '<span class="fb-status ok">'+meta+'</span>';
+  } else {
+    statusEl.innerHTML = '<span class="fb-status err">⚠️ Não consegui ler o conteúdo</span>';
+  }
+  progressEl.style.width = '100%';
+  setTimeout(()=>{ progressEl.style.opacity='0'; }, 1500);
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'fb-remove';
+  removeBtn.innerHTML = '✕';
+  removeBtn.title = 'Remover arquivo';
+  removeBtn.onclick = function(){ removeUploadByBadge(badge); };
+  badge.appendChild(removeBtn);
+}
+function updateBadgeError(badge, errMsg){
+  const statusEl = badge.querySelector('.fb-status-text');
+  const progressEl = badge.querySelector('.fb-progress');
+  progressEl.style.width = '100%';
+  progressEl.style.background = '#ef4444';
+  statusEl.innerHTML = '<span class="fb-status err">❌ '+(errMsg||'Erro ao enviar')+'</span>';
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'fb-remove';
+  removeBtn.innerHTML = '✕';
+  removeBtn.onclick = function(){ badge.remove(); };
+  badge.appendChild(removeBtn);
+}
 async function handleConvUpload(input){
   const files = Array.from(input.files);
   if(!files.length) return;
-  const token=localStorage.getItem('capi_token');
-  // Toast persistente durante o upload
-  const loadingToast = document.createElement('div');
-  loadingToast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--gold);border-radius:20px;padding:10px 20px;color:var(--gold);font-size:.83rem;z-index:400;animation:fadeUp .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.3)';
-  loadingToast.textContent='⏳ Enviando arquivo, aguarde...';
-  document.body.appendChild(loadingToast);
-  try{
-    for(const file of files){
-      const fd=new FormData();
-      fd.append('file',file);
-      if(currentConvId) fd.append('conversation_id',currentConvId);
-      const r=await fetch('/api/conversation/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
-      const data=await r.json();
-      if(!r.ok) throw new Error(data.error||'Erro ao enviar arquivo');
-      const uploadId = Array.isArray(data) ? data[0].id : data.id;
-      pendingUploadIds.push(uploadId);
-      pendingUploadNames.push(file.name);
-      const area=document.getElementById('fileBadgeArea');
-      const badge=document.createElement('div');
-      badge.className='file-badge';
-      badge.dataset.uploadId=uploadId;
-      badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId},'${file.name.replace(/'/g,"\\'")}')">✕</button>`;
-      area.appendChild(badge);
-    }
-    loadingToast.remove();
-    // Meio-termo: mostra arquivo anexado, habilita envio, foca no input com dica
-    $('sendBtn').disabled = false;
-    const chatInput = $('chatInput');
-    chatInput.setAttribute('placeholder', '💡 Escreva o que precisa ou toque em enviar →');
-    chatInput.focus();
-    showToast('📄 Arquivo pronto! Escreva instruções ou envie direto.');
-  }catch(e){
-    loadingToast.remove();
-    showToast('❌ Erro: ' + e.message + '. Tente novamente.');
-  }
-  input.value='';
-}
+  const token = localStorage.getItem('capi_token');
+  const area = document.getElementById('fileBadgeArea');
 
+  for(const file of files){
+    const badge = createFileBadge(file);
+    area.appendChild(badge);
+    const progressEl = badge.querySelector('.fb-progress');
+    progressEl.style.width = '30%';
+
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      if(currentConvId) fd.append('conversation_id', currentConvId);
+
+      progressEl.style.width = '60%';
+      const r = await fetch('/api/conversation/upload', {
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token},
+        body:fd
+      });
+      const data = await r.json();
+      if(!r.ok) throw new Error(data.error || 'Erro ao enviar');
+
+      progressEl.style.width = '90%';
+      const uploadData = Array.isArray(data) ? data[0] : data;
+
+      pendingUploadIds.push(uploadData.id);
+      pendingUploadNames.push(file.name);
+      if(!window._uploadMeta) window._uploadMeta = {};
+      window._uploadMeta[uploadData.id] = uploadData;
+
+      badge.dataset.uploadId = uploadData.id;
+      updateBadgeSuccess(badge, uploadData);
+
+    } catch(e) {
+      updateBadgeError(badge, e.message);
+    }
+  }
+
+  if(pendingUploadIds.length > 0){
+    $('sendBtn').disabled = false;
+    $('chatInput').setAttribute('placeholder', '💡 Escreva o que precisa ou toque em enviar →');
+    $('chatInput').focus();
+  }
+  input.value = '';
+}
+function removeUploadByBadge(badge){
+  const uploadId = parseInt(badge.dataset.uploadId);
+  const fileName = badge.dataset.fileName;
+  pendingUploadIds = pendingUploadIds.filter(id => id !== uploadId);
+  if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
+  if(window._uploadMeta) delete window._uploadMeta[uploadId];
+  badge.remove();
+  $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+  if(pendingUploadIds.length===0){
+    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
+  }
+}
 function removeUpload(btn, uploadId, fileName){
   pendingUploadIds = pendingUploadIds.filter(id => id !== uploadId);
   if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
+  if(window._uploadMeta) delete window._uploadMeta[uploadId];
   btn.closest('.file-badge').remove();
   $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
   if(pendingUploadIds.length===0){
@@ -3717,7 +3844,11 @@ init();
 
 <!-- Drag & Drop Overlay -->
 <div id="dragOverlay" class="drag-overlay">
-  📎 Solte o arquivo aqui para enviar
+  <div class="drag-overlay-box">
+    <div class="drag-icon">📄</div>
+    <div class="drag-title">Solte o arquivo aqui</div>
+    <div class="drag-sub">PDF, DOCX, TXT ou imagem (JPG, PNG)</div>
+  </div>
 </div>
 
 <!-- Banner PWA -->
