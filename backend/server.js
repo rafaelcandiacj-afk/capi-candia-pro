@@ -1505,6 +1505,12 @@ app.patch('/api/admin/users/:id', adminMiddleware, (req, res) => {
   res.json({ success: true, user });
 });
 
+// Limpa memórias acumuladas de um usuário
+app.delete('/api/admin/users/:id/memory', adminMiddleware, (req, res) => {
+  db.prepare('DELETE FROM user_memory WHERE user_id = ?').run(req.params.id);
+  res.json({success: true, message: 'Memórias limpas'});
+});
+
 app.delete('/api/admin/users/:id', adminMiddleware, (req, res) => {
   db.prepare('DELETE FROM messages WHERE user_id = ?').run(req.params.id);
   db.prepare('DELETE FROM conversations WHERE user_id = ?').run(req.params.id);
