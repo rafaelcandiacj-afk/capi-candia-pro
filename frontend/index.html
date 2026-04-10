@@ -1403,12 +1403,29 @@ async function loadConversation(id){
     const data=await res.json();
     currentConvId=id;
     convHistory=data.messages.map(m=>(({role:m.role,content:m.content})));
+    // Atualiza projeto ativo se conversa pertence a um projeto
+    if(data.conversation && data.conversation.project_id){
+      _activeProjectId = data.conversation.project_id;
+    } else {
+      _activeProjectId = null;
+    }
     $('chatMessages').innerHTML='';
-    data.messages.forEach(m=>appendMessage(m.role,m.content));
-    // mark active
-    document.querySelectorAll('.conv-item').forEach(el=>el.classList.remove('active'));
+    if(data.messages.length === 0){
+      // Conversa vazia — mostra tela de boas-vindas
+      newConversationUI();
+    } else {
+      data.messages.forEach(m=>appendMessage(m.role,m.content));
+    }
+    // mark active — tanto conversas normais quanto de projetos
+    document.querySelectorAll('.conv-item, .project-conv-item').forEach(el=>el.classList.remove('active'));
     const el=document.getElementById('conv-'+id);
     if(el) el.classList.add('active');
+    // Marca ativa dentro do projeto também
+    document.querySelectorAll('.project-conv-item').forEach(el => {
+      if(el.getAttribute('onclick') && el.getAttribute('onclick').includes('loadConversation('+id+')')){
+        el.classList.add('active');
+      }
+    });
     if(window.innerWidth<=768) $('sidebar').classList.remove('open');
   }catch(e){console.error(e);}
 }
@@ -1425,8 +1442,8 @@ async function deleteConversation(e,id){
 }
 
 function newConversation(){
-  currentConvId=null;convHistory=[];newConversationUI();
-  document.querySelectorAll('.conv-item').forEach(el=>el.classList.remove('active'));
+  currentConvId=null;convHistory=[];_activeProjectId=null;newConversationUI();
+  document.querySelectorAll('.conv-item, .project-conv-item').forEach(el=>el.classList.remove('active'));
   if(window.innerWidth<=768) $('sidebar').classList.remove('open');
 }
 
@@ -1493,7 +1510,7 @@ async function sendMessage(){
     const res=await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:hasUploads?pendingUploadIds:undefined})
+      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:hasUploads?pendingUploadIds:undefined,project_id:_activeProjectId||undefined})
     });
     if(res.status===401){removeTyping(typingEl);isLoading=false;logout();return;}
     const data=await res.json();
@@ -1502,6 +1519,7 @@ async function sendMessage(){
     if(data.conversation_id && !currentConvId){
       currentConvId=data.conversation_id;
       loadConversations(); // refresh sidebar
+      if(_activeProjectId) loadProjects(); // refresh projetos
     }
     convHistory.push({role:'assistant',content:reply});
     removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);

@@ -1221,7 +1221,7 @@ app.get('/api/projects/:id/conversations', authMiddleware, (req, res) => {
 
 // ─── CHAT COM RAG ─────────────────────────────────────────────
 app.post('/api/chat', authMiddleware, async (req, res) => {
-  const { messages, conversation_id, upload_id, upload_ids } = req.body;
+  const { messages, conversation_id, upload_id, upload_ids, project_id } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
@@ -1521,7 +1521,9 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
     if (!convId) {
       const firstUserMsg = messages.find(m => m.role === 'user');
       const title = firstUserMsg ? firstUserMsg.content.substring(0, 60) : 'Nova conversa';
-      const conv = db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
+      const conv = project_id
+        ? db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(userId, title, project_id)
+        : db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
       convId = conv.lastInsertRowid;
     } else {
       db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(convId);
