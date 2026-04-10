@@ -739,14 +739,14 @@
       <!-- Desktop: toolbar inline no header -->
       <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
-          <button class="teses-btn" onclick="openTesesModal()">⚖️ Teses</button>
-          <button class="teses-btn" onclick="openConteudoModal()">✍️ Conteúdo</button>
-          <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
-          <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
-          <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
-          <button class="teses-btn" onclick="openAudienciaModal()">🎭 Audiência</button>
-          <button class="teses-btn" onclick="openPrescricaoModal()">⏱️ Prescrição</button>
-          <button class="teses-btn" onclick="openMinhasPecas()">📁 Minhas Peças</button>
+          <button class="teses-btn" onclick="openTesesModal()">Teses</button>
+          <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
+          <button class="teses-btn" onclick="openPeticaoModal()">Petição</button>
+          <button class="teses-btn" onclick="openCalculadoraModal()">Honorários</button>
+          <button class="teses-btn" onclick="openGame()">Jogo</button>
+          <button class="teses-btn" onclick="openAudienciaModal()">Audiência</button>
+          <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
+          <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
         </div>
         <div class="header-divider"></div>
         <button class="header-action-btn" onclick="openProfileModal()">
@@ -765,19 +765,19 @@
     </header>
     <!-- Mobile toolbar: linha separada com scroll horizontal -->
     <div class="mobile-toolbar">
-      <button class="teses-btn" onclick="openTesesModal()">⚖️ Teses</button>
-      <button class="teses-btn" onclick="openConteudoModal()">✍️ Conteúdo</button>
-      <button class="teses-btn" onclick="openPeticaoModal()">📄 Petição</button>
-      <button class="teses-btn" onclick="openCalculadoraModal()">💰 Honorários</button>
-      <button class="teses-btn" onclick="openGame()">🎮 Jogo</button>
-      <button class="teses-btn" onclick="openAudienciaModal()">🎭 Audiência</button>
-      <button class="teses-btn" onclick="openPrescricaoModal()">⏱️ Prescrição</button>
-      <button class="teses-btn" onclick="openMinhasPecas()">📁 Minhas Peças</button>
+      <button class="teses-btn" onclick="openTesesModal()">Teses</button>
+      <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
+      <button class="teses-btn" onclick="openPeticaoModal()">Petição</button>
+      <button class="teses-btn" onclick="openCalculadoraModal()">Honorários</button>
+      <button class="teses-btn" onclick="openGame()">Jogo</button>
+      <button class="teses-btn" onclick="openAudienciaModal()">Audiência</button>
+      <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
+      <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
     </div>
     <!-- Dropdown menu mobile -->
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
-      <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">👤 Meu Perfil</button>
-      <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">✏️ Nova Conversa</button>
+      <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
+      <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
       <!-- Feature 4: Controle de fonte (mobile) -->
       <div class="mobile-menu-item" style="justify-content:space-between;cursor:default">
@@ -788,13 +788,10 @@
         </div>
       </div>
       <div class="mobile-menu-divider"></div>
-      <button class="mobile-menu-item danger" onclick="logout()">🚪 Sair</button>
+      <button class="mobile-menu-item danger" onclick="logout()">Sair</button>
     </div>
 
-    <!-- DASHBOARD DE USO -->
-    <div id="dashboardUso" style="display:none;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0">
-      <div style="font-size:.78rem;color:var(--text2);text-align:center" id="dashboardUsoText">📊 Este mês: carregando...</div>
-    </div>
+<!-- dashboard removido -->
 
     <!-- BANNER FUNDADORES -->
     <div id="bannerFundadores" style="background:linear-gradient(135deg,#b8860b,#8b6508);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0">
@@ -1073,7 +1070,6 @@ function showChat(user){
   loadFavorites();
   loadTemplates();
   setTimeout(loadNotifications,1500);
-  setTimeout(loadDashboardUso,2000);
 }
 // ── MINHAS PEÇAS ──────────────────────────────────────────
 async function openMinhasPecas(){
@@ -1086,7 +1082,7 @@ async function openMinhasPecas(){
     const r = await fetch('/api/favorites', {headers:{'Authorization':'Bearer '+token}});
     const favs = await r.json();
     if(!favs.length){
-      body.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="font-size:2.5rem;margin-bottom:12px">📂</div><div style="color:var(--text2);font-size:.9rem">Nenhuma peça salva ainda.<br>Clique em <strong>⭐ Favoritar</strong> em qualquer resposta da Capi para salvar aqui.</div></div>';
+      body.innerHTML = '<div style="text-align:center;padding:60px 20px"><div style="font-size:2.5rem;margin-bottom:12px">📂</div><div style="color:var(--text2);font-size:.9rem">Nenhuma peça salva ainda.<br>Clique em <strong>Favoritar</strong> em qualquer resposta da Capi para salvar aqui.</div></div>';
       return;
     }
     body.innerHTML = '';
@@ -1102,7 +1098,7 @@ async function openMinhasPecas(){
         </div>
         <div style="font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px">${preview}${f.content.length>200?'...':''}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="copyFav(${f.id},'${btoa(encodeURIComponent(f.content))}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">📋 Copiar</button>
+          <button onclick="copyFav(${f.id},'${btoa(encodeURIComponent(f.content))}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">Copiar</button>
           <button onclick="expandFav(this,'${btoa(encodeURIComponent(f.content))}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">👁 Ver completo</button>
           <button onclick="deleteFavFromModal(this,${f.id})" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(239,83,80,.3);background:rgba(239,83,80,.08);color:#ef5350;font-size:.78rem;cursor:pointer;font-weight:600">🗑 Excluir</button>
         </div>
@@ -1500,7 +1496,7 @@ function appendMessage(role,content,suggestions){
       chipsDiv.style.cssText='flex-direction:column;align-items:flex-start;gap:6px';
       const label=document.createElement('div');
       label.style.cssText='font-size:.7rem;color:var(--text2);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px';
-      label.textContent='⚡ Próximos passos';
+      label.textContent='Próximos passos';
       chipsDiv.appendChild(label);
       const chipsRow=document.createElement('div');
       chipsRow.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
@@ -3048,7 +3044,7 @@ function createAudienciaModal(){
 <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:min(620px,97vw);max-height:93vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.5)">
   <!-- Header -->
   <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,rgba(184,134,11,.12),transparent)">
-    <div style="font-size:1.1rem;font-weight:700;color:var(--text)">🎭 Simulador de Audiência</div>
+    <div style="font-size:1.1rem;font-weight:700;color:var(--text)">Simulador de Audiência</div>
     <button onclick="closeAudienciaModal()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
   </div>
 
@@ -3294,7 +3290,7 @@ init();
 <div id="profileModal" class="modal-overlay hidden">
   <div class="modal-box">
     <button class="modal-close" onclick="closeProfileModal()">✕</button>
-    <div class="modal-title">👤 Meu Perfil</div>
+    <div class="modal-title">Meu Perfil</div>
     <div class="profile-avatar" id="profileAvatarLetter">M</div>
     <div class="form-group">
       <label>Nome completo</label>
@@ -3632,7 +3628,7 @@ init();
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:min(780px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
     <div style="padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
       <div>
-        <div style="font-size:1.1rem;font-weight:700;color:var(--text)">📁 Minhas Peças</div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--text)">Minhas Peças</div>
         <div style="font-size:.78rem;color:var(--text2);margin-top:2px">Suas peças e teses favoritas salvas</div>
       </div>
       <button onclick="closeMinhasPecas()" style="background:none;border:none;color:var(--text2);font-size:1.4rem;cursor:pointer;line-height:1">×</button>
