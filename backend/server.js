@@ -2622,6 +2622,17 @@ app.get('/app', (req, res) => {
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Catch-all SPA — deve ficar após todas as rotas de API
+app.get('/api/user/stats', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  inicioMes.setHours(0, 0, 0, 0);
+  const msgs = db.prepare("SELECT COUNT(*) as c FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = ?) AND role = 'assistant' AND created_at >= ?").get(userId, inicioMes.toISOString());
+  const totalMsgs = msgs?.c || 0;
+  const horasEconomizadas = Math.round(totalMsgs * 0.5);
+  res.json({ pecas: totalMsgs, horas: horasEconomizadas });
+});
+
 app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -2689,16 +2700,6 @@ Mantenha respostas curtas (2-4 parágrafos) para simular o ritmo real de uma aud
 });
 
 // ─── USER STATS ───────────────────────────────────────────
-app.get('/api/user/stats', authMiddleware, (req, res) => {
-  const userId = req.user.id;
-  const inicioMes = new Date();
-  inicioMes.setDate(1);
-  inicioMes.setHours(0, 0, 0, 0);
-  const msgs = db.prepare("SELECT COUNT(*) as c FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = ?) AND role = 'assistant' AND created_at >= ?").get(userId, inicioMes.toISOString());
-  const totalMsgs = msgs?.c || 0;
-  const horasEconomizadas = Math.round(totalMsgs * 0.5);
-  res.json({ pecas: totalMsgs, horas: horasEconomizadas });
-});
 
 app.post('/api/tts', authMiddleware, async (req, res) => {
   const { text } = req.body;
