@@ -2666,64 +2666,76 @@ app.post('/api/peca/gerar', authMiddleware, async (req, res) => {
     const escritorio = profile?.escritorio || '[Escritório]';
     const anos_experiencia = profile?.anos_experiencia || '';
 
-    const systemPrompt = `Você é um advogado sênior brasileiro redigindo uma peça jurídica. Gere a peça completa em formato JSON com exatamente 5 seções.
+    const hoje = new Date();
+    const dataFormatada = hoje.toLocaleDateString('pt-BR', {day:'2-digit', month:'long', year:'numeric'});
 
-METODOLOGIA INTERNA (invisível na peça): Use IRAC (Issue, Rule, Application, Conclusion) para estruturar cada argumento. A metodologia deve estar enraizada na escrita, nunca exposta.
+    const systemPrompt = `Você é o melhor advogado processualista do Brasil. Sua missão é redigir uma peça jurídica COMPLETA, REAL e PRONTA PARA PROTOCOLAR com base nos fatos que o advogado descreveu.
+
+REGRA CRÍTICA: ESCREVA A PEÇA COMPLETA USANDO OS FATOS FORNECIDOS. Não use placeholders genéricos como "[descrever o fato principal]", "[qualificação]", "[descrição]". EXTRAIA os dados da descrição do advogado e ESCREVA o texto real. Use colchetes APENAS para dados pessoais que o advogado NÃO forneceu (CPF, RG, endereço, nome completo do réu se não mencionado).
+
+METODOLOGIA: Use IRAC internamente (Issue, Rule, Application, Conclusion). Nunca exponha a metodologia — ela deve estar enraizada na escrita.
 
 ESTRUTURA "Projeto de Sentença" (Art. 489 CPC): Espelhe a lógica decisória do juiz.
 
-Retorne APENAS um JSON válido no formato:
+Retorne APENAS um JSON válido:
 {
-  "tipo_peca": "Nome da ação/peça identificada",
+  "tipo_peca": "Nome completo da ação identificada",
   "sections": [
     {
       "id": "enderecamento",
-      "title": "Endereçamento",
-      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA [vara] DA COMARCA DE [cidade]\\n\\n[Qualificação do autor], por seu advogado..., vem propor a presente\\n\\n[TIPO DA AÇÃO]\\n\\nem face de [qualificação do réu]..."
+      "title": "Da Qualificação das Partes",
+      "content": "texto completo do endereçamento com qualificação"
     },
     {
       "id": "fatos",
       "title": "Dos Fatos",
-      "content": "[Narrativa detalhada, cronológica e persuasiva. Mínimo 4 parágrafos.]"
+      "content": "Narrativa REAL e DETALHADA com os fatos do caso. MÍNIMO 5 parágrafos longos. Use TODOS os fatos que o advogado descreveu: datas, valores, nomes, circunstâncias. Construa uma história persuasiva e cronológica que mostre a injustiça."
     },
     {
       "id": "direito",
       "title": "Do Direito",
-      "content": "[Fundamentação jurídica com artigos, doutrina, jurisprudência. Cada pedido com base legal própria. Use silogismo: norma + fato = conclusão.]"
+      "content": "Fundamentação jurídica ROBUSTA. MÍNIMO 6 parágrafos. Cite artigos específicos (CC, CDC, CPC, CF), doutrina, súmulas e jurisprudência. Cada argumento com silogismo: norma + fato = conclusão. Explore todos os ângulos jurídicos do caso."
     },
     {
       "id": "pedidos",
       "title": "Dos Pedidos",
-      "content": "Diante do exposto, requer:\\na) [pedido específico];\\nb) [pedido];\\n...\\nDá-se à causa o valor de R$ [valor]."
+      "content": "Pedidos ESPECÍFICOS e DETALHADOS como comandos decisórios. Inclua valores quando possível. Pedidos escalonados: principal + subsidiários. Inclua correção monetária, juros, honorários, custas, produção de provas, tutela de urgência se cabível. Valor da causa."
     },
     {
       "id": "fechamento",
-      "title": "Fechamento",
-      "content": "Termos em que,\\nPede deferimento.\\n\\n[Cidade], [data].\\n\\n[Advogado]\\nOAB/[UF] [número]"
+      "title": "Do Encerramento e Requerimentos",
+      "content": "Requerimentos finais (justiça gratuita se cabível, citação, provas, etc.) + Termos em que, Pede deferimento. + Local, data, assinatura."
     }
   ],
-  "alertas": ["alerta 1 sobre o que revisar", "alerta 2", "alerta 3"],
-  "plano_b": "Estratégia alternativa caso a tese principal não prospere",
-  "escolhas_estrategicas": ["decisão 1", "decisão 2"]
+  "alertas": ["alerta específico e útil 1", "alerta 2", "alerta 3"],
+  "plano_b": "Estratégia alternativa concreta e específica para este caso",
+  "escolhas_estrategicas": ["decisão argumentativa 1", "decisão 2"]
 }
 
-REGRAS:
-- Linguagem forense formal SEMPRE. Zero informalidade.
-- PROIBIDO inventar jurisprudência. Se citar número de processo, adicione "(confirme no JusBrasil antes de protocolar)".
-- Preferência por súmulas, temas repetitivos STJ, repercussão geral STF.
-- Use [NOME DO RÉU], [DATA], [CPF], etc. para dados não informados.
-- Pedidos como comandos decisórios claros, prontos pro juiz copiar.
-- O JSON deve ser válido. Escape aspas e newlines corretamente.`;
+REGRAS ABSOLUTAS:
+1. ESCREVA TEXTOS REAIS E COMPLETOS — não templates. A peça deve estar pronta para o advogado revisar e protocolar.
+2. USE os fatos fornecidos: datas, valores, nomes de empresas, produtos, circunstâncias. NÃO os ignore.
+3. Linguagem forense formal, técnica e elegante. Use negrito pontual para destacar pontos fortes.
+4. PROIBIDO inventar jurisprudência com número falso. Se citar decisão, adicione "(confirme no JusBrasil antes de protocolar)".
+5. Preferência por súmulas, temas repetitivos STJ, repercussão geral STF.
+6. Use colchetes APENAS para: CPF, RG, endereço completo, nome da parte adversa se não fornecido.
+7. Seção "Dos Fatos" deve ter NO MÍNIMO 5 parágrafos longos.
+8. Seção "Do Direito" deve ter NO MÍNIMO 6 parágrafos com fundamentação densa.
+9. Pedidos devem ser específicos com valores, não genéricos.
+10. JSON válido. Escape aspas e newlines corretamente. Use \\n para quebras de linha dentro do content.`;
 
     const userMessage = `DADOS DO ADVOGADO:
 - Nome: ${nome}
-- OAB: ${oab}
+- OAB: ${estado ? 'OAB/' + estado + ' ' : ''}${oab}
 - Cidade/Estado: ${cidade}/${estado}
 - Área de atuação: ${area}
 - Escritório: ${escritorio}${anos_experiencia ? `\n- Anos de experiência: ${anos_experiencia}` : ''}
+- Data de hoje: ${dataFormatada}
 
-DESCRIÇÃO DO CASO:
-${descricao.trim()}`;
+DESCRIÇÃO DO CASO (USE TODOS ESTES FATOS NA PEÇA):
+${descricao.trim()}
+
+IMPORTANTE: Escreva a peça COMPLETA usando os fatos acima. Não use placeholders para dados que estão na descrição. A peça deve sair pronta para revisar e protocolar.`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 120000);
