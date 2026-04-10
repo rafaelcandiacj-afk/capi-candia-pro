@@ -1140,8 +1140,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 - Escritório: ${userProfile.escritorio || 'não informado'}${memoriesText}
 
 REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias para personalizar respostas e demonstrar que lembra do advogado.${tomInstrucao}${expInstrucao}${geoInstrucao}${
-      (userProfile.oab || userProfile.escritorio) ?
-        `\n\n✍️ RODAPÉ DE PETIÇÕES: Quando gerar qualquer petição, inclua SEMPRE ao final o seguinte rodapé:\n${userProfile.cidade || ''}${userProfile.estado ? (userProfile.cidade ? ' - ' : '') + userProfile.estado : ''}, [DATA].\n${userProfile.nome}\n${userProfile.oab ? 'OAB/' + (userProfile.estado||'') + ' Nº ' + userProfile.oab : ''}${userProfile.escritorio ? '\n' + userProfile.escritorio : ''}` : ''
+      '' // rodapé movido para formatoCtx de petição
     }`;
   } else {
     // Sem perfil: NUNCA perguntar nome/área diretamente
@@ -1266,11 +1265,20 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   // ── FORMATO LIMPO: instrução por tipo de peça (itens 3, 4, 6, 7) ──
   let formatoCtx = '';
   if (isPeticao) {
+    const _cidade = userProfile?.cidade || '';
+    const _estado = userProfile?.estado || '';
+    const _nome = userProfile?.nome || '';
+    const _oab = userProfile?.oab || '';
+    const _escritorio = userProfile?.escritorio || '';
+    const _rodape = (_oab || _escritorio) ? 
+      `\n\n${_cidade}${_estado ? (_cidade ? ' - ' : '') + _estado : ''}, [DATA].\n${_nome}${_oab ? '\nOAB/' + _estado + ' Nº ' + _oab : ''}${_escritorio ? '\n' + _escritorio : ''}` : '';
     formatoCtx = `\n\n📄 MODO PETIÇÃO ATIVADO:
 - Entregue APENAS a petição. Sem comentários extras, sugestões de reels, hashtags ou scripts de atendimento não solicitados.
 - Ao final da petição, adicione obrigatoriamente o bloco:
   ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, campos que precisam ser preenchidos pelo advogado, documentos que precisam ser anexados]
-- Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
+- Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.
+- Use [NOME DO RÉU], [DATA DO FATO], [COMARCA] para campos não informados.
+- Ao final da petição, APÓS o bloco ⚠️, inclua o rodapé de assinatura do advogado:${_rodape || '\n\n[Cidade/UF], [DATA].\n[Nome do Advogado]\nOAB/[Estado] Nº [Número]'}`;
   } else if (isTese) {
     // Verifica se é pedido de conteúdo para redes (aí pode usar o formato com reels)
     const isConteudo = /instagram|reels|carrossel|post|conte[úu]do|legenda|hashtag|redes/i.test(currentMsg);
