@@ -14,6 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'capi-candia-secret-2026';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'capiAdmin2026';
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || 'sk_ef7c32daa249f0825ec017f69aa8721b2ca641739c552e8d';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyB0dw7uiZYobpmH4euewn4M4u0Nfp5EQk0';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '60fiathVaK4HCn08Syd6';
 
 // ─── HONORÁRIOS OAB — 27 SECCIONAIS ─────────────────────────────
@@ -2737,46 +2738,93 @@ ${descricao.trim()}
 
 IMPORTANTE: Escreva a peça COMPLETA usando os fatos acima. Não use placeholders para dados que estão na descrição. A peça deve sair pronta para revisar e protocolar.`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    // ── GERAÇÃO: Gemini (primário, mais barato/rápido) com fallback OpenAI ──
+    let raw = null;
 
-    let openaiRes;
-    try {
-      openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4.1',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: 16000,
-          temperature: 0.4,
-          response_format: { type: 'json_object' }
-        }),
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
+    if (GEMINI_API_KEY) {
+      console.log('✨ Gerando peça via Gemini 2.5 Flash...');
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 120000);
+      try {
+        const gemRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: systemPrompt + '\n\n' + userMessage }] }],
+              generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 32000,
+                responseMimeType: 'application/json'
+              }
+            }),
+            signal: ctrl.signal
+          }
+        );
+        clearTimeout(t);
+        if (!gemRes.ok) {
+          const errText = await gemRes.text().catch(() => '');
+          console.error('Gemini erro:', gemRes.status, errText.slice(0, 200));
+          throw new Error('Gemini HTTP ' + gemRes.status);
+        }
+        const gemData = await gemRes.json();
+        raw = gemData.candidates?.[0]?.content?.parts?.[0]?.text || null;
+        if (raw) console.log('✅ Gemini respondeu:', raw.length, 'chars');
+      } catch (gemErr) {
+        clearTimeout(t);
+        console.warn('⚠️ Gemini falhou, fallback OpenAI:', gemErr.message);
+        raw = null;
+      }
     }
 
-    if (!openaiRes.ok) {
-      const errData = await openaiRes.json().catch(() => ({}));
-      return res.status(502).json({ error: errData.error?.message || 'Erro na OpenAI' });
+    // Fallback: OpenAI
+    if (!raw) {
+      console.log('🟡 Gerando peça via OpenAI gpt-4.1...');
+      const ctrl2 = new AbortController();
+      const t2 = setTimeout(() => ctrl2.abort(), 120000);
+      try {
+        const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: 'gpt-4.1',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: 16000,
+            temperature: 0.4,
+            response_format: { type: 'json_object' }
+          }),
+          signal: ctrl2.signal
+        });
+        clearTimeout(t2);
+        if (!oaiRes.ok) {
+          const errData = await oaiRes.json().catch(() => ({}));
+          return res.status(502).json({ error: errData.error?.message || 'Erro na IA' });
+        }
+        const oaiData = await oaiRes.json();
+        raw = oaiData.choices?.[0]?.message?.content || '{}';
+      } catch (oaiErr) {
+        clearTimeout(t2);
+        throw oaiErr;
+      }
     }
 
-    const data = await openaiRes.json();
-    const raw = data.choices?.[0]?.message?.content || '{}';
-
+    // Parse JSON (limpa markdown fences se houver)
     let parsed;
     try {
-      parsed = JSON.parse(raw);
+      let cleaned = raw.trim();
+      if (cleaned.startsWith('```')) {
+        cleaned = cleaned.replace(/^```json?\n?/, '').replace(/\n?```$/, '').trim();
+      }
+      parsed = JSON.parse(cleaned);
     } catch (e) {
-      return res.status(502).json({ error: 'Resposta inválida da OpenAI (JSON malformado)', raw });
+      return res.status(502).json({ error: 'Resposta inválida da IA (JSON malformado)', raw: raw?.slice(0, 500) });
     }
 
     const secoes = (parsed.sections || []).map(s => ({
@@ -2813,41 +2861,59 @@ app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
 
     const userMessage = `SEÇÃO A REESCREVER: ${secao_id}\n\nDESCRIÇÃO ORIGINAL DO CASO:\n${(descricao_original || '').trim()}\n\nCONTEÚDO ATUAL DA SEÇÃO:\n${(conteudo_atual || '').trim()}\n\nINSTRUÇÃO DO ADVOGADO:\n${instrucao.trim()}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    let content = null;
 
-    let openaiRes;
-    try {
-      openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4.1',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage }
-          ],
-          max_tokens: 8000,
-          temperature: 0.4
-        }),
-        signal: controller.signal
-      });
-    } finally {
-      clearTimeout(timeout);
+    // Gemini primário
+    if (GEMINI_API_KEY) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 120000);
+      try {
+        const gemRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: systemPrompt + '\n\n' + userMessage }] }],
+              generationConfig: { temperature: 0.4, maxOutputTokens: 8000 }
+            }),
+            signal: ctrl.signal
+          }
+        );
+        clearTimeout(t);
+        if (gemRes.ok) {
+          const gemData = await gemRes.json();
+          content = gemData.candidates?.[0]?.content?.parts?.[0]?.text || null;
+        }
+      } catch (e) { clearTimeout(t); }
     }
 
-    if (!openaiRes.ok) {
-      const errData = await openaiRes.json().catch(() => ({}));
-      return res.status(502).json({ error: errData.error?.message || 'Erro na OpenAI' });
+    // Fallback OpenAI
+    if (!content) {
+      const ctrl2 = new AbortController();
+      const t2 = setTimeout(() => ctrl2.abort(), 120000);
+      try {
+        const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1',
+            messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
+            max_tokens: 8000, temperature: 0.4
+          }),
+          signal: ctrl2.signal
+        });
+        clearTimeout(t2);
+        if (!oaiRes.ok) {
+          const errData = await oaiRes.json().catch(() => ({}));
+          return res.status(502).json({ error: errData.error?.message || 'Erro na IA' });
+        }
+        const oaiData = await oaiRes.json();
+        content = oaiData.choices?.[0]?.message?.content || '';
+      } catch (oaiErr) { clearTimeout(t2); throw oaiErr; }
     }
 
-    const data = await openaiRes.json();
-    const content = data.choices?.[0]?.message?.content || '';
-
-    return res.json({ conteudo: content.trim() });
+    return res.json({ conteudo: (content || '').trim() });
   } catch (err) {
     if (err.name === 'AbortError') {
       return res.status(504).json({ error: 'Timeout na regeneração da seção (120s)' });
