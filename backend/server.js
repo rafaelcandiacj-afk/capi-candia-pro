@@ -2877,7 +2877,7 @@ app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
         .replace(/>/g, '&gt;')
         .replace(/\n/g, '<br>');
       return `<div style="margin-bottom:32px;">
-  <h2 style="font-size:14pt;font-weight:bold;text-align:center;text-transform:uppercase;margin-bottom:16px;font-family:'Times New Roman',serif;">${(s.title || '').replace(/&/g,'&amp;')}</h2>
+  <h2 style="font-size:14pt;font-weight:bold;text-align:center;text-transform:uppercase;margin-bottom:16px;font-family:'Times New Roman',serif;">${(s.titulo || s.title || '').replace(/&/g,'&amp;')}</h2>
   <p style="font-size:12pt;line-height:1.8;text-align:justify;font-family:'Times New Roman',serif;">${contentHtml}</p>
 </div>`;
     }).join('\n');
