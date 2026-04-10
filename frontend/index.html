@@ -901,7 +901,7 @@ async function init(){
     }catch(e){ showAuth(); }
   } else showAuth();
   $('chatInput').addEventListener('input',()=>{
-    $('sendBtn').disabled=$('chatInput').value.trim()===''||isLoading;
+    $('sendBtn').disabled=($('chatInput').value.trim()==='' && pendingUploadIds.length===0)||isLoading;
   });
 }
 
@@ -1320,7 +1320,7 @@ async function renameConversation(e, id){
 async function loadConversation(id){
   const token=localStorage.getItem('capi_token');
   // Limpa uploads pendentes ao trocar de conversa
-  pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';
+  pendingUploadIds=[];pendingUploadNames=[];document.getElementById('fileBadgeArea').innerHTML='';
   try{
     const res=await fetch('/api/conversations/'+id+'/messages',{headers:{'Authorization':'Bearer '+token}});
     if(!res.ok) return;
@@ -1399,11 +1399,16 @@ function sendSuggestion(btn){
 
 async function sendMessage(){
   const text=$('chatInput').value.trim();
-  if(!text||isLoading) return;
+  const hasUploads = pendingUploadIds.length > 0;
+  if((!text && !hasUploads)||isLoading) return;
+  // Se tem upload mas nenhum texto, usa prompt automático
+  const finalText = text || (hasUploads ? 'Analise este documento para mim.' : '');
+  // Salva nomes dos arquivos para exibir no card
+  const uploadFileNames = [...pendingUploadNames];
   const welcome=$('welcomeScreen');
   if(welcome) welcome.remove();
-  convHistory.push({role:'user',content:text});
-  appendMessage('user',text);
+  convHistory.push({role:'user',content:finalText});
+  appendMessage('user',finalText,null,uploadFileNames);
   $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;
   isLoading=true;
   const typingEl=showTyping();
@@ -1412,7 +1417,7 @@ async function sendMessage(){
     const res=await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:pendingUploadIds.length>0?pendingUploadIds:undefined})
+      body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:hasUploads?pendingUploadIds:undefined})
     });
     if(res.status===401){removeTyping(typingEl);isLoading=false;logout();return;}
     const data=await res.json();
@@ -1433,12 +1438,12 @@ async function sendMessage(){
     appendMessage('assistant', msgErro);
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
-    pendingUploadIds=[];document.getElementById('fileBadgeArea').innerHTML='';
-    isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='';
+    pendingUploadIds=[];pendingUploadNames=[];document.getElementById('fileBadgeArea').innerHTML='';
+    isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='' && pendingUploadIds.length===0;
   }
 }
 
-function appendMessage(role,content,suggestions){
+function appendMessage(role,content,suggestions,uploadFiles){
   const imgSrc=(CAPI_LOGO_SRC||document.querySelector('.auth-logo-img').src);
   const user=JSON.parse(localStorage.getItem('capi_user')||'{}');
   const wrapper=document.createElement('div');
@@ -1449,7 +1454,24 @@ function appendMessage(role,content,suggestions){
   else avatar.textContent=(user.name||user.email||'?').charAt(0).toUpperCase();
   const bubble=document.createElement('div');
   bubble.className='message-bubble';
-  bubble.innerHTML=formatMsg(content);
+  // Card de documento anexado (para mensagens do usuário com upload)
+  if(role==='user' && uploadFiles && uploadFiles.length > 0){
+    const cardsHtml = uploadFiles.map(fname => {
+      const ext = fname.split('.').pop().toUpperCase();
+      const icon = ext === 'PDF' ? '📄' : ext === 'DOCX' ? '📝' : ext === 'PNG' || ext === 'JPG' || ext === 'JPEG' || ext === 'WEBP' ? '🖼️' : '📎';
+      const shortName = fname.length > 35 ? fname.substring(0,32) + '...' : fname;
+      return `<div style="display:flex;align-items:center;gap:10px;background:rgba(184,134,11,.12);border:1px solid rgba(184,134,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:8px">
+        <div style="width:40px;height:40px;border-radius:8px;background:rgba(184,134,11,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">${icon}</div>
+        <div style="min-width:0">
+          <div style="font-size:.85rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+          <div style="font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px">${ext} • Documento enviado</div>
+        </div>
+      </div>`;
+    }).join('');
+    bubble.innerHTML = cardsHtml + formatMsg(content);
+  } else {
+    bubble.innerHTML=formatMsg(content);
+  }
   wrapper.appendChild(avatar);
   const msgContent=document.createElement('div');
   msgContent.style.cssText='display:flex;flex-direction:column;min-width:0;max-width:100%';
@@ -1629,6 +1651,7 @@ function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrol
 
 // ── ESTADO GLOBAL EXTRA ──────────────────────────────────────
 let pendingUploadIds = [];
+let pendingUploadNames = [];
 let userProfile = {};
 
 // ── NOTIFICAÇÕES ─────────────────────────────────────────────
@@ -2097,22 +2120,18 @@ async function handleConvUpload(input){
       if(!r.ok) throw new Error(data.error||'Erro ao enviar arquivo');
       const uploadId = Array.isArray(data) ? data[0].id : data.id;
       pendingUploadIds.push(uploadId);
+      pendingUploadNames.push(file.name);
       const area=document.getElementById('fileBadgeArea');
       const badge=document.createElement('div');
       badge.className='file-badge';
       badge.dataset.uploadId=uploadId;
-      badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId})">✕</button>`;
+      badge.innerHTML=`📎 ${file.name} <button onclick="removeUpload(this,${uploadId},'${file.name.replace(/'/g,"\\'")}')">✕</button>`;
       area.appendChild(badge);
     }
     loadingToast.remove();
-    // Preenche o input e habilita envio
-    const chatInput = $('chatInput');
-    if(!chatInput.value.trim()){
-      chatInput.value = 'Analise este documento para mim';
-    }
+    // Auto-envio: dispara a mensagem automaticamente após upload
     $('sendBtn').disabled = false;
-    chatInput.focus();
-    showToast('✅ Arquivo anexado! Toque em Enviar para analisar.');
+    sendMessage();
   }catch(e){
     loadingToast.remove();
     showToast('❌ Erro: ' + e.message + '. Tente novamente.');
@@ -2120,13 +2139,16 @@ async function handleConvUpload(input){
   input.value='';
 }
 
-function removeUpload(btn, uploadId){
+function removeUpload(btn, uploadId, fileName){
   pendingUploadIds = pendingUploadIds.filter(id => id !== uploadId);
+  if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
   btn.closest('.file-badge').remove();
+  $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
 }
 
 function clearUpload(){
   pendingUploadIds=[];
+  pendingUploadNames=[];
   document.getElementById('fileBadgeArea').innerHTML='';
 }
 
