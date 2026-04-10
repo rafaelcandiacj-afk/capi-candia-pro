@@ -15,8 +15,6 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png">
   <!-- /PWA -->
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- DOCX CDN para exportar peças -->
-  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
   <style>
     :root {
       /* Paleta: fundo claro/neutro + dourado Cândia */
@@ -1932,12 +1930,19 @@ function downloadDocx(content){
     const plainText = content
       .replace(/\*\*/g,'')
       .replace(/[*_#`]/g,'')
+      .replace(/<[^>]+>/g,'')
       .trim();
     const hoje = new Date();
     const dataStr = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
-    // Check if docx library is loaded
+    // Se a lib docx não carregou, gera TXT simples (sem dependência)
     if(typeof docx === 'undefined'){
-      showToast('❌ Biblioteca DOCX ainda carregando. Tente novamente em instantes.');
+      const txt = 'CAPI CÂND-IA PRO — Peça Jurídica\nGerado em: ' + dataStr + '\n' + '='.repeat(50) + '\n\n' + plainText;
+      const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'peca-juridica-' + Date.now() + '.txt';
+      a.click();
+      showToast('✅ Arquivo .txt baixado!');
       return;
     }
     const {
