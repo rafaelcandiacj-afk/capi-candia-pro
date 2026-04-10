@@ -1720,7 +1720,7 @@ async function loadProfile(){
 // ── TERMÔMETRO DE TOM ──────────────────────────────────
 const TOM_CICLO=[['descontraido','🤙'],['equilibrado','⚖️'],['formal','👔']];
 
-const TOM_LABELS={'descontraido':'🤙 Descontraído','equilibrado':'⚖️ Equilibrado','formal':'👔 Formal'};
+const TOM_LABELS={'descontraido':'Descontraído','equilibrado':'Equilibrado','formal':'Formal'};
 function updateTomBtn(tom){
   const btn=document.getElementById('tomTermometroBtn');
   if(!btn) return;
@@ -1748,7 +1748,7 @@ async function cycleTom(){
       body:JSON.stringify({...userProfile,tom_preferido:novo})
     });
   }catch(e){}
-  const labels={'descontraido':'🤙 Descontraído','equilibrado':'⚖️ Equilibrado','formal':'👔 Formal'};
+  const labels={'descontraido':'Descontraído','equilibrado':'Equilibrado','formal':'Formal'};
   showToast('Tom alterado para '+labels[novo]);
 }
 
@@ -3379,9 +3379,9 @@ init();
     <div class="form-group">
       <label>Tom preferido de comunicação</label>
       <div style="display:flex;gap:8px;margin-top:6px" id="tom_btns">
-        <button type="button" class="tom-btn" data-tom="descontraido" onclick="selectTom(this)">🤙 Descontraído</button>
-        <button type="button" class="tom-btn" data-tom="equilibrado" onclick="selectTom(this)">⚖️ Equilibrado</button>
-        <button type="button" class="tom-btn" data-tom="formal" onclick="selectTom(this)">👔 Formal</button>
+        <button type="button" class="tom-btn" data-tom="descontraido" onclick="selectTom(this)">Descontraído</button>
+        <button type="button" class="tom-btn" data-tom="equilibrado" onclick="selectTom(this)">Equilibrado</button>
+        <button type="button" class="tom-btn" data-tom="formal" onclick="selectTom(this)">Formal</button>
       </div>
     </div>
     <div class="modal-footer">
