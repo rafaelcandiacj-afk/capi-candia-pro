@@ -90,7 +90,7 @@
     body.dark-mode .message-actions button { color:#a09890!important }
     body.dark-mode #bannerFundadores { opacity:.85 }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;min-height:var(--app-height,100vh);overflow:hidden}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:var(--base-font,14px);min-height:100vh;min-height:var(--app-height,100vh);overflow:hidden}
     #particles-bg{display:none}
     .particle{display:none}
     .hidden{display:none!important}
@@ -1722,12 +1722,15 @@ async function loadProfile(){
 // ── TERMÔMETRO DE TOM ──────────────────────────────────
 const TOM_CICLO=[['descontraido','🤙'],['equilibrado','⚖️'],['formal','👔']];
 
+const TOM_LABELS={'descontraido':'🤙 Descontraído','equilibrado':'⚖️ Equilibrado','formal':'👔 Formal'};
 function updateTomBtn(tom){
   const btn=document.getElementById('tomTermometroBtn');
   if(!btn) return;
-  const entry=TOM_CICLO.find(e=>e[0]===tom)||TOM_CICLO[1];
-  btn.textContent=entry[1]+' Tom';
-  btn.title='Tom: '+tom.charAt(0).toUpperCase()+tom.slice(1)+' — clique para alternar';
+  const label=TOM_LABELS[tom]||'⚖️ Equilibrado';
+  btn.textContent=label;
+  btn.title='Tom atual: '+label+' — clique para alternar';
+  btn.style.color=tom==='descontraido'?'#22c55e':tom==='formal'?'#3b82f6':'var(--gold)';
+  btn.style.borderColor=tom==='descontraido'?'rgba(34,197,94,.3)':tom==='formal'?'rgba(59,130,246,.3)':'rgba(184,134,11,.3)';
 }
 
 async function cycleTom(){
@@ -2007,9 +2010,12 @@ function getFontSizeIdx(){
   return idx >= 0 ? idx : 1; // default = 14px (idx 1)
 }
 function applyFontSize(px){
+  // Usa variavel CSS para afetar todos os elementos que usam rem/em
+  document.documentElement.style.setProperty('--base-font', px + 'px');
   document.body.style.fontSize = px + 'px';
   localStorage.setItem('capi_font_size', px);
-  showToast('Fonte: ' + px + 'px');
+  const labels = {12:'Pequena',14:'Normal',16:'Grande',18:'Extra grande'};
+  showToast('Fonte: ' + (labels[px]||px+'px'));
 }
 function changeFontSize(dir){
   const cur = getFontSizeIdx();
