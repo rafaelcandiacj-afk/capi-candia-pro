@@ -2645,6 +2645,266 @@ app.get('/checkout', (req, res) => {
   res.redirect(302, url);
 });
 
+// ── CALCULADORA DE HONORÁRIOS
+// ─── EDITOR DE PEÇAS JURÍDICAS ───────────────────────────────
+
+// POST /api/peca/gerar — gera peça jurídica completa em JSON com 5 seções
+app.post('/api/peca/gerar', authMiddleware, async (req, res) => {
+  try {
+    const { descricao } = req.body;
+    if (!descricao || !descricao.trim()) {
+      return res.status(400).json({ error: 'descricao é obrigatória' });
+    }
+
+    // Busca perfil do usuário
+    const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
+    const nome = profile?.nome || 'Advogado(a)';
+    const oab = profile?.oab || '[OAB]';
+    const cidade = profile?.cidade || '[Cidade]';
+    const estado = profile?.estado || '[Estado]';
+    const area = profile?.area || '[Área]';
+    const escritorio = profile?.escritorio || '[Escritório]';
+    const anos_experiencia = profile?.anos_experiencia || '';
+
+    const systemPrompt = `Você é um advogado sênior brasileiro redigindo uma peça jurídica. Gere a peça completa em formato JSON com exatamente 5 seções.
+
+METODOLOGIA INTERNA (invisível na peça): Use IRAC (Issue, Rule, Application, Conclusion) para estruturar cada argumento. A metodologia deve estar enraizada na escrita, nunca exposta.
+
+ESTRUTURA "Projeto de Sentença" (Art. 489 CPC): Espelhe a lógica decisória do juiz.
+
+Retorne APENAS um JSON válido no formato:
+{
+  "tipo_peca": "Nome da ação/peça identificada",
+  "sections": [
+    {
+      "id": "enderecamento",
+      "title": "Endereçamento",
+      "content": "EXCELENTÍSSIMO(A) SENHOR(A) DOUTOR(A) JUIZ(A) DE DIREITO DA [vara] DA COMARCA DE [cidade]\\n\\n[Qualificação do autor], por seu advogado..., vem propor a presente\\n\\n[TIPO DA AÇÃO]\\n\\nem face de [qualificação do réu]..."
+    },
+    {
+      "id": "fatos",
+      "title": "Dos Fatos",
+      "content": "[Narrativa detalhada, cronológica e persuasiva. Mínimo 4 parágrafos.]"
+    },
+    {
+      "id": "direito",
+      "title": "Do Direito",
+      "content": "[Fundamentação jurídica com artigos, doutrina, jurisprudência. Cada pedido com base legal própria. Use silogismo: norma + fato = conclusão.]"
+    },
+    {
+      "id": "pedidos",
+      "title": "Dos Pedidos",
+      "content": "Diante do exposto, requer:\\na) [pedido específico];\\nb) [pedido];\\n...\\nDá-se à causa o valor de R$ [valor]."
+    },
+    {
+      "id": "fechamento",
+      "title": "Fechamento",
+      "content": "Termos em que,\\nPede deferimento.\\n\\n[Cidade], [data].\\n\\n[Advogado]\\nOAB/[UF] [número]"
+    }
+  ],
+  "alertas": ["alerta 1 sobre o que revisar", "alerta 2", "alerta 3"],
+  "plano_b": "Estratégia alternativa caso a tese principal não prospere",
+  "escolhas_estrategicas": ["decisão 1", "decisão 2"]
+}
+
+REGRAS:
+- Linguagem forense formal SEMPRE. Zero informalidade.
+- PROIBIDO inventar jurisprudência. Se citar número de processo, adicione "(confirme no JusBrasil antes de protocolar)".
+- Preferência por súmulas, temas repetitivos STJ, repercussão geral STF.
+- Use [NOME DO RÉU], [DATA], [CPF], etc. para dados não informados.
+- Pedidos como comandos decisórios claros, prontos pro juiz copiar.
+- O JSON deve ser válido. Escape aspas e newlines corretamente.`;
+
+    const userMessage = `DADOS DO ADVOGADO:
+- Nome: ${nome}
+- OAB: ${oab}
+- Cidade/Estado: ${cidade}/${estado}
+- Área de atuação: ${area}
+- Escritório: ${escritorio}${anos_experiencia ? `\n- Anos de experiência: ${anos_experiencia}` : ''}
+
+DESCRIÇÃO DO CASO:
+${descricao.trim()}`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+
+    let openaiRes;
+    try {
+      openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          max_tokens: 16000,
+          temperature: 0.4,
+          response_format: { type: 'json_object' }
+        }),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!openaiRes.ok) {
+      const errData = await openaiRes.json().catch(() => ({}));
+      return res.status(502).json({ error: errData.error?.message || 'Erro na OpenAI' });
+    }
+
+    const data = await openaiRes.json();
+    const raw = data.choices?.[0]?.message?.content || '{}';
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return res.status(502).json({ error: 'Resposta inválida da OpenAI (JSON malformado)', raw });
+    }
+
+    const sections = (parsed.sections || []).map(s => ({
+      id: s.id,
+      title: s.title,
+      content: s.content
+    }));
+
+    return res.json({
+      sections,
+      tipo_peca: parsed.tipo_peca || '',
+      alertas: parsed.alertas || [],
+      plano_b: parsed.plano_b || '',
+      escolhas_estrategicas: parsed.escolhas_estrategicas || []
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Timeout na geração da peça (120s)' });
+    }
+    console.error('Erro /api/peca/gerar:', err);
+    return res.status(500).json({ error: 'Erro interno ao gerar peça' });
+  }
+});
+
+// POST /api/peca/regenerar-secao — regenera uma seção específica conforme instrução
+app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
+  try {
+    const { secao_id, descricao_original, instrucao, conteudo_atual } = req.body;
+    if (!secao_id || !instrucao) {
+      return res.status(400).json({ error: 'secao_id e instrucao são obrigatórios' });
+    }
+
+    const systemPrompt = 'Você é um advogado sênior. Reescreva APENAS a seção indicada da peça jurídica conforme a instrução. Mantenha linguagem forense formal. Retorne APENAS o texto da seção, sem JSON, sem markdown.';
+
+    const userMessage = `SEÇÃO A REESCREVER: ${secao_id}\n\nDESCRIÇÃO ORIGINAL DO CASO:\n${(descricao_original || '').trim()}\n\nCONTEÚDO ATUAL DA SEÇÃO:\n${(conteudo_atual || '').trim()}\n\nINSTRUÇÃO DO ADVOGADO:\n${instrucao.trim()}`;
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+
+    let openaiRes;
+    try {
+      openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
+          max_tokens: 8000,
+          temperature: 0.4
+        }),
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!openaiRes.ok) {
+      const errData = await openaiRes.json().catch(() => ({}));
+      return res.status(502).json({ error: errData.error?.message || 'Erro na OpenAI' });
+    }
+
+    const data = await openaiRes.json();
+    const content = data.choices?.[0]?.message?.content || '';
+
+    return res.json({ content: content.trim() });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Timeout na regeneração da seção (120s)' });
+    }
+    console.error('Erro /api/peca/regenerar-secao:', err);
+    return res.status(500).json({ error: 'Erro interno ao regenerar seção' });
+  }
+});
+
+// POST /api/peca/exportar — exporta peça como HTML formatado
+app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
+  try {
+    const { sections, tipo_peca } = req.body;
+    if (!sections || !Array.isArray(sections) || sections.length === 0) {
+      return res.status(400).json({ error: 'sections é obrigatório e deve ser um array' });
+    }
+
+    const dataAtual = new Date().toLocaleDateString('pt-BR', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    });
+
+    const sectionsHtml = sections.map(s => {
+      const contentHtml = (s.content || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\n/g, '<br>');
+      return `<div style="margin-bottom:32px;">
+  <h2 style="font-size:14pt;font-weight:bold;text-align:center;text-transform:uppercase;margin-bottom:16px;font-family:'Times New Roman',serif;">${(s.title || '').replace(/&/g,'&amp;')}</h2>
+  <p style="font-size:12pt;line-height:1.8;text-align:justify;font-family:'Times New Roman',serif;">${contentHtml}</p>
+</div>`;
+    }).join('\n');
+
+    const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>${(tipo_peca || 'Peça Jurídica').replace(/&/g,'&amp;')}</title>
+  <style>
+    @media print {
+      body { margin: 3cm 3cm 2cm 4cm; }
+      .no-print { display: none; }
+    }
+    body {
+      font-family: 'Times New Roman', serif;
+      font-size: 12pt;
+      line-height: 1.8;
+      color: #000;
+      background: #fff;
+      margin: 3cm 3cm 2cm 4cm;
+    }
+    h1 { font-size: 14pt; text-align: center; text-transform: uppercase; margin-bottom: 40px; }
+    h2 { font-size: 14pt; text-align: center; text-transform: uppercase; margin: 32px 0 16px; }
+    p { text-align: justify; margin: 0 0 12px; }
+  </style>
+</head>
+<body>
+  <h1>${(tipo_peca || 'Peça Jurídica').replace(/&/g,'&amp;')}</h1>
+  ${sectionsHtml}
+</body>
+</html>`;
+
+    return res.json({ html });
+  } catch (err) {
+    console.error('Erro /api/peca/exportar:', err);
+    return res.status(500).json({ error: 'Erro interno ao exportar peça' });
+  }
+});
+
 // ─── HONORÁRIOS API ──────────────────────────────────────────
 // GET /api/honorarios — lista todos os estados
 app.get('/api/honorarios', (req, res) => {

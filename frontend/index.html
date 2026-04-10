@@ -737,7 +737,7 @@
       <!-- Desktop: toolbar inline no header -->
       <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
-          <button class="teses-btn" onclick="openPeticaoModal()">Petição</button>
+          <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
           <button class="teses-btn" onclick="openTesesModal()">Teses</button>
           <button class="teses-btn" onclick="openAudienciaModal()">Audiência</button>
           <button class="teses-btn nav-mais-btn" onclick="toggleNavMais(event)" id="navMaisBtn">Mais ▾</button>
@@ -768,7 +768,7 @@
     <div class="mobile-toolbar">
       <button class="teses-btn" onclick="openTesesModal()">Teses</button>
       <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
-      <button class="teses-btn" onclick="openPeticaoModal()">Petição</button>
+      <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
       <button class="teses-btn" onclick="openCalculadoraModal()">Honorários</button>
       <button class="teses-btn" onclick="openGame()">Jogo</button>
       <button class="teses-btn" onclick="openAudienciaModal()">Audiência</button>
@@ -804,7 +804,7 @@
           <button class="suggestion-chip" onclick="sendSuggestion(this)">Me ajuda a cobrar mais sem perder cliente</button>
           <button class="suggestion-chip" onclick="sendSuggestion(this)">Gera uma tese para eu anunciar no Instagram</button>
           <button class="suggestion-chip" onclick="sendSuggestion(this)">Script para fechar o cliente difícil</button>
-          <button class="suggestion-chip" onclick="sendSuggestion(this)">Monta uma petição para mim agora</button>
+          <button class="suggestion-chip" onclick="window.location.href='/editor-peca.html'">Abrir editor de petição</button>
         </div>
         <div class="templates-section" id="welcomeTemplates" style="display:none">
           <div class="templates-section-title">⭐ Meus Atalhos <span style="font-size:.7rem;font-weight:400;opacity:.6">(prompts que você salvou para reusar)</span></div>
@@ -1369,7 +1369,7 @@ function newConversationUI(){
       <button class="suggestion-chip" onclick="sendSuggestion(this)">Me ajuda a cobrar mais sem perder cliente</button>
       <button class="suggestion-chip" onclick="sendSuggestion(this)">Gera uma tese para eu anunciar no Instagram</button>
       <button class="suggestion-chip" onclick="sendSuggestion(this)">Script para fechar o cliente difícil</button>
-      <button class="suggestion-chip" onclick="sendSuggestion(this)">Monta uma petição para mim agora</button>
+      <button class="suggestion-chip" onclick="window.location.href='/editor-peca.html'">Abrir editor de petição</button>
     </div>`;
   $('chatMessages').appendChild(div);
   $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;

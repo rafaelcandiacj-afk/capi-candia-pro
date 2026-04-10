@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor de Peça — Capi Când-IA Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #b8960c;
+      --gold-light: #d4ac14;
+      --gold-dim: rgba(184,150,12,0.12);
+      --bg: #faf8f5;
+      --bg2: #fff;
+      --bg3: #f5f3f0;
+      --text: #1a1a1a;
+      --text2: #666;
+      --border: #e8e4de;
+      --radius-card: 10px;
+      --radius-btn: 20px;
+      --sidebar-w: 340px;
+      --header-h: 48px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --transition: 0.2s ease;
+    }
+
+    body.dark-mode {
+      --bg: #141414;
+      --bg2: #1e1e1e;
+      --bg3: #252525;
+      --text: #e8e4de;
+      --text2: #999;
+      --border: #333;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ─── Scrollbar ────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+    /* ─── Layout Shell ─────────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── Header ───────────────────────────────────────────────────── */
+    #header {
+      height: var(--header-h);
+      min-height: var(--header-h);
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      z-index: 100;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .logo-mark {
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo-text span {
+      color: var(--gold);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ─── Buttons ──────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: var(--radius-btn);
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--bg3);
+      border-color: var(--text2);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-ghost {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .btn-ghost:hover {
+      background: var(--bg3);
+      border-color: transparent;
+    }
+
+    .btn-primary {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-light);
+      border-color: var(--gold-light);
+    }
+
+    .btn-primary:disabled,
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-sm {
+      height: 26px;
+      padding: 0 10px;
+      font-size: 12px;
+      border-radius: 14px;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 8px;
+    }
+
+    /* ─── Spinner ──────────────────────────────────────────────────── */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .spinner-dark {
+      border-color: rgba(0,0,0,0.15);
+      border-top-color: var(--text2);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Main Body ────────────────────────────────────────────────── */
+    #body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ─── Sidebar ──────────────────────────────────────────────────── */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      max-width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition), width var(--transition);
+    }
+
+    .sidebar-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
+    }
+
+    .sidebar-toggle-mobile {
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ─── Form fields ──────────────────────────────────────────────── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text2);
+      letter-spacing: 0.01em;
+    }
+
+    .field label .optional {
+      font-weight: 400;
+      opacity: 0.7;
+    }
+
+    textarea, input[type="text"] {
+      font-family: inherit;
+      font-size: 13.5px;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 10px 12px;
+      width: 100%;
+      resize: none;
+      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+
+    textarea::placeholder, input::placeholder {
+      color: var(--text2);
+      opacity: 0.65;
+    }
+
+    textarea:focus, input[type="text"]:focus {
+      border-color: var(--gold);
+      background: var(--bg2);
+      box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+
+    #textarea-briefing {
+      min-height: 180px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* ─── Gerar button ─────────────────────────────────────────────── */
+    #btn-gerar {
+      width: 100%;
+      height: 40px;
+      border-radius: var(--radius-btn);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    /* ─── Alerts panel ─────────────────────────────────────────────── */
+    #alerts-panel {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 4px;
+    }
+
+    #alerts-panel.visible {
+      display: flex;
+    }
+
+    .alerts-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text2);
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .alert-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius-card);
+      padding: 10px 12px;
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text);
+      animation: fadeInUp 0.3s ease both;
+    }
+
+    .alert-item.alert-warning {
+      border-left-color: #e07b00;
+    }
+
+    .alert-item.alert-info {
+      border-left-color: #0070c9;
+    }
+
+    .alert-type {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text2);
+      margin-bottom: 3px;
+    }
+
+    /* ─── Editor area ──────────────────────────────────────────────── */
+    #editor-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #editor-toolbar {
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg2);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .toolbar-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      flex: 1;
+    }
+
+    #editor-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 40px;
+    }
+
+    /* ─── Empty state ──────────────────────────────────────────────── */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 400px;
+      gap: 16px;
+      text-align: center;
+      color: var(--text2);
+      user-select: none;
+    }
+
+    #empty-state svg {
+      opacity: 0.2;
+    }
+
+    .empty-heading {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      opacity: 0.5;
+    }
+
+    .empty-sub {
+      font-size: 13px;
+      opacity: 0.6;
+      max-width: 300px;
+      line-height: 1.6;
+    }
+
+    /* ─── Document header ──────────────────────────────────────────── */
+    #doc-header {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #doc-header.visible {
+      display: flex;
+    }
+
+    #doc-title-input {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 6px;
+      margin-left: -6px;
+      color: var(--text);
+    }
+
+    #doc-title-input:focus {
+      background: var(--bg3);
+      box-shadow: none;
+      border: none;
+    }
+
+    .doc-meta {
+      font-size: 12px;
+      color: var(--text2);
+      padding-left: 6px;
+    }
+
+    /* ─── Section blocks ───────────────────────────────────────────── */
+    #sections-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-block {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      animation: fadeInUp 0.35s ease both;
+    }
+
+    .section-block:hover {
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-block:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+      gap: 10px;
+      cursor: default;
+    }
+
+    .section-num {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      flex: 1;
+      color: var(--text);
+    }
+
+    .section-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-body {
+      padding: 0;
+    }
+
+    .section-textarea {
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      padding: 14px 16px;
+      font-size: 13.5px;
+      line-height: 1.75;
+      min-height: 120px;
+    }
+
+    .section-textarea:focus {
+      box-shadow: none;
+      border: none;
+    }
+
+    /* ─── Regenerate inline input ──────────────────────────────────── */
+    .regen-panel {
+      display: none;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--bg3);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .regen-panel.open {
+      display: flex;
+    }
+
+    .regen-panel input {
+      flex: 1;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+    }
+
+    .regen-panel .btn {
+      height: 30px;
+    }
+
+    /* ─── Skeleton loading ─────────────────────────────────────────── */
+    @keyframes shimmer {
+      0%   { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+
+    .skeleton-block {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+      animation: fadeInUp 0.3s ease both;
+    }
+
+    .skeleton-block:nth-child(2) { animation-delay: 0.05s; }
+    .skeleton-block:nth-child(3) { animation-delay: 0.10s; }
+    .skeleton-block:nth-child(4) { animation-delay: 0.15s; }
+    .skeleton-block:nth-child(5) { animation-delay: 0.20s; }
+
+    .skeleton-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    .skeleton-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .skeleton-line {
+      height: 13px;
+      border-radius: 6px;
+      background: linear-gradient(
+        90deg,
+        var(--bg3) 25%,
+        var(--border) 50%,
+        var(--bg3) 75%
+      );
+      background-size: 600px 100%;
+      animation: shimmer 1.4s infinite linear;
+    }
+
+    .skeleton-line.short { width: 55%; }
+    .skeleton-line.medium { width: 78%; }
+    .skeleton-line.long { width: 100%; }
+    .skeleton-line.title { height: 16px; width: 40%; }
+
+    /* ─── Animations ───────────────────────────────────────────────── */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ─── Mobile toggle bar ────────────────────────────────────────── */
+    #mobile-tab-bar {
+      display: none;
+      height: 40px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      align-items: stretch;
+    }
+
+    .mobile-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      transition: all var(--transition);
+      border-bottom: 2px solid transparent;
+    }
+
+    .mobile-tab.active {
+      color: var(--text);
+      border-bottom-color: var(--gold);
+    }
+
+    /* ─── Toast notifications ──────────────────────────────────────── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-md);
+      animation: toastIn 0.25s ease;
+      pointer-events: auto;
+      max-width: 320px;
+    }
+
+    .toast.error {
+      background: #d32f2f;
+      color: #fff;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(8px); }
+    }
+
+    /* ─── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      #mobile-tab-bar {
+        display: flex;
+      }
+
+      #body {
+        flex-direction: column;
+      }
+
+      #sidebar {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      #sidebar.hidden-mobile {
+        display: none;
+      }
+
+      #editor-area.hidden-mobile {
+        display: none;
+      }
+
+      #editor-scroll {
+        padding: 20px 16px;
+      }
+
+      .header-actions .btn-back span {
+        display: none;
+      }
+
+      #btn-exportar span {
+        display: none;
+      }
+    }
+
+    @media (min-width: 769px) {
+      #mobile-tab-bar {
+        display: none !important;
+      }
+    }
+
+    /* ─── Divider ──────────────────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+
+    /* ─── Util ─────────────────────────────────────────────────────── */
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+    }
+
+    .text-muted {
+      color: var(--text2);
+    }
+
+    /* ─── Word count ───────────────────────────────────────────────── */
+    .word-count {
+      font-size: 11px;
+      color: var(--text2);
+      padding: 4px 16px 10px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════════ -->
+  <header id="header">
+    <a href="#" class="header-logo" aria-label="Capi Când-IA Pro — página inicial">
+      <!-- SVG Logo mark -->
+      <svg class="logo-mark" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="26" height="26" rx="7" fill="#b8960c"/>
+        <path d="M13 6.5C13 6.5 7.5 9.5 7.5 14C7.5 16.485 9.015 18.5 13 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M13 6.5C13 6.5 18.5 9.5 18.5 14C18.5 16.485 16.985 18.5 13 18.5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="13" y1="6.5" x2="13" y2="19.5" stroke="white" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Capi <span>Când-IA</span> Pro</span>
+    </a>
+
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-back" id="btn-voltar" onclick="voltarChat()">
+        <!-- Arrow left icon -->
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M8.5 11L4.5 7L8.5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Voltar ao Chat</span>
+      </button>
+      <button class="btn" id="btn-exportar" onclick="exportarPeca()">
+        <!-- Export icon -->
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M7 1V9M7 1L4.5 3.5M7 1L9.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 10V11.5C2 12.05 2.45 12.5 3 12.5H11C11.55 12.5 12 12.05 12 11.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>Exportar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══ MOBILE TAB BAR ════════════════════════════════════════════════ -->
+  <div id="mobile-tab-bar">
+    <button class="mobile-tab active" id="tab-briefing" onclick="switchMobileTab('briefing')">Briefing</button>
+    <button class="mobile-tab" id="tab-editor" onclick="switchMobileTab('editor')">Editor</button>
+  </div>
+
+  <!-- ═══ BODY ══════════════════════════════════════════════════════════ -->
+  <div id="body">
+
+    <!-- ── SIDEBAR ─────────────────────────────────────────────────── -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Briefing</span>
+      </div>
+
+      <div class="sidebar-body">
+
+        <!-- Descrição do caso -->
+        <div class="field">
+          <label for="textarea-briefing">Descrição do caso</label>
+          <textarea
+            id="textarea-briefing"
+            placeholder="Descreva o caso aqui. Quem é o cliente, o que aconteceu, o que quer. Pode escrever como se estivesse conversando com um colega..."
+            rows="8"
+            oninput="autoExpand(this)"
+          ></textarea>
+        </div>
+
+        <!-- Tipo de peça -->
+        <div class="field">
+          <label for="input-tipo">Tipo de peça <span class="optional">(opcional)</span></label>
+          <input
+            type="text"
+            id="input-tipo"
+            placeholder="ex.: inicial cível, agravo, exceção de pré-executividade..."
+          />
+        </div>
+
+        <!-- Vara/Juízo -->
+        <div class="field">
+          <label for="input-vara">Vara / Juízo <span class="optional">(opcional)</span></label>
+          <input
+            type="text"
+            id="input-vara"
+            placeholder="ex.: 3ª Vara Cível de São Paulo..."
+          />
+        </div>
+
+        <!-- Botão gerar -->
+        <button class="btn btn-primary" id="btn-gerar" onclick="gerarPeca()">
+          <span id="btn-gerar-label">Gerar Peça</span>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Alertas (aparecem após gerar) -->
+        <div id="alerts-panel">
+          <div class="alerts-title">Alertas e Estratégia</div>
+          <div id="alerts-list"></div>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- ── EDITOR ───────────────────────────────────────────────────── -->
+    <main id="editor-area">
+      <div id="editor-toolbar">
+        <span class="toolbar-title" id="toolbar-title">Nova peça</span>
+        <button class="btn btn-sm btn-ghost" id="btn-toggle-all" onclick="toggleAllSections()" style="display:none;">
+          Recolher tudo
+        </button>
+      </div>
+
+      <div id="editor-scroll">
+
+        <!-- Empty state -->
+        <div id="empty-state">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="12" y="8" width="48" height="56" rx="6" stroke="currentColor" stroke-width="2"/>
+            <line x1="22" y1="24" x2="50" y2="24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="22" y1="32" x2="50" y2="32" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="22" y1="40" x2="40" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="52" cy="54" r="10" fill="var(--bg)" stroke="currentColor" stroke-width="2"/>
+            <path d="M48 54h8M52 50v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <p class="empty-heading">Nenhuma peça gerada ainda</p>
+          <p class="empty-sub">Descreva o caso no painel ao lado e clique em <strong>Gerar Peça</strong> para começar.</p>
+        </div>
+
+        <!-- Document header -->
+        <div id="doc-header">
+          <input
+            type="text"
+            id="doc-title-input"
+            placeholder="Título da peça"
+            value=""
+          />
+          <span class="doc-meta" id="doc-meta-info"></span>
+        </div>
+
+        <!-- Sections container -->
+        <div id="sections-container"></div>
+
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══════════════════════════════════════════════ -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- ═══ JAVASCRIPT ════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── Config ───────────────────────────────────────────────────────────
+const API_BASE   = '';
+const TOKEN_KEY  = 'token';
+const DM_KEY     = 'darkMode';
+
+// ─── State ────────────────────────────────────────────────────────────
+let generatedSections = [];
+let isGenerating      = false;
+let currentTipo       = '';
+let currentVara       = '';
+
+// ─── Section definitions ──────────────────────────────────────────────
+const SECTION_DEFS = [
+  { id: 'qualificacao', title: 'Da Qualificação das Partes' },
+  { id: 'fatos',        title: 'Dos Fatos' },
+  { id: 'direito',      title: 'Do Direito' },
+  { id: 'pedidos',      title: 'Dos Pedidos' },
+  { id: 'encerramento', title: 'Do Encerramento e Requerimentos' },
+];
+
+// ─── Init ─────────────────────────────────────────────────────────────
+(function init() {
+  applyDarkMode();
+  adjustAllTextareas();
+  window.addEventListener('resize', adjustAllTextareas);
+})();
+
+function applyDarkMode() {
+  if (localStorage.getItem(DM_KEY) === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+}
+
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || '';
+}
+
+// ─── autoExpand textarea ──────────────────────────────────────────────
+function autoExpand(el) {
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight) + 'px';
+}
+
+function adjustAllTextareas() {
+  document.querySelectorAll('textarea').forEach(t => autoExpand(t));
+}
+
+// ─── Mobile tab switching ─────────────────────────────────────────────
+function switchMobileTab(tab) {
+  const sidebar = document.getElementById('sidebar');
+  const editor  = document.getElementById('editor-area');
+  const tabB    = document.getElementById('tab-briefing');
+  const tabE    = document.getElementById('tab-editor');
+
+  if (tab === 'briefing') {
+    sidebar.classList.remove('hidden-mobile');
+    editor.classList.add('hidden-mobile');
+    tabB.classList.add('active');
+    tabE.classList.remove('active');
+  } else {
+    sidebar.classList.add('hidden-mobile');
+    editor.classList.remove('hidden-mobile');
+    tabB.classList.remove('active');
+    tabE.classList.add('active');
+  }
+}
+
+// ─── Navigation ───────────────────────────────────────────────────────
+function voltarChat() {
+  const confirmed = generatedSections.length === 0
+    || confirm('Tem certeza? O rascunho atual será perdido.');
+  if (confirmed) window.location.href = '/';
+}
+
+// ─── Gerar peça ───────────────────────────────────────────────────────
+async function gerarPeca() {
+  const descricao = document.getElementById('textarea-briefing').value.trim();
+  if (!descricao) {
+    showToast('Descreva o caso antes de gerar.', 'error');
+    document.getElementById('textarea-briefing').focus();
+    return;
+  }
+  if (isGenerating) return;
+
+  isGenerating   = true;
+  currentTipo    = document.getElementById('input-tipo').value.trim();
+  currentVara    = document.getElementById('input-vara').value.trim();
+
+  // Build prompt payload
+  let promptText = descricao;
+  if (currentTipo) promptText += `\nTipo de peça: ${currentTipo}`;
+  if (currentVara) promptText += `\nVara/Juízo: ${currentVara}`;
+
+  // Button loading state
+  setBtnLoading('btn-gerar', 'btn-gerar-label', 'Gerando...', true);
+
+  // Show skeleton
+  showSkeletons();
+  showDocHeader();
+  hideEmptyState();
+
+  // Switch mobile to editor
+  if (window.innerWidth <= 768) switchMobileTab('editor');
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/peca/gerar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ descricao: promptText }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    generatedSections = data.secoes || mockSections(promptText);
+    renderSections(generatedSections);
+    renderAlerts(data.alertas || mockAlerts());
+    updateDocMeta();
+    showToast('Peça gerada com sucesso.');
+
+  } catch (err) {
+    console.warn('API unavailable, using mock data:', err);
+    // Graceful fallback: use mock data in dev / demo mode
+    generatedSections = mockSections(promptText);
+    renderSections(generatedSections);
+    renderAlerts(mockAlerts());
+    updateDocMeta();
+    showToast('Modo demo: peça gerada com conteúdo de exemplo.');
+  } finally {
+    isGenerating = false;
+    setBtnLoading('btn-gerar', 'btn-gerar-label', 'Gerar Peça', false);
+    document.getElementById('btn-toggle-all').style.display = '';
+  }
+}
+
+// ─── Regenerar seção ──────────────────────────────────────────────────
+async function regenerarSecao(sectionId) {
+  const panel    = document.getElementById(`regen-panel-${sectionId}`);
+  const instrucao = document.getElementById(`regen-input-${sectionId}`).value.trim();
+  const textarea = document.getElementById(`section-textarea-${sectionId}`);
+  const btn      = document.getElementById(`btn-regen-${sectionId}`);
+
+  if (!instrucao) {
+    showToast('Informe o que quer mudar nesta seção.', 'error');
+    document.getElementById(`regen-input-${sectionId}`).focus();
+    return;
+  }
+
+  // Loading state on regen button
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span>';
+
+  // Subtle loading on textarea
+  textarea.style.opacity = '0.4';
+  textarea.style.transition = 'opacity 0.3s ease';
+
+  const descricao = document.getElementById('textarea-briefing').value.trim();
+  const sectionDef = SECTION_DEFS.find(s => s.id === sectionId);
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/peca/regenerar-secao`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({
+        secao_id: sectionId,
+        secao_titulo: sectionDef?.title || sectionId,
+        instrucao,
+        descricao,
+        conteudo_atual: textarea.value,
+      }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    const newContent = data.conteudo || mockRegenContent(sectionDef?.title, instrucao);
+    textarea.value = newContent;
+    autoExpand(textarea);
+    showToast(`Seção "${sectionDef?.title}" atualizada.`);
+    closeRegenPanel(sectionId);
+
+    // Update state
+    const idx = generatedSections.findIndex(s => s.id === sectionId);
+    if (idx !== -1) generatedSections[idx].conteudo = newContent;
+
+  } catch (err) {
+    console.warn('Regen API unavailable, using mock:', err);
+    const newContent = mockRegenContent(sectionDef?.title, instrucao);
+    textarea.value = newContent;
+    autoExpand(textarea);
+    showToast(`Seção atualizada (modo demo).`);
+    closeRegenPanel(sectionId);
+
+    const idx = generatedSections.findIndex(s => s.id === sectionId);
+    if (idx !== -1) generatedSections[idx].conteudo = newContent;
+
+  } finally {
+    textarea.style.opacity = '';
+    btn.disabled = false;
+    btn.innerHTML = refreshIcon();
+  }
+}
+
+// ─── Toggle regen panel ───────────────────────────────────────────────
+function toggleRegenPanel(sectionId) {
+  const panel = document.getElementById(`regen-panel-${sectionId}`);
+  const isOpen = panel.classList.contains('open');
+  // Close all others
+  document.querySelectorAll('.regen-panel.open').forEach(p => {
+    if (p.id !== `regen-panel-${sectionId}`) p.classList.remove('open');
+  });
+  panel.classList.toggle('open', !isOpen);
+  if (!isOpen) {
+    setTimeout(() => document.getElementById(`regen-input-${sectionId}`)?.focus(), 60);
+  }
+}
+
+function closeRegenPanel(sectionId) {
+  const panel = document.getElementById(`regen-panel-${sectionId}`);
+  if (panel) panel.classList.remove('open');
+}
+
+// ─── Exportar ─────────────────────────────────────────────────────────
+async function exportarPeca() {
+  if (generatedSections.length === 0) {
+    showToast('Gere uma peça antes de exportar.', 'error');
+    return;
+  }
+
+  const titulo  = document.getElementById('doc-title-input').value || 'Peça Jurídica';
+  const secoes  = generatedSections.map(s => ({
+    id: s.id,
+    titulo: s.titulo,
+    conteudo: document.getElementById(`section-textarea-${s.id}`)?.value || s.conteudo,
+  }));
+
+  const exportBtn = document.getElementById('btn-exportar');
+  const origHtml  = exportBtn.innerHTML;
+  exportBtn.disabled = true;
+  exportBtn.innerHTML = '<span class="spinner spinner-dark"></span><span>Exportando</span>';
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/peca/exportar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`,
+      },
+      body: JSON.stringify({ titulo, secoes }),
+    });
+
+    if (resp.ok) {
+      const ct = resp.headers.get('Content-Type') || '';
+      if (ct.includes('text/html')) {
+        const html = await resp.text();
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(html);
+          win.document.close();
+        } else {
+          downloadBlob(new Blob([html], { type: 'text/html' }), `${titulo}.html`);
+        }
+      } else {
+        const blob = await resp.blob();
+        downloadBlob(blob, `${titulo}.docx`);
+      }
+      showToast('Exportação concluída.');
+    } else {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+  } catch (err) {
+    console.warn('Export API unavailable, generating local HTML:', err);
+    const html = buildExportHtml(titulo, secoes, currentTipo, currentVara);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    } else {
+      downloadBlob(new Blob([html], { type: 'text/html' }), `${titulo}.html`);
+    }
+    showToast('Documento aberto para impressão.');
+  } finally {
+    exportBtn.disabled = false;
+    exportBtn.innerHTML = origHtml;
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─── DOM helpers ──────────────────────────────────────────────────────
+function hideEmptyState() {
+  document.getElementById('empty-state').style.display = 'none';
+}
+
+function showDocHeader() {
+  document.getElementById('doc-header').classList.add('visible');
+}
+
+function showSkeletons() {
+  const container = document.getElementById('sections-container');
+  container.innerHTML = SECTION_DEFS.map((_, i) => `
+    <div class="skeleton-block">
+      <div class="skeleton-header">
+        <div class="skeleton-line title"></div>
+      </div>
+      <div class="skeleton-body">
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line medium"></div>
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line short"></div>
+        <div class="skeleton-line long"></div>
+        <div class="skeleton-line medium"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSections(sections) {
+  const container = document.getElementById('sections-container');
+  container.innerHTML = '';
+
+  sections.forEach((sec, idx) => {
+    const block = document.createElement('div');
+    block.className  = 'section-block';
+    block.id         = `section-block-${sec.id}`;
+    block.style.animationDelay = `${idx * 0.06}s`;
+    block.innerHTML  = buildSectionHtml(sec, idx + 1);
+    container.appendChild(block);
+
+    // autoExpand the textarea after insertion
+    const ta = block.querySelector('textarea');
+    if (ta) {
+      requestAnimationFrame(() => autoExpand(ta));
+      ta.addEventListener('input', () => autoExpand(ta));
+    }
+  });
+}
+
+function buildSectionHtml(sec, num) {
+  const safeContent = escHtml(sec.conteudo || '');
+  return `
+    <div class="section-header">
+      <span class="section-num">${num}</span>
+      <span class="section-title">${escHtml(sec.titulo)}</span>
+      <div class="section-actions">
+        <button
+          class="btn btn-sm btn-ghost btn-icon"
+          id="btn-regen-${sec.id}"
+          onclick="toggleRegenPanel('${sec.id}')"
+          title="Regenerar esta seção"
+          aria-label="Regenerar ${escHtml(sec.titulo)}"
+        >${refreshIcon()}</button>
+      </div>
+    </div>
+    <div class="section-body">
+      <textarea
+        id="section-textarea-${sec.id}"
+        class="section-textarea"
+        rows="6"
+        oninput="autoExpand(this)"
+      >${safeContent}</textarea>
+      <div class="word-count" id="wc-${sec.id}"></div>
+    </div>
+    <div class="regen-panel" id="regen-panel-${sec.id}">
+      <input
+        type="text"
+        id="regen-input-${sec.id}"
+        placeholder="O que quer mudar nesta seção?"
+        onkeydown="if(event.key==='Enter'){regenerarSecao('${sec.id}');}if(event.key==='Escape'){closeRegenPanel('${sec.id}');}"
+      />
+      <button class="btn btn-sm" onclick="regenerarSecao('${sec.id}')">Aplicar</button>
+      <button class="btn btn-sm btn-ghost" onclick="closeRegenPanel('${sec.id}')">Cancelar</button>
+    </div>
+  `;
+}
+
+function renderAlerts(alertas) {
+  const panel = document.getElementById('alerts-panel');
+  const list  = document.getElementById('alerts-list');
+  list.innerHTML = '';
+
+  alertas.forEach(a => {
+    const item = document.createElement('div');
+    item.className = `alert-item alert-${a.tipo || 'info'}`;
+    item.innerHTML = `
+      <div class="alert-type">${escHtml(labelForAlertType(a.tipo))}</div>
+      ${escHtml(a.mensagem)}
+    `;
+    list.appendChild(item);
+  });
+
+  panel.classList.add('visible');
+}
+
+function labelForAlertType(tipo) {
+  const map = { warning: 'Atenção', info: 'Informação', strategy: 'Estratégia', planb: 'Plano B' };
+  return map[tipo] || 'Nota';
+}
+
+function updateDocMeta() {
+  const tipo  = currentTipo || 'Peça Jurídica';
+  const vara  = currentVara ? ` — ${currentVara}` : '';
+  const now   = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+
+  document.getElementById('doc-title-input').value    = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+  document.getElementById('doc-meta-info').textContent = `Gerada em ${now}${vara}`;
+  document.getElementById('toolbar-title').textContent = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+}
+
+function toggleAllSections() {
+  const btn  = document.getElementById('btn-toggle-all');
+  const all  = document.querySelectorAll('.section-textarea');
+  const any  = document.querySelectorAll('.regen-panel.open');
+  any.forEach(p => p.classList.remove('open'));
+  // Toggle expand/collapse bodies
+  const isCollapsed = btn.textContent.trim() === 'Expandir tudo';
+  all.forEach(ta => {
+    ta.closest('.section-body').style.display = isCollapsed ? '' : 'none';
+  });
+  btn.textContent = isCollapsed ? 'Recolher tudo' : 'Expandir tudo';
+}
+
+function setBtnLoading(btnId, labelId, text, loading) {
+  const btn   = document.getElementById(btnId);
+  const label = document.getElementById(labelId);
+  if (loading) {
+    btn.disabled = true;
+    btn.insertAdjacentHTML('afterbegin', '<span class="spinner"></span>');
+    label.textContent = text;
+  } else {
+    btn.disabled = false;
+    const spinner = btn.querySelector('.spinner');
+    if (spinner) spinner.remove();
+    label.textContent = text;
+  }
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────
+function refreshIcon() {
+  return `<svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+    <path d="M11.5 2.5C10.3 1.1 8.5 0.25 6.5 0.25C2.91 0.25 0 3.16 0 6.75C0 10.34 2.91 13.25 6.5 13.25C9.48 13.25 12 11.3 12.77 8.57" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M11.5 0.75V4.25H8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────
+function showToast(msg, type = 'default') {
+  const container = document.getElementById('toast-container');
+  const toast     = document.createElement('div');
+  toast.className = `toast${type === 'error' ? ' error' : ''}`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.animation = 'toastOut 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
+
+// ─── Util ─────────────────────────────────────────────────────────────
+function escHtml(str) {
+  const el = document.createElement('div');
+  el.appendChild(document.createTextNode(str || ''));
+  return el.innerHTML;
+}
+
+// ─── Mock data (demo / offline fallback) ─────────────────────────────
+function mockSections(prompt) {
+  const tipo = currentTipo || 'Peça Jurídica';
+  return [
+    {
+      id: 'qualificacao',
+      titulo: 'Da Qualificação das Partes',
+      conteudo: `REQUERENTE: [Nome Completo], [nacionalidade], [estado civil], [profissão], inscrito no CPF/MF sob o n.º [000.000.000-00], portador do RG n.º [000000], residente e domiciliado na [Endereço Completo, Número, Complemento, Bairro, Cidade – Estado, CEP: 00000-000].\n\nREQUEREIDO: [Nome ou Razão Social], [pessoa física/jurídica], [qualificação], com sede/domicílio na [Endereço Completo].`,
+    },
+    {
+      id: 'fatos',
+      titulo: 'Dos Fatos',
+      conteudo: `O(a) Requerente, na condição de [qualificação], veio a contratar com o(a) Requerido(a) os serviços de [descrição], conforme comprovam os documentos que acompanham a presente.\n\nOcorre que, em [data], o(a) Requerido(a) [descrever o fato principal ensejador da ação], causando ao(à) Requerente danos de ordem [material/moral/estética], conforme se demonstrará.\n\nApesar das tentativas extrajudiciais de resolução, a parte contrária não apresentou solução satisfatória, tornando necessária a intervenção do Poder Judiciário.`,
+    },
+    {
+      id: 'direito',
+      titulo: 'Do Direito',
+      conteudo: `A conduta do(a) Requerido(a) configura evidente violação aos ditames do Código Civil Brasileiro, especialmente em seu artigo 186 e 927, que estabelecem a obrigação de reparar o dano causado por ato ilícito.\n\nAdemais, aplica-se ao caso o disposto no artigo 6.º, VI e VIII, da Lei n.º 8.078/90 (Código de Defesa do Consumidor), que assegura ao consumidor a efetiva prevenção e reparação de danos, bem como a facilitação da defesa de seus direitos.\n\nO nexo causal entre a conduta omissiva/comissiva do(a) Requerido(a) e os danos sofridos pelo(a) Requerente é inequívoco, preenchendo-se, portanto, todos os pressupostos da responsabilidade civil.`,
+    },
+    {
+      id: 'pedidos',
+      titulo: 'Dos Pedidos',
+      conteudo: `Ante o exposto, requer o(a) Requerente seja julgada PROCEDENTE a presente demanda, para o fim de:\n\na) Reconhecer a responsabilidade civil do(a) Requerido(a) pelos danos causados ao(à) Requerente;\n\nb) Condenar o(a) Requerido(a) ao pagamento de indenização por danos materiais no valor de R$ [X.XXX,XX] (por extenso), devidamente corrigido pelo IPCA desde a data do evento e acrescido de juros de mora de 1% ao mês a partir da citação;\n\nc) Condenar o(a) Requerido(a) ao pagamento de indenização por danos morais no valor de R$ [X.XXX,XX] (por extenso), a ser arbitrado com base nos princípios da razoabilidade e proporcionalidade;\n\nd) Condenar o(a) Requerido(a) ao pagamento das custas processuais e honorários advocatícios, nos termos do artigo 85 do CPC.`,
+    },
+    {
+      id: 'encerramento',
+      titulo: 'Do Encerramento e Requerimentos',
+      conteudo: `Requer ainda:\n\na) A concessão dos benefícios da justiça gratuita, nos termos do artigo 98 e seguintes do CPC/15, haja vista a hipossuficiência econômica do(a) Requerente, conforme declaração anexa;\n\nb) A citação do(a) Requerido(a), no endereço acima indicado, para que, querendo, ofereça contestação no prazo legal, sob pena de revelia;\n\nc) A produção de todos os meios de prova em direito admitidos, especialmente documental, testemunhal, pericial e depoimento pessoal do(a) Requerido(a).\n\nDá-se à causa o valor de R$ [X.XXX,XX] (por extenso).\n\n[Cidade], [data].\n\n[Nome do Advogado(a)]\nOAB/[Estado] n.º [00.000]`,
+    },
+  ];
+}
+
+function mockAlerts() {
+  return [
+    {
+      tipo: 'warning',
+      mensagem: 'Verifique a prescrição antes de distribuir: o prazo pode estar próximo do vencimento dependendo da data do evento.',
+    },
+    {
+      tipo: 'strategy',
+      mensagem: 'Considere incluir pedido liminar se houver urgência comprovável — a tutela de urgência pode acelerar a resolução.',
+    },
+    {
+      tipo: 'planb',
+      mensagem: 'Plano B: caso a via judicial seja desvantajosa (risco de sucumbência elevado), avalie proposta extrajudicial documentada antes da distribuição.',
+    },
+  ];
+}
+
+function mockRegenContent(titulo, instrucao) {
+  return `[Seção "${titulo}" atualizada conforme instrução: "${instrucao}"]\n\nConteúdo revisado com base na orientação fornecida. Substitua este texto pelo conteúdo gerado pela IA quando o endpoint /api/peca/regenerar-secao estiver disponível.\n\nO texto anterior foi ajustado para incorporar as modificações solicitadas, mantendo a coerência jurídica com o restante da peça.`;
+}
+
+// ─── Export HTML generator (local fallback) ───────────────────────────
+function buildExportHtml(titulo, secoes, tipo, vara) {
+  const now = new Date().toLocaleString('pt-BR', { dateStyle: 'long' });
+  const secHtml = secoes.map(s => `
+    <div class="section">
+      <h2>${escHtml(s.titulo)}</h2>
+      <div class="section-body">${escHtml(s.conteudo || '').replace(/\n/g, '<br/>')}</div>
+    </div>
+  `).join('');
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>${escHtml(titulo)}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', serif;
+    font-size: 12pt;
+    line-height: 1.8;
+    color: #1a1a1a;
+    background: #fff;
+    padding: 0;
+  }
+  @page {
+    size: A4;
+    margin: 3cm 3cm 2.5cm 3cm;
+  }
+  .header-doc {
+    text-align: center;
+    border-bottom: 2px solid #b8960c;
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+  .header-doc h1 {
+    font-size: 16pt;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .meta {
+    font-size: 10pt;
+    color: #666;
+    margin-top: 6px;
+  }
+  .section {
+    margin-bottom: 28px;
+    page-break-inside: avoid;
+  }
+  .section h2 {
+    font-size: 12pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-left: 3px solid #b8960c;
+    padding-left: 10px;
+    margin-bottom: 10px;
+    color: #1a1a1a;
+  }
+  .section-body {
+    text-align: justify;
+    hyphens: auto;
+  }
+  .footer-doc {
+    margin-top: 40px;
+    font-size: 9pt;
+    color: #999;
+    text-align: center;
+    border-top: 1px solid #e8e4de;
+    padding-top: 12px;
+  }
+  @media print {
+    body { padding: 0; }
+    .no-print { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="no-print" style="background:#fffbea;border-bottom:1px solid #e8d800;padding:10px 20px;font-size:12px;font-family:sans-serif;">
+  <strong>Documento gerado por Capi Când-IA Pro.</strong>
+  Revise o conteúdo antes de protocolar.
+  <button onclick="window.print()" style="margin-left:16px;padding:4px 14px;background:#b8960c;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Imprimir / Salvar PDF</button>
+</div>
+<div style="padding: 3cm 3cm 2.5cm 3cm;">
+  <div class="header-doc">
+    <h1>${escHtml(titulo)}</h1>
+    <div class="meta">${vara ? escHtml(vara) + ' — ' : ''}${now}</div>
+  </div>
+  ${secHtml}
+  <div class="footer-doc">Gerado por Capi Când-IA Pro &mdash; apenas para fins de rascunho. Não substitui revisão profissional.</div>
+</div>
+</body>
+</html>`;
+}
+</script>
+</body>
+</html>
