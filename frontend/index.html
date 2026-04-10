@@ -1685,6 +1685,8 @@ async function saveProfile(){
   const oab=document.getElementById('profile_oab').value.trim();
   const escritorio=document.getElementById('profile_escritorio').value.trim();
   const especialidade_secundaria=document.getElementById('profile_especialidade2').value.trim();
+  const bioEl2=document.getElementById('profile_bio');
+  const bio=bioEl2?bioEl2.value.trim():'';
   const tomBtn=document.querySelector('.tom-btn.selected');
   const tom_preferido=tomBtn?tomBtn.dataset.tom:'equilibrado';
   const token=localStorage.getItem('capi_token');
@@ -1692,10 +1694,10 @@ async function saveProfile(){
     const r=await fetch('/api/profile',{
       method:'PUT',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido})
+      body:JSON.stringify({nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido,bio})
     });
     if(r.ok){
-      userProfile={nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido};
+      userProfile={nome,area,cidade,anos_experiencia,estado,oab,escritorio,especialidade_secundaria,tom_preferido,bio};
       localStorage.setItem('capi_tom',tom_preferido);
       updateTomBtn(tom_preferido);
       closeProfileModal();
@@ -3373,6 +3375,10 @@ init();
     <div class="form-group">
       <label>Especialidade secundária</label>
       <input type="text" id="profile_especialidade2" class="form-input" placeholder="Ex: Direito Digital, Imobiliário...">
+    </div>
+    <div class="form-group">
+      <label>Conte sobre você <span style="font-size:.72rem;opacity:.6;font-weight:400">(a Capi usa para te conhecer melhor)</span></label>
+      <textarea id="profile_bio" class="form-input" style="resize:vertical;min-height:70px;max-height:140px;font-family:'Inter',sans-serif" placeholder="Ex: Tenho escritório solo, atendo PMEs, prefiro petições objetivas, tenho dificuldade com cálculos trabalhistas, meus clientes são da região central do MS..."></textarea>
     </div>
     <div class="form-group">
       <label>Tom preferido de comunicação</label>

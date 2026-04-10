@@ -1356,7 +1356,7 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
       if (nomeMatch || areaMatch) {
         const nome = nomeMatch ? nomeMatch[1] : existingProfile?.nome;
         const area = areaMatch ? areaMatch[1].trim() : existingProfile?.area;
-        db.prepare('INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))').run(userId, nome || null, area || null, existingProfile?.cidade || null, existingProfile?.estado || null, existingProfile?.anos_experiencia || null, existingProfile?.tom_preferido || 'equilibrado', existingProfile?.oab || null, existingProfile?.escritorio || null);
+        db.prepare('INSERT OR REPLACE INTO user_profiles (user_id, nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, bio, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))').run(userId, nome || null, area || null, existingProfile?.cidade || null, existingProfile?.estado || null, existingProfile?.anos_experiencia || null, existingProfile?.tom_preferido || 'equilibrado', existingProfile?.oab || null, existingProfile?.escritorio || null, existingProfile?.bio || null);
       }
     }
 
@@ -1668,7 +1668,7 @@ app.post('/api/admin/knowledge/ingest-server-files', adminMiddleware, async (req
 
 // Salvar/atualizar perfil
 app.put('/api/profile', authMiddleware, (req, res) => {
-  const { nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria } = req.body;
+  const { nome, area, cidade, estado, anos_experiencia, tom_preferido, oab, escritorio, especialidade_secundaria, bio } = req.body;
   const userId = req.user.id;
   const tomValido = ['descontraido', 'equilibrado', 'formal'].includes(tom_preferido) ? tom_preferido : 'equilibrado';
   db.prepare(`
@@ -2193,6 +2193,7 @@ try { db.prepare("ALTER TABLE user_profiles ADD COLUMN oab TEXT").run(); } catch
 try { db.prepare("ALTER TABLE user_profiles ADD COLUMN escritorio TEXT").run(); } catch(e) {}
 try { db.prepare("ALTER TABLE user_profiles ADD COLUMN tom_preferido TEXT DEFAULT 'equilibrado'").run(); } catch(e) {}
 try { db.prepare("ALTER TABLE user_profiles ADD COLUMN especialidade_secundaria TEXT").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE user_profiles ADD COLUMN bio TEXT").run(); } catch(e) {}
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
