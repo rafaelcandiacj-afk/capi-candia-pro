@@ -788,6 +788,145 @@
       padding: 4px 16px 10px;
       text-align: right;
     }
+
+    /* ─── Templates section ────────────────────────────────────────── */
+    .templates-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .templates-label { font-size: .72rem; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+    .templates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .template-btn { padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; font-size: .75rem; color: var(--text); cursor: pointer; text-align: left; transition: all .2s; font-family: inherit; }
+    .template-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ─── Salvar button ────────────────────────────────────────────── */
+    #btn-salvar { display: none; }
+
+    /* ─── Minhas Peças panel ───────────────────────────────────────── */
+    .minhas-pecas-wrapper {
+      position: relative;
+    }
+
+    #panel-minhas-pecas {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 340px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-md);
+      z-index: 200;
+      flex-direction: column;
+      overflow: hidden;
+      animation: fadeInUp 0.2s ease both;
+    }
+
+    #panel-minhas-pecas.open {
+      display: flex;
+    }
+
+    .mp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mp-header-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .mp-close {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .mp-close:hover { color: var(--text); background: var(--bg3); }
+
+    .mp-list {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .mp-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background var(--transition);
+    }
+
+    .mp-item:last-child { border-bottom: none; }
+    .mp-item:hover { background: var(--bg3); }
+
+    .mp-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mp-item-tipo {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mp-item-date {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 1px;
+    }
+
+    .mp-item-desc {
+      font-size: 11.5px;
+      color: var(--text2);
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mp-delete {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .mp-delete:hover { color: #d32f2f; background: rgba(211,47,47,0.08); }
+
+    .mp-empty {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 13px;
+    }
+
+    .mp-loading {
+      padding: 20px 16px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -808,12 +947,37 @@
     </a>
 
     <div class="header-actions">
+      <div class="minhas-pecas-wrapper">
+        <button class="btn btn-ghost" id="btn-minhas-pecas" onclick="toggleMinhasPecas()">
+          <!-- Folder icon -->
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M1 3.5C1 2.95 1.45 2.5 2 2.5H5.5L7 4H12C12.55 4 13 4.45 13 5V11C13 11.55 12.55 12 12 12H2C1.45 12 1 11.55 1 11V3.5Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          </svg>
+          <span>Minhas Peças</span>
+        </button>
+        <div id="panel-minhas-pecas">
+          <div class="mp-header">
+            <span class="mp-header-title">Minhas Peças Salvas</span>
+            <button class="mp-close" onclick="fecharMinhasPecas()" title="Fechar">×</button>
+          </div>
+          <div class="mp-list" id="mp-list"></div>
+        </div>
+      </div>
       <button class="btn btn-ghost btn-back" id="btn-voltar" onclick="voltarChat()">
         <!-- Arrow left icon -->
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <path d="M8.5 11L4.5 7L8.5 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <span>Voltar ao Chat</span>
+      </button>
+      <button class="btn" id="btn-salvar" onclick="salvarPeca()">
+        <!-- Save icon -->
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M4 1v4h6V1" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <rect x="3.5" y="7" width="7" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/>
+        </svg>
+        <span>Salvar</span>
       </button>
       <button class="btn" id="btn-exportar" onclick="exportarPeca()">
         <!-- Export icon -->
@@ -878,6 +1042,19 @@
         <button class="btn btn-primary" id="btn-gerar" onclick="gerarPeca()">
           <span id="btn-gerar-label">Gerar Peça</span>
         </button>
+
+        <!-- Modelos rápidos -->
+        <div class="templates-section">
+          <div class="templates-label">Modelos rápidos</div>
+          <div class="templates-grid">
+            <button class="template-btn" onclick="aplicarTemplate('consumidor')">⚖️ Consumidor</button>
+            <button class="template-btn" onclick="aplicarTemplate('trabalhista')">👷 Trabalhista</button>
+            <button class="template-btn" onclick="aplicarTemplate('familia')">👨‍👩‍👧 Família</button>
+            <button class="template-btn" onclick="aplicarTemplate('previdenciario')">🏥 Previdenciário</button>
+            <button class="template-btn" onclick="aplicarTemplate('criminal')">🔒 Criminal</button>
+            <button class="template-btn" onclick="aplicarTemplate('indenizacao')">💼 Indenização</button>
+          </div>
+        </div>
 
         <div class="divider"></div>
 
@@ -952,6 +1129,9 @@ let generatedSections = [];
 let isGenerating      = false;
 let currentTipo       = '';
 let currentVara       = '';
+let currentPecaId     = null;   // ID from saved peça (null = not yet saved)
+let currentAlertasData = { alertas: [], estrategias: [], planoB: '' };
+let minhasPecasOpen   = false;
 
 // ─── Section definitions ──────────────────────────────────────────────
 const SECTION_DEFS = [
@@ -1069,10 +1249,17 @@ async function gerarPeca() {
 
     generatedSections = data.secoes;
     if (data.tipo_peca) currentTipo = data.tipo_peca;
+    currentPecaId = null; // reset saved ID on new generation
+    currentAlertasData = {
+      alertas: data.alertas || [],
+      estrategias: data.escolhas_estrategicas || [],
+      planoB: data.plano_b || '',
+    };
     renderSections(generatedSections);
-    renderAlerts(data.alertas || [], data.escolhas_estrategicas || [], data.plano_b || '');
+    renderAlerts(currentAlertasData.alertas, currentAlertasData.estrategias, currentAlertasData.planoB);
     updateDocMeta();
     showToast('Peça gerada com sucesso.');
+    document.getElementById('btn-salvar').style.display = '';
 
   } catch (err) {
     console.error('Erro ao gerar peça:', err);
@@ -1083,6 +1270,220 @@ async function gerarPeca() {
     document.getElementById('btn-toggle-all').style.display = '';
   }
 }
+
+// ─── Templates rápidos ───────────────────────────────────────────────
+const TEMPLATES = {
+  consumidor: 'Meu cliente comprou [produto/serviço] no valor de R$ [valor]. O produto/serviço apresentou defeito/falha em [prazo]. Tentou resolver com a empresa [tentativas], mas não obteve solução em [prazo]. Sofreu prejuízos: [descrever]. Local: [cidade/UF].',
+  trabalhista: 'Meu cliente trabalhou na empresa [nome] de [data início] a [data fim], na função de [cargo], com salário de R$ [valor]. Foi dispensado [com/sem justa causa]. Não recebeu [verbas]. Durante o contrato: [descrever irregularidades: horas extras, assédio, desvio de função, etc.]. Local: [cidade/UF].',
+  familia: 'Minha cliente conviveu em [casamento/união estável] com [nome] por [X anos]. Têm [X] filho(s) menor(es). A relação chegou ao fim há [prazo]. Precisa de [divórcio/dissolução], [guarda], [alimentos] e [partilha de bens: descrever]. Local: [cidade/UF].',
+  previdenciario: 'Meu cliente tem [X anos] de idade, contribuiu por [X anos] ao INSS. Requereu [tipo de benefício] em [data] mas foi indeferido porque [motivo]. Trabalhou como [atividades]. Tem [condição de saúde se relevante]. Local: [cidade/UF].',
+  criminal: 'Meu cliente foi [preso/denunciado/investigado] por [tipo penal]. Os fatos ocorreram em [data] em [local]. [Descrever circunstâncias]. Está [preso/solto]. Precisa de [habeas corpus/defesa prévia/resposta à acusação]. Local: [cidade/UF].',
+  indenizacao: 'Meu cliente sofreu [tipo de dano: acidente, erro médico, negativação indevida, etc.] em [data]. O responsável é [quem]. Os prejuízos foram: [materiais: R$ valor] e [morais: descrever impacto]. Tentou resolver [como]. Local: [cidade/UF].',
+};
+
+function aplicarTemplate(key) {
+  const ta = document.getElementById('textarea-briefing');
+  if (!ta) return;
+  ta.value = TEMPLATES[key] || '';
+  autoExpand(ta);
+  ta.focus();
+  // Place cursor at first placeholder
+  const firstBracket = ta.value.indexOf('[');
+  if (firstBracket !== -1) ta.setSelectionRange(firstBracket, firstBracket);
+}
+
+// ─── Salvar peça ──────────────────────────────────────────────────────
+async function salvarPeca() {
+  if (generatedSections.length === 0) {
+    showToast('Nada para salvar.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-salvar');
+  const origHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner spinner-dark"></span><span>Salvando…</span>';
+
+  const descricao = document.getElementById('textarea-briefing').value.trim();
+  // Collect current textarea values into sections
+  const secoes = generatedSections.map(s => ({
+    id: s.id,
+    titulo: s.titulo,
+    conteudo: document.getElementById(`section-textarea-${s.id}`)?.value || s.conteudo,
+  }));
+
+  const payload = {
+    tipo_peca: currentTipo || 'Peça Jurídica',
+    descricao,
+    secoes,
+    alertas: currentAlertasData.alertas,
+    plano_b: currentAlertasData.planoB,
+    escolhas_estrategicas: currentAlertasData.estrategias,
+  };
+
+  try {
+    let resp;
+    if (currentPecaId) {
+      // Update existing
+      resp = await fetch(`${API_BASE}/api/pecas/${currentPecaId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    } else {
+      // Create new
+      resp = await fetch(`${API_BASE}/api/pecas`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (data.id) currentPecaId = data.id;
+    showToast('Peça salva com sucesso.');
+  } catch (err) {
+    console.error('Erro ao salvar peça:', err);
+    showToast('Erro ao salvar: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHtml;
+  }
+}
+
+// ─── Minhas Peças ────────────────────────────────────────────────────
+function toggleMinhasPecas() {
+  const panel = document.getElementById('panel-minhas-pecas');
+  if (panel.classList.contains('open')) {
+    fecharMinhasPecas();
+  } else {
+    abrirMinhasPecas();
+  }
+}
+
+function fecharMinhasPecas() {
+  document.getElementById('panel-minhas-pecas').classList.remove('open');
+  minhasPecasOpen = false;
+}
+
+async function abrirMinhasPecas() {
+  const panel = document.getElementById('panel-minhas-pecas');
+  const list  = document.getElementById('mp-list');
+  panel.classList.add('open');
+  minhasPecasOpen = true;
+
+  list.innerHTML = '<div class="mp-loading">Carregando…</div>';
+
+  try {
+    const resp = await fetch(`${API_BASE}/api/pecas`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const pecas = Array.isArray(data) ? data : (data.pecas || data.items || []);
+    renderMinhasPecas(pecas);
+  } catch (err) {
+    console.error('Erro ao carregar peças:', err);
+    list.innerHTML = `<div class="mp-empty">Erro ao carregar peças.<br><small>${escHtml(err.message)}</small></div>`;
+  }
+}
+
+function renderMinhasPecas(pecas) {
+  const list = document.getElementById('mp-list');
+  if (!pecas || pecas.length === 0) {
+    list.innerHTML = '<div class="mp-empty">Nenhuma peça salva ainda.</div>';
+    return;
+  }
+
+  list.innerHTML = pecas.map(p => {
+    const tipo = escHtml(p.tipo_peca || 'Peça Jurídica');
+    const desc = escHtml((p.descricao || '').slice(0, 80));
+    const rawDate = p.created_at || p.data || p.updated_at || '';
+    const date = rawDate ? new Date(rawDate).toLocaleDateString('pt-BR', { dateStyle: 'short' }) : '';
+    return `
+      <div class="mp-item" onclick="carregarPeca(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+        <div class="mp-item-info">
+          <div class="mp-item-tipo">${tipo}</div>
+          ${ date ? `<div class="mp-item-date">${date}</div>` : '' }
+          ${ desc ? `<div class="mp-item-desc">${desc}${p.descricao && p.descricao.length > 80 ? '…' : ''}</div>` : '' }
+        </div>
+        <button class="mp-delete" onclick="event.stopPropagation(); deletarPeca('${escHtml(p.id || '')}', this.closest('.mp-item'))" title="Apagar peça">×</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function carregarPeca(p) {
+  fecharMinhasPecas();
+
+  currentPecaId = p.id || null;
+  currentTipo   = p.tipo_peca || '';
+
+  // Fill briefing textarea
+  const ta = document.getElementById('textarea-briefing');
+  ta.value = p.descricao || '';
+  autoExpand(ta);
+
+  // Fill tipo/vara if available
+  document.getElementById('input-tipo').value = p.tipo_peca || '';
+
+  if (p.secoes && p.secoes.length > 0) {
+    generatedSections = p.secoes;
+    currentAlertasData = {
+      alertas: p.alertas || [],
+      estrategias: p.escolhas_estrategicas || [],
+      planoB: p.plano_b || '',
+    };
+
+    hideEmptyState();
+    showDocHeader();
+    renderSections(generatedSections);
+    renderAlerts(currentAlertasData.alertas, currentAlertasData.estrategias, currentAlertasData.planoB);
+    updateDocMeta();
+    document.getElementById('btn-salvar').style.display = '';
+    document.getElementById('btn-toggle-all').style.display = '';
+    showToast('Peça carregada.');
+  } else {
+    showToast('Peça carregada — sem seções para exibir.', 'error');
+  }
+}
+
+async function deletarPeca(id, el) {
+  if (!id) return;
+  if (!confirm('Apagar esta peça salva?')) return;
+  try {
+    const resp = await fetch(`${API_BASE}/api/pecas/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    el.remove();
+    const list = document.getElementById('mp-list');
+    if (!list.querySelector('.mp-item')) {
+      list.innerHTML = '<div class="mp-empty">Nenhuma peça salva ainda.</div>';
+    }
+    // If the deleted peça is the current one, reset ID
+    if (String(currentPecaId) === String(id)) currentPecaId = null;
+    showToast('Peça apagada.');
+  } catch (err) {
+    showToast('Erro ao apagar: ' + err.message, 'error');
+  }
+}
+
+// Close Minhas Peças when clicking outside
+document.addEventListener('click', function(e) {
+  const wrapper = document.querySelector('.minhas-pecas-wrapper');
+  if (minhasPecasOpen && wrapper && !wrapper.contains(e.target)) {
+    fecharMinhasPecas();
+  }
+});
 
 // ─── Regenerar seção ──────────────────────────────────────────────────
 async function regenerarSecao(sectionId) {

@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 require('dotenv').config();
+const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, Tab, TabStopPosition, TabStopType } = require('docx');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -497,7 +498,39 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS pecas_salvas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    tipo_peca TEXT,
+    descricao TEXT,
+    secoes TEXT,
+    alertas TEXT,
+    plano_b TEXT,
+    escolhas_estrategicas TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS ai_usage_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    feature TEXT NOT NULL,
+    model TEXT,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    thinking_tokens INTEGER DEFAULT 0,
+    estimated_cost_usd REAL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
+
+// ─── AI USAGE LOGGING ───────────────────────────────────────
+function logAiUsage(userId, feature, model, inputTokens, outputTokens, thinkingTokens, costUsd) {
+  try {
+    db.prepare('INSERT INTO ai_usage_log (user_id, feature, model, input_tokens, output_tokens, thinking_tokens, estimated_cost_usd) VALUES (?, ?, ?, ?, ?, ?, ?)').run(userId, feature, model, inputTokens || 0, outputTokens || 0, thinkingTokens || 0, costUsd || 0);
+  } catch(e) { console.error('Log AI usage error:', e.message); }
+}
 
 // Migração: adiciona colunas novas à tabela user_profiles se ainda não existirem
 const userProfileCols = db.prepare("PRAGMA table_info(user_profiles)").all().map(c => c.name);
@@ -1435,6 +1468,15 @@ Retorne APENAS um JSON array de 3 strings. Exemplo: ["Gerar embargos de declara�
     }
 
     res.json({ reply, tokens, conversation_id: convId, suggestions });
+
+    // Log AI usage for chat
+    try {
+      const chatUserMsg = messages[messages.length - 1]?.content || '';
+      const chatInputTokens = Math.round(fullSystemPrompt.length / 3.5) + Math.round(chatUserMsg.length / 3.5);
+      const chatOutputTokens = Math.round(reply.length / 3.5);
+      const chatCost = (chatInputTokens/1e6)*2.00 + (chatOutputTokens/1e6)*8.00;
+      logAiUsage(userId, 'chat', 'gpt-4.1', chatInputTokens, chatOutputTokens, 0, chatCost);
+    } catch(e) { console.error('Erro log chat usage:', e.message); }
 
     // MEMÓRIA DO ADVOGADO — extrai insights em background (não bloqueia a resposta)
     if (hasProfile) {
@@ -2646,6 +2688,76 @@ app.get('/checkout', (req, res) => {
   res.redirect(302, url);
 });
 
+// ── MINHAS PEÇAS (salvar/listar/carregar/deletar) ─────────────────────────────
+
+// POST /api/pecas — salvar peça
+app.post('/api/pecas', authMiddleware, (req, res) => {
+  try {
+    const { tipo_peca, descricao, secoes, alertas, plano_b, escolhas_estrategicas } = req.body;
+    const result = db.prepare(
+      'INSERT INTO pecas_salvas (user_id, tipo_peca, descricao, secoes, alertas, plano_b, escolhas_estrategicas) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).run(
+      req.user.id,
+      tipo_peca || null,
+      descricao || null,
+      secoes ? JSON.stringify(secoes) : null,
+      alertas ? JSON.stringify(alertas) : null,
+      plano_b || null,
+      escolhas_estrategicas ? JSON.stringify(escolhas_estrategicas) : null
+    );
+    return res.json({ id: result.lastInsertRowid, message: 'Peça salva' });
+  } catch (err) {
+    console.error('Erro POST /api/pecas:', err);
+    return res.status(500).json({ error: 'Erro ao salvar peça' });
+  }
+});
+
+// GET /api/pecas — listar peças do usuário
+app.get('/api/pecas', authMiddleware, (req, res) => {
+  try {
+    const rows = db.prepare('SELECT * FROM pecas_salvas WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+    const pecas = rows.map(p => ({
+      ...p,
+      secoes: p.secoes ? JSON.parse(p.secoes) : [],
+      alertas: p.alertas ? JSON.parse(p.alertas) : [],
+      escolhas_estrategicas: p.escolhas_estrategicas ? JSON.parse(p.escolhas_estrategicas) : []
+    }));
+    return res.json({ pecas });
+  } catch (err) {
+    console.error('Erro GET /api/pecas:', err);
+    return res.status(500).json({ error: 'Erro ao listar peças' });
+  }
+});
+
+// GET /api/pecas/:id — carregar peça específica
+app.get('/api/pecas/:id', authMiddleware, (req, res) => {
+  try {
+    const peca = db.prepare('SELECT * FROM pecas_salvas WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+    if (!peca) return res.status(404).json({ error: 'Peça não encontrada' });
+    return res.json({
+      ...peca,
+      secoes: peca.secoes ? JSON.parse(peca.secoes) : [],
+      alertas: peca.alertas ? JSON.parse(peca.alertas) : [],
+      escolhas_estrategicas: peca.escolhas_estrategicas ? JSON.parse(peca.escolhas_estrategicas) : []
+    });
+  } catch (err) {
+    console.error('Erro GET /api/pecas/:id:', err);
+    return res.status(500).json({ error: 'Erro ao carregar peça' });
+  }
+});
+
+// DELETE /api/pecas/:id — deletar peça
+app.delete('/api/pecas/:id', authMiddleware, (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM pecas_salvas WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Peça não encontrada ou sem permissão' });
+    return res.json({ message: 'Peça deletada' });
+  } catch (err) {
+    console.error('Erro DELETE /api/pecas/:id:', err);
+    return res.status(500).json({ error: 'Erro ao deletar peça' });
+  }
+});
+
 // ── CALCULADORA DE HONORÁRIOS
 // ─── EDITOR DE PEÇAS JURÍDICAS ───────────────────────────────
 
@@ -2832,6 +2944,16 @@ IMPORTANTE: Escreva a peça COMPLETA usando os fatos acima. Não use placeholder
       conteudo: s.content
     }));
 
+    // Log usage
+    const usedModel = GEMINI_API_KEY ? 'gemini-2.5-flash' : 'gpt-4.1';
+    const estInputTokens = Math.round(userMessage.length / 3.5);
+    const estOutputTokens = Math.round(raw.length / 3.5);
+    const estThinkingTokens = GEMINI_API_KEY ? estOutputTokens * 3 : 0;
+    const estCost = GEMINI_API_KEY
+      ? (estInputTokens/1e6)*0.15 + (estThinkingTokens/1e6)*3.50 + (estOutputTokens/1e6)*0.60
+      : (estInputTokens/1e6)*2.00 + (estOutputTokens/1e6)*8.00;
+    logAiUsage(req.user.id, 'peca_gerar', usedModel, estInputTokens, estOutputTokens, estThinkingTokens, estCost);
+
     return res.json({
       secoes,
       tipo_peca: parsed.tipo_peca || '',
@@ -2922,7 +3044,7 @@ app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/peca/exportar — exporta peça como HTML formatado
+// POST /api/peca/exportar — exporta peça como .docx (ABNT)
 app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
   try {
     const { secoes, sections: sectionsAlt, tipo_peca } = req.body;
@@ -2931,56 +3053,151 @@ app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'secoes é obrigatório e deve ser um array' });
     }
 
+    const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
+    const nome = profile?.nome || 'Advogado(a)';
+    const oab = profile?.oab || '[OAB]';
+    const cidade = profile?.cidade || '[Cidade]';
+    const estado = profile?.estado || '[Estado]';
+
     const dataAtual = new Date().toLocaleDateString('pt-BR', {
       day: '2-digit', month: 'long', year: 'numeric'
     });
 
-    const sectionsHtml = secs.map(s => {
-      const contentHtml = (s.conteudo || s.content || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br>');
-      return `<div style="margin-bottom:32px;">
-  <h2 style="font-size:14pt;font-weight:bold;text-align:center;text-transform:uppercase;margin-bottom:16px;font-family:'Times New Roman',serif;">${(s.titulo || s.title || '').replace(/&/g,'&amp;')}</h2>
-  <p style="font-size:12pt;line-height:1.8;text-align:justify;font-family:'Times New Roman',serif;">${contentHtml}</p>
-</div>`;
-    }).join('\n');
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X',
+      'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
 
-    const html = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>${(tipo_peca || 'Peça Jurídica').replace(/&/g,'&amp;')}</title>
-  <style>
-    @media print {
-      body { margin: 3cm 3cm 2cm 4cm; }
-      .no-print { display: none; }
-    }
-    body {
-      font-family: 'Times New Roman', serif;
-      font-size: 12pt;
-      line-height: 1.8;
-      color: #000;
-      background: #fff;
-      margin: 3cm 3cm 2cm 4cm;
-    }
-    h1 { font-size: 14pt; text-align: center; text-transform: uppercase; margin-bottom: 40px; }
-    h2 { font-size: 14pt; text-align: center; text-transform: uppercase; margin: 32px 0 16px; }
-    p { text-align: justify; margin: 0 0 12px; }
-  </style>
-</head>
-<body>
-  <h1>${(tipo_peca || 'Peça Jurídica').replace(/&/g,'&amp;')}</h1>
-  ${sectionsHtml}
-</body>
-</html>`;
+    const docChildren = [];
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.send(html);
+    // Title
+    docChildren.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 400 },
+      children: [
+        new TextRun({
+          text: (tipo_peca || 'PEÇA JURÍDICA').toUpperCase(),
+          bold: true,
+          size: 28, // 14pt = 28 half-points
+          font: 'Times New Roman'
+        })
+      ]
+    }));
+
+    // Sections
+    secs.forEach((s, idx) => {
+      const titulo = s.titulo || s.title || '';
+      const conteudo = s.conteudo || s.content || '';
+      const prefix = romanNumerals[idx] ? romanNumerals[idx] + ' — ' : '';
+
+      // Section title
+      docChildren.push(new Paragraph({
+        alignment: AlignmentType.LEFT,
+        spacing: { before: 400, after: 200 },
+        children: [
+          new TextRun({
+            text: prefix + titulo,
+            bold: true,
+            size: 24, // 12pt
+            font: 'Times New Roman'
+          })
+        ]
+      }));
+
+      // Section content — split on newlines
+      const paragraphs = conteudo.split('\n').filter(p => p.trim().length > 0);
+      paragraphs.forEach(paraText => {
+        docChildren.push(new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { line: 360, lineRule: 'auto', after: 200 }, // 1.5 line spacing = 360 twips
+          children: [
+            new TextRun({
+              text: paraText.trim(),
+              size: 24,
+              font: 'Times New Roman'
+            })
+          ]
+        }));
+      });
+    });
+
+    // Signature block
+    docChildren.push(new Paragraph({ children: [new TextRun({ text: '', size: 24 })], spacing: { before: 600 } }));
+    docChildren.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: `${cidade}/${estado}, ${dataAtual}`, size: 24, font: 'Times New Roman' })]
+    }));
+    docChildren.push(new Paragraph({ children: [new TextRun({ text: '', size: 24 })], spacing: { before: 400 } }));
+    docChildren.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: '_'.repeat(50), size: 24, font: 'Times New Roman' })]
+    }));
+    docChildren.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: nome, bold: true, size: 24, font: 'Times New Roman' })]
+    }));
+    docChildren.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      children: [new TextRun({ text: `OAB/${estado} nº ${oab}`, size: 24, font: 'Times New Roman' })]
+    }));
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: 3402,    // 3cm
+              bottom: 3402, // 3cm
+              right: 3402,  // 3cm
+              left: 4536    // 4cm
+            }
+          }
+        },
+        children: docChildren
+      }]
+    });
+
+    const buffer = await Packer.toBuffer(doc);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', 'attachment; filename="peti%C3%A7%C3%A3o.docx"');
+    return res.send(buffer);
   } catch (err) {
     console.error('Erro /api/peca/exportar:', err);
     return res.status(500).json({ error: 'Erro interno ao exportar peça' });
+  }
+});
+
+// ─── ADMIN: AI USAGE ─────────────────────────────────────────
+// GET /api/admin/ai-usage
+app.get('/api/admin/ai-usage', (req, res) => {
+  try {
+    const adminPass = req.headers['x-admin-password'];
+    if (!adminPass || adminPass !== ADMIN_PASSWORD) {
+      return res.status(403).json({ error: 'Acesso negado' });
+    }
+    const days = parseInt(req.query.days) || 30;
+    const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const totalRow = db.prepare('SELECT COALESCE(SUM(estimated_cost_usd), 0) as total FROM ai_usage_log WHERE created_at >= ?').get(since);
+    const byFeature = db.prepare('SELECT feature, COUNT(*) as count, COALESCE(SUM(estimated_cost_usd), 0) as total_cost FROM ai_usage_log WHERE created_at >= ? GROUP BY feature ORDER BY total_cost DESC').all(since);
+    const byModel = db.prepare('SELECT model, COUNT(*) as count, COALESCE(SUM(estimated_cost_usd), 0) as total_cost FROM ai_usage_log WHERE created_at >= ? GROUP BY model ORDER BY total_cost DESC').all(since);
+    const byUser = db.prepare(`
+      SELECT a.user_id, up.nome, COUNT(*) as count, COALESCE(SUM(a.estimated_cost_usd), 0) as total_cost
+      FROM ai_usage_log a
+      LEFT JOIN user_profiles up ON up.user_id = a.user_id
+      WHERE a.created_at >= ?
+      GROUP BY a.user_id
+      ORDER BY total_cost DESC
+    `).all(since);
+
+    return res.json({
+      days,
+      total_cost_usd: totalRow.total,
+      by_feature: byFeature,
+      by_model: byModel,
+      by_user: byUser
+    });
+  } catch (err) {
+    console.error('Erro GET /api/admin/ai-usage:', err);
+    return res.status(500).json({ error: 'Erro interno' });
   }
 });
 
