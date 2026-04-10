@@ -1056,23 +1056,27 @@ async function gerarPeca() {
       body: JSON.stringify({ descricao: promptText }),
     });
 
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      const errBody = await resp.text().catch(() => '');
+      throw new Error(`HTTP ${resp.status}: ${errBody.slice(0,200)}`);
+    }
     const data = await resp.json();
+    console.log('API response:', JSON.stringify(data).slice(0,300));
 
-    generatedSections = data.secoes || mockSections(promptText);
+    if (!data.secoes || data.secoes.length === 0) {
+      throw new Error('API retornou secoes vazio: ' + JSON.stringify(data).slice(0,300));
+    }
+
+    generatedSections = data.secoes;
+    if (data.tipo_peca) currentTipo = data.tipo_peca;
     renderSections(generatedSections);
-    renderAlerts(data.alertas || mockAlerts());
+    renderAlerts(data.alertas || [], data.escolhas_estrategicas || [], data.plano_b || '');
     updateDocMeta();
     showToast('Peça gerada com sucesso.');
 
   } catch (err) {
-    console.warn('API unavailable, using mock data:', err);
-    // Graceful fallback: use mock data in dev / demo mode
-    generatedSections = mockSections(promptText);
-    renderSections(generatedSections);
-    renderAlerts(mockAlerts());
-    updateDocMeta();
-    showToast('Modo demo: peça gerada com conteúdo de exemplo.');
+    console.error('Erro ao gerar peça:', err);
+    showToast('Erro ao gerar: ' + err.message, true);
   } finally {
     isGenerating = false;
     setBtnLoading('btn-gerar', 'btn-gerar-label', 'Gerar Peça', false);
@@ -1333,22 +1337,40 @@ function buildSectionHtml(sec, num) {
   `;
 }
 
-function renderAlerts(alertas) {
+function renderAlerts(alertas, estrategias, planoB) {
   const panel = document.getElementById('alerts-panel');
   const list  = document.getElementById('alerts-list');
   list.innerHTML = '';
 
-  alertas.forEach(a => {
+  // Alertas (strings ou objetos)
+  const alertList = Array.isArray(alertas) ? alertas : [];
+  alertList.forEach(a => {
+    const msg = typeof a === 'string' ? a : (a.mensagem || '');
+    const tipo = typeof a === 'string' ? 'warning' : (a.tipo || 'warning');
     const item = document.createElement('div');
-    item.className = `alert-item alert-${a.tipo || 'info'}`;
-    item.innerHTML = `
-      <div class="alert-type">${escHtml(labelForAlertType(a.tipo))}</div>
-      ${escHtml(a.mensagem)}
-    `;
+    item.className = `alert-item alert-${tipo}`;
+    item.innerHTML = `<div class="alert-type">${escHtml(labelForAlertType(tipo))}</div>${escHtml(msg)}`;
     list.appendChild(item);
   });
 
-  panel.classList.add('visible');
+  // Escolhas estratégicas
+  const stratList = Array.isArray(estrategias) ? estrategias : [];
+  stratList.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'alert-item alert-strategy';
+    item.innerHTML = `<div class="alert-type">Estratégia</div>${escHtml(typeof e === 'string' ? e : e.mensagem || '')}`;
+    list.appendChild(item);
+  });
+
+  // Plano B
+  if (planoB) {
+    const item = document.createElement('div');
+    item.className = 'alert-item alert-planb';
+    item.innerHTML = `<div class="alert-type">Plano B</div>${escHtml(planoB)}`;
+    list.appendChild(item);
+  }
+
+  if (list.children.length > 0) panel.classList.add('visible');
 }
 
 function labelForAlertType(tipo) {
