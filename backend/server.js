@@ -1261,7 +1261,7 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  const maxTok = isPeticao ? 40000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
+  const maxTok = isPeticao ? 16000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
 
   // ── FORMATO LIMPO: instrução por tipo de peça (itens 3, 4, 6, 7) ──
   let formatoCtx = '';
@@ -1272,13 +1272,13 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, campos que precisam ser preenchidos pelo advogado, documentos que precisam ser anexados]
 - Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
   } else if (isTese) {
-    formatoCtx = `\n\n⚖️ MODO TESE JURÍDICA ATIVADO:
-- Entregue APENAS a tese jurídica. NÃO adicione sugestões de reels, hashtags ou scripts de atendimento a menos que explicitamente solicitado.
-- Ao final da tese, adicione obrigatoriamente o bloco:
-  ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, orientações práticas para aplicar a tese]
-- Após apresentar a tese principal, adicione um parágrafo:
-  Plano B: Se esta abordagem não funcionar, uma alternativa seria...
-- Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
+    // Verifica se é pedido de conteúdo para redes (aí pode usar o formato com reels)
+    const isConteudo = /instagram|reels|carrossel|post|conte[úu]do|legenda|hashtag|redes/i.test(currentMsg);
+    if (isConteudo) {
+      formatoCtx = `\n\n📱 MODO CONTEÚDO PARA REDES ATIVADO: O usuário quer conteúdo para redes sociais. Use o formato completo com Reels, hashtags e scripts.`;
+    } else {
+      formatoCtx = `\n\n⚖️ MODO TESE JURÍDICA ATIVADO — REGRA ABSOLUTA:\nIGNORE completamente o formato padrão de tese com campos de Reels, Carrossel, hashtags e scripts de atendimento. Esse formato NÃO deve aparecer aqui.\nEntregue APENAS:\n1. Fundamentos legais (artigos de lei com números)\n2. Jurisprudência (com número do julgado quando souber)\n3. Argumentação jurídica\n4. Bloco obrigatório ao final:\n\n⚠️ Atenção antes de protocolar:\n• [alerta específico 1 - ex: súmula que pode contrariar]\n• [alerta específico 2 - ex: jurisprudência divergente]\n• [alerta específico 3]\n\n📌 Plano B: Se esta abordagem não funcionar, uma alternativa seria [estratégia alternativa concreta].\n\nNÃO inclua: 🎯 Ideia de Reels, 📝 Legenda educativa, #️⃣ Hashtags, 💬 Script de atendimento, 🔄 Status, 🏷️ Tags de complexidade.`;
+    }
   } else {
     // Chat normal: só a regra de jurisprudência
     formatoCtx = `\n\n📌 REGRA JURISPRUDÊNCIA: Quando citar STJ, STF ou outros tribunais, SEMPRE inclua o número do julgado (REsp, RE, Tema, Súmula). Se não souber o número exato, escreva: "(verifique o número exato no JusBrasil antes de protocolar)" ao lado da citação.`;
