@@ -1,0 +1,2760 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Treinamento em Audiências 2.0 — Capi Când-IA Pro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #b8960c;
+      --gold-light: #d4ac14;
+      --gold-dim: rgba(184,150,12,0.12);
+      --gold-dim2: rgba(184,150,12,0.25);
+      --red: #c0392b;
+      --red-dim: rgba(192,57,43,0.10);
+      --green: #27ae60;
+      --green-dim: rgba(39,174,96,0.12);
+      --orange: #e67e22;
+      --orange-dim: rgba(230,126,34,0.12);
+      --blue-dim: rgba(52,152,219,0.12);
+      --blue: #2980b9;
+      --yellow: #f39c12;
+      --yellow-dim: rgba(243,156,18,0.12);
+      --bg: #faf8f5;
+      --bg2: #fff;
+      --bg3: #f5f3f0;
+      --text: #1a1a1a;
+      --text2: #666;
+      --border: #e8e4de;
+      --radius-card: 10px;
+      --radius-btn: 20px;
+      --sidebar-w: 280px;
+      --header-h: 48px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+      --transition: 0.2s ease;
+      --transition-slow: 0.3s ease;
+    }
+
+    body.dark-mode {
+      --bg: #141414;
+      --bg2: #1e1e1e;
+      --bg3: #252525;
+      --text: #e8e4de;
+      --text2: #999;
+      --border: #333;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.6;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+    /* ─── App Shell ─────────────────────────────────────────────────────── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    #header {
+      height: var(--header-h);
+      min-height: var(--header-h);
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+      z-index: 200;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .logo-mark {
+      width: 26px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo-text span { color: var(--gold); }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ─── Buttons ────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 16px;
+      height: 32px;
+      border-radius: var(--radius-btn);
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover { background: var(--border); }
+
+    .btn-primary {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background: var(--gold-light);
+      border-color: var(--gold-light);
+    }
+
+    .btn-danger {
+      color: var(--red);
+      border-color: transparent;
+      background: transparent;
+    }
+    .btn-danger:hover { background: var(--red-dim); border-color: var(--red-dim); }
+
+    .btn-ghost {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text2);
+    }
+    .btn-ghost:hover { background: var(--bg3); color: var(--text); border-color: var(--border); }
+
+    .btn-lg {
+      height: 44px;
+      padding: 0 28px;
+      font-size: 15px;
+      border-radius: 22px;
+    }
+
+    .btn-full { width: 100%; }
+
+    /* ─── Content area ───────────────────────────────────────────────────── */
+    #content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ─── Screen visibility ──────────────────────────────────────────────── */
+    .screen {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SCREEN 1 — SETUP
+    ═══════════════════════════════════════════════════════════════════════ */
+    #screen-setup {
+      overflow-y: auto;
+      align-items: center;
+      background: var(--bg);
+      padding: 40px 20px 60px;
+    }
+
+    .setup-card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .setup-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--gold-dim);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .setup-icon svg { color: var(--gold); }
+
+    .setup-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .setup-subtitle {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    .form-label span {
+      font-weight: 400;
+      color: var(--text2);
+      margin-left: 4px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+
+    .form-control::placeholder { color: var(--text2); }
+
+    select.form-control {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 100px;
+      line-height: 1.5;
+    }
+
+    /* Difficulty toggle */
+    .diff-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .diff-btn {
+      padding: 10px 8px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      cursor: pointer;
+      text-align: center;
+      transition: all var(--transition);
+      font-family: inherit;
+    }
+
+    .diff-btn:hover { border-color: var(--text2); }
+
+    .diff-btn .diff-label {
+      font-size: 13px;
+      font-weight: 600;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .diff-btn .diff-hint {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.3;
+      display: block;
+    }
+
+    .diff-btn.iniciante { --diff-color: #27ae60; }
+    .diff-btn.intermediario { --diff-color: #b8960c; }
+    .diff-btn.veterano { --diff-color: #c0392b; }
+
+    .diff-btn.selected {
+      border-color: var(--diff-color);
+      background: color-mix(in srgb, var(--diff-color) 10%, transparent);
+    }
+
+    .diff-btn.selected .diff-label { color: var(--diff-color); }
+
+    .diff-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--diff-color);
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .setup-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 28px 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SCREEN 2 — SIMULATION
+    ═══════════════════════════════════════════════════════════════════════ */
+    #screen-sim {
+      flex-direction: row;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sim-sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .sidebar-header {
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    /* Phase Stepper */
+    .phase-stepper {
+      padding: 20px 20px 16px;
+      flex: 1;
+    }
+
+    .phase-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 4px;
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .phase-step:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+    }
+
+    .phase-step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 32px;
+      width: 2px;
+      height: calc(100% - 20px);
+      background: var(--border);
+      transition: background var(--transition-slow);
+    }
+
+    .phase-step.completed::before { background: var(--gold); }
+    .phase-step.active::before { background: linear-gradient(to bottom, var(--gold), var(--border)); }
+
+    .phase-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition-slow);
+      z-index: 1;
+    }
+
+    .phase-step.active .phase-dot {
+      border-color: var(--gold);
+      background: var(--gold-dim);
+      box-shadow: 0 0 0 4px var(--gold-dim);
+    }
+
+    .phase-step.completed .phase-dot {
+      border-color: var(--gold);
+      background: var(--gold);
+    }
+
+    .phase-step.completed .phase-dot svg { color: #fff; }
+    .phase-step .phase-dot svg { color: var(--text2); }
+    .phase-step.active .phase-dot svg { color: var(--gold); }
+
+    .phase-info { flex: 1; padding-top: 4px; }
+
+    .phase-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      transition: color var(--transition-slow);
+    }
+
+    .phase-step.active .phase-name { color: var(--gold); }
+    .phase-step.completed .phase-name { color: var(--text); }
+
+    .phase-desc {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 1px;
+    }
+
+    .phase-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: 10px;
+      background: var(--gold-dim);
+      color: var(--gold);
+      display: none;
+    }
+
+    .phase-step.active .phase-badge { display: inline-flex; }
+
+    /* Case info card */
+    .case-info-card {
+      margin: 0 12px 16px;
+      padding: 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .case-info-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text2);
+      margin-bottom: 8px;
+    }
+
+    .case-info-row {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 4px;
+      display: flex;
+      gap: 6px;
+    }
+
+    .case-info-row strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-iniciante { background: var(--green-dim); color: var(--green); }
+    .badge-intermediario { background: var(--gold-dim); color: var(--gold); }
+    .badge-veterano { background: var(--red-dim); color: var(--red); }
+    .badge-concluida { background: var(--green-dim); color: var(--green); }
+    .badge-andamento { background: var(--gold-dim); color: var(--gold); }
+
+    /* Sim main area */
+    .sim-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Chat top bar */
+    .chat-topbar {
+      height: 44px;
+      min-height: 44px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+    }
+
+    .judge-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .judge-avatar svg { color: var(--gold); }
+
+    .judge-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .topbar-phase {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 500;
+      padding: 2px 10px;
+      border-radius: 10px;
+      background: var(--gold-dim);
+    }
+
+    .topbar-divider { flex: 1; }
+
+    .exchange-counter {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    /* Messages area */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Message bubbles */
+    .msg {
+      display: flex;
+      gap: 10px;
+      animation: msgSlide 0.3s ease;
+      max-width: 85%;
+    }
+
+    @keyframes msgSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-judge { align-self: flex-start; }
+    .msg-adversario { align-self: flex-start; }
+    .msg-testemunha { align-self: flex-start; }
+    .msg-user { align-self: flex-end; flex-direction: row-reverse; }
+
+    .msg-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+    }
+
+    .msg-judge .msg-icon { background: var(--gold-dim); }
+    .msg-adversario .msg-icon { background: var(--red-dim); }
+    .msg-testemunha .msg-icon { background: var(--yellow-dim); }
+    .msg-user .msg-icon { background: var(--blue-dim); }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .msg-judge .msg-bubble {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 4px 12px 12px 12px;
+    }
+
+    .msg-adversario .msg-bubble {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--red);
+      border-radius: 4px 12px 12px 12px;
+    }
+
+    .msg-testemunha .msg-bubble {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--yellow);
+      border-radius: 4px 12px 12px 12px;
+    }
+
+    .msg-user .msg-bubble {
+      background: var(--blue-dim);
+      border: 1px solid rgba(52,152,219,0.2);
+      border-radius: 12px 4px 12px 12px;
+    }
+
+    .dark-mode .msg-user .msg-bubble {
+      background: rgba(52,152,219,0.15);
+    }
+
+    .msg-sender {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .msg-judge .msg-sender { color: var(--gold); }
+    .msg-adversario .msg-sender { color: var(--red); }
+    .msg-testemunha .msg-sender { color: var(--yellow); }
+    .msg-user .msg-sender { color: var(--blue); text-align: right; }
+
+    .msg-text { color: var(--text); }
+
+    .msg-dica {
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: var(--gold-dim);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--gold);
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .msg-dica::before { content: '💡'; font-size: 13px; }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .typing-indicator.visible { display: flex; }
+
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: 4px 12px 12px 12px;
+    }
+
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: typingBounce 1.2s infinite;
+    }
+
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-6px); opacity: 1; }
+    }
+
+    /* Input area */
+    .chat-input-area {
+      border-top: 1px solid var(--border);
+      background: var(--bg2);
+      padding: 16px 20px;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-textarea {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: none;
+      min-height: 44px;
+      max-height: 140px;
+      overflow-y: auto;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .chat-textarea:focus {
+      outline: none;
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px var(--gold-dim);
+    }
+
+    .chat-textarea::placeholder { color: var(--text2); }
+
+    .chat-send-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--gold);
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+
+    .chat-send-btn:hover { background: var(--gold-light); transform: scale(1.05); }
+    .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .chat-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .chat-hint {
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       SCREEN 3 — FEEDBACK
+    ═══════════════════════════════════════════════════════════════════════ */
+    #screen-feedback {
+      overflow-y: auto;
+      padding: 32px 24px 60px;
+      background: var(--bg);
+    }
+
+    .feedback-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      animation: fadeUp 0.4s ease;
+    }
+
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .feedback-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .feedback-subtitle { font-size: 14px; color: var(--text2); margin-top: 3px; }
+
+    /* Score circle */
+    .score-section {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 32px;
+      align-items: center;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    .score-circle {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      flex-shrink: 0;
+    }
+
+    .score-circle svg { transform: rotate(-90deg); }
+
+    .score-circle-track { fill: none; stroke: var(--border); stroke-width: 8; }
+    .score-circle-fill {
+      fill: none;
+      stroke-width: 8;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
+    }
+
+    .score-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-number .n {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .score-number .d {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .score-info { flex: 1; }
+
+    .score-label {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .score-desc { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+    .phase-scores {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .phase-score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .phase-score-name {
+      font-size: 12px;
+      color: var(--text2);
+      width: 120px;
+      flex-shrink: 0;
+    }
+
+    .phase-score-bar {
+      flex: 1;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .phase-score-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: var(--gold);
+      transition: width 0.8s ease;
+    }
+
+    .phase-score-val {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      width: 28px;
+      text-align: right;
+    }
+
+    /* Radar chart */
+    .radar-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 3px;
+      height: 16px;
+      background: var(--gold);
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .radar-grid {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .radar-svg-wrap {
+      display: flex;
+      justify-content: center;
+    }
+
+    #radar-svg {
+      width: 260px;
+      height: 260px;
+      overflow: visible;
+    }
+
+    .radar-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .radar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .radar-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .radar-item-label {
+      font-size: 12px;
+      color: var(--text2);
+      flex: 1;
+    }
+
+    .radar-item-score {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .radar-item-comment {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 1px;
+    }
+
+    /* Moments */
+    .moments-section {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    .moment-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .moment-card {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+    }
+
+    .moment-phase {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+
+    .moment-text {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .moment-eval {
+      font-size: 12px;
+      color: var(--text2);
+      font-style: italic;
+    }
+
+    /* Lists */
+    .feedback-lists {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .list-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .list-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .list-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .list-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    .list-card.fortes .list-item-dot { background: var(--green); }
+    .list-card.melhorar .list-item-dot { background: var(--orange); }
+    .list-card.fortes { border-left: 3px solid var(--green); }
+    .list-card.melhorar { border-left: 3px solid var(--orange); }
+
+    .dica-card {
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-dim2);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .dica-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .dica-content {}
+
+    .dica-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 4px;
+    }
+
+    .dica-text {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Transcript */
+    .transcript-toggle {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all var(--transition);
+      margin-bottom: 12px;
+    }
+
+    .transcript-toggle:hover { background: var(--bg3); color: var(--text); }
+
+    .transcript-body {
+      display: none;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text2);
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .transcript-body.open { display: block; }
+
+    .feedback-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       HISTORICO PANEL (slide-in overlay)
+    ═══════════════════════════════════════════════════════════════════════ */
+    #historico-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      z-index: 300;
+      backdrop-filter: blur(2px);
+    }
+
+    #historico-backdrop.open { display: block; }
+
+    #historico-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      max-width: 100vw;
+      height: 100vh;
+      background: var(--bg2);
+      border-left: 1px solid var(--border);
+      z-index: 400;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      box-shadow: var(--shadow-lg);
+    }
+
+    #historico-panel.open { transform: translateX(0); }
+
+    .hist-header {
+      height: var(--header-h);
+      min-height: var(--header-h);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 12px;
+    }
+
+    .hist-title {
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .hist-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .hist-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .hist-item:hover { border-color: var(--gold); box-shadow: var(--shadow-sm); }
+
+    .hist-item-info { flex: 1; }
+
+    .hist-item-tipo {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .hist-item-meta {
+      font-size: 12px;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hist-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hist-nota {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .hist-nota-d { font-size: 11px; color: var(--text2); text-align: center; }
+
+    .hist-nota-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 40px;
+    }
+
+    .hist-empty {
+      text-align: center;
+      color: var(--text2);
+      padding: 48px 20px;
+    }
+
+    .hist-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+    .hist-empty-text { font-size: 14px; }
+
+    /* Skeleton loading */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg3) 25%, var(--border) 50%, var(--bg3) 75%);
+      background-size: 200% 100%;
+      animation: skelShimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes skelShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ─── Mobile sidebar collapse ─────────────────────────────────────────── */
+    .mobile-phase-bar {
+      display: none;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      padding: 10px 16px;
+      gap: 8px;
+      scrollbar-width: none;
+    }
+
+    .mobile-phase-bar::-webkit-scrollbar { display: none; }
+
+    .mobile-phase-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: default;
+      transition: background var(--transition);
+      min-width: 70px;
+    }
+
+    .mobile-phase-item.active { background: var(--gold-dim); }
+
+    .mobile-phase-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobile-phase-item.active .mobile-phase-dot { border-color: var(--gold); background: var(--gold-dim); }
+    .mobile-phase-item.completed .mobile-phase-dot { border-color: var(--gold); background: var(--gold); }
+
+    .mobile-phase-label {
+      font-size: 10px;
+      color: var(--text2);
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .mobile-phase-item.active .mobile-phase-label { color: var(--gold); font-weight: 600; }
+
+    /* Print styles */
+    @media print {
+      #header, .sim-sidebar, .chat-input-area, .feedback-actions, .transcript-toggle, #historico-panel, #historico-backdrop { display: none !important; }
+      #screen-feedback { padding: 0; }
+      .feedback-wrapper { max-width: 100%; }
+      .feedback-lists { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ─── Responsive ──────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .sim-sidebar { display: none; }
+      .mobile-phase-bar { display: flex; }
+      .score-section { grid-template-columns: 1fr; text-align: center; }
+      .radar-grid { grid-template-columns: 1fr; }
+      .feedback-lists { grid-template-columns: 1fr; }
+      .setup-card { padding: 24px; }
+      #screen-feedback { padding: 16px; }
+      .diff-btn .diff-hint { display: none; }
+    }
+
+    @media (max-width: 480px) {
+      .header-logo .logo-text { display: none; }
+      .moment-cards { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Empty state ─────────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text2);
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-text { font-size: 15px; }
+
+    /* ─── Utility ─────────────────────────────────────────────────────────── */
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+    .text-gold { color: var(--gold); }
+    .text-green { color: var(--green); }
+    .text-red { color: var(--red); }
+    .flex-1 { flex: 1; }
+    .gap-8 { gap: 8px; }
+
+    /* ─── Phase transition animation ─────────────────────────────────────── */
+    .phase-transition-toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--bg2);
+      border: 1px solid var(--gold);
+      border-radius: 24px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gold);
+      z-index: 500;
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .phase-transition-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Encerrar confirm ───────────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 600;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(2px);
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: var(--shadow-lg);
+      animation: fadeUp 0.25s ease;
+    }
+
+    .modal-icon { font-size: 40px; margin-bottom: 12px; }
+    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .modal-desc { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+    /* ─── Loading overlay ────────────────────────────────────────────────── */
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 700;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .loading-overlay.open { display: flex; }
+
+    .loading-spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text { color: #fff; font-size: 14px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ── HEADER ────────────────────────────────────────────────────────────── -->
+  <header id="header">
+    <a href="/app" class="header-logo" aria-label="Capi Când-IA Pro">
+      <!-- Inline SVG logo -->
+      <svg class="logo-mark" viewBox="0 0 26 26" fill="none" aria-hidden="true">
+        <rect width="26" height="26" rx="6" fill="#b8960c" fill-opacity="0.15"/>
+        <path d="M13 5C8.58 5 5 8.58 5 13s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" fill="#b8960c"/>
+        <path d="M13 9v4.41l2.79 2.79-.7.7L12 13.59V9h1z" fill="#b8960c"/>
+      </svg>
+      <span class="logo-text">Capi <span>Când-IA</span> Pro</span>
+    </a>
+    <div class="header-actions">
+      <a href="/app" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar ao Chat
+      </a>
+      <button class="btn" onclick="openHistorico()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l2 3H21a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/></svg>
+        Histórico
+      </button>
+    </div>
+  </header>
+
+  <!-- ── CONTENT ───────────────────────────────────────────────────────────── -->
+  <main id="content">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SCREEN 1 — SETUP
+    ══════════════════════════════════════════════════════════════════════ -->
+    <section id="screen-setup" class="screen active">
+      <div class="setup-card">
+        <div class="setup-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 21v-6"/><path d="M15 21v-6"/><rect x="9" y="9" width="6" height="4" rx="1"/></svg>
+        </div>
+        <h1 class="setup-title">Treinamento em Audiências</h1>
+        <p class="setup-subtitle">Simule audiências reais com juiz, adversário e testemunhas controlados por IA</p>
+
+        <div class="form-group">
+          <label class="form-label" for="tipo-audiencia">Tipo de audiência</label>
+          <select id="tipo-audiencia" class="form-control">
+            <option value="" disabled selected>Selecione o tipo…</option>
+            <optgroup label="Trabalhista">
+              <option value="Reclamação Trabalhista">Reclamação Trabalhista</option>
+              <option value="Conciliação Trabalhista">Conciliação Trabalhista</option>
+              <option value="Instrução Trabalhista">Instrução Trabalhista</option>
+            </optgroup>
+            <optgroup label="Família">
+              <option value="Divórcio Litigioso">Divórcio Litigioso</option>
+              <option value="Guarda e Alimentos">Guarda e Alimentos</option>
+              <option value="Inventário">Inventário</option>
+            </optgroup>
+            <optgroup label="Cível">
+              <option value="Indenização / Danos Morais">Indenização / Danos Morais</option>
+              <option value="Cobrança">Cobrança</option>
+              <option value="Consumidor (CDC)">Consumidor (CDC)</option>
+            </optgroup>
+            <optgroup label="Outras">
+              <option value="Previdenciário / INSS">Previdenciário / INSS</option>
+              <option value="Criminal">Criminal</option>
+              <option value="Conciliação Cível">Conciliação Cível</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="papel">Seu papel</label>
+          <select id="papel" class="form-control">
+            <option value="" disabled selected>Selecione seu papel…</option>
+            <option value="Advogado do Autor/Reclamante">Advogado do Autor / Reclamante</option>
+            <option value="Advogado do Réu/Reclamado">Advogado do Réu / Reclamado</option>
+            <option value="Defensor Criminal">Defensor Criminal</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contexto">Contexto do caso <span>(opcional)</span></label>
+          <textarea id="contexto" class="form-control" placeholder="Resuma os fatos em 3–5 linhas: partes envolvidas, pedido principal, ponto controvertido…" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nível de dificuldade</label>
+          <div class="diff-group">
+            <button class="diff-btn iniciante selected" data-diff="Iniciante" onclick="selectDiff(this)">
+              <span class="diff-label"><span class="diff-dot"></span>Iniciante</span>
+              <span class="diff-hint">Juiz paciente, adversário moderado</span>
+            </button>
+            <button class="diff-btn intermediario" data-diff="Intermediário" onclick="selectDiff(this)">
+              <span class="diff-label"><span class="diff-dot"></span>Intermediário</span>
+              <span class="diff-hint">Ritmo real de audiência</span>
+            </button>
+            <button class="diff-btn veterano" data-diff="Veterano" onclick="selectDiff(this)">
+              <span class="diff-label"><span class="diff-dot"></span>Veterano</span>
+              <span class="diff-hint">Adversário brilhante, juiz rigoroso</span>
+            </button>
+          </div>
+        </div>
+
+        <hr class="setup-divider">
+
+        <button class="btn btn-primary btn-lg btn-full" onclick="iniciarTreinamento()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Iniciar Treinamento
+        </button>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SCREEN 2 — SIMULATION
+    ══════════════════════════════════════════════════════════════════════ -->
+    <section id="screen-sim" class="screen">
+
+      <!-- Mobile phase bar -->
+      <div class="mobile-phase-bar" id="mobile-phase-bar"></div>
+
+      <!-- Sidebar -->
+      <aside class="sim-sidebar">
+        <div class="sidebar-header">
+          <span class="sidebar-title">Fases da Audiência</span>
+        </div>
+        <div class="phase-stepper" id="phase-stepper">
+          <!-- Dynamically rendered -->
+        </div>
+        <div class="case-info-card" id="case-info-card">
+          <!-- Rendered on start -->
+        </div>
+      </aside>
+
+      <!-- Main area -->
+      <div class="sim-main">
+        <!-- Top bar -->
+        <div class="chat-topbar">
+          <div class="judge-avatar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          </div>
+          <span class="judge-name" id="judge-name">MM. Juiz(a)</span>
+          <span class="topbar-phase" id="topbar-phase">Abertura</span>
+          <div class="topbar-divider"></div>
+          <span class="exchange-counter" id="exchange-counter">Turno 0</span>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chat-messages">
+          <div class="typing-indicator" id="typing-indicator">
+            <div class="judge-avatar">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+            </div>
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input area -->
+        <div class="chat-input-area">
+          <div class="chat-input-row">
+            <textarea
+              id="chat-textarea"
+              class="chat-textarea"
+              placeholder="Sua manifestação como advogado(a)…"
+              rows="2"
+              onkeydown="handleTextareaKey(event)"
+              oninput="autoResizeTextarea(this)"
+            ></textarea>
+            <button class="chat-send-btn" id="send-btn" onclick="sendResponse()" title="Enviar (Ctrl+Enter)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+          <div class="chat-footer">
+            <span class="chat-hint">Ctrl + Enter para enviar</span>
+            <button class="btn btn-danger" onclick="confirmEncerrar()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+              Encerrar Audiência
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SCREEN 3 — FEEDBACK
+    ══════════════════════════════════════════════════════════════════════ -->
+    <section id="screen-feedback" class="screen">
+      <div class="feedback-wrapper">
+
+        <div class="feedback-header">
+          <div>
+            <h2 class="feedback-title">Resultado da Audiência</h2>
+            <p class="feedback-subtitle" id="fb-subtitle">Análise detalhada do seu desempenho</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn" onclick="window.print()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Imprimir
+            </button>
+          </div>
+        </div>
+
+        <!-- Score section -->
+        <div class="score-section" id="score-section">
+          <div class="score-circle">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle class="score-circle-track" cx="60" cy="60" r="52"/>
+              <circle class="score-circle-fill" id="score-arc" cx="60" cy="60" r="52"
+                stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke="#b8960c"/>
+            </svg>
+            <div class="score-number">
+              <div class="n" id="score-num">—</div>
+              <div class="d">/10</div>
+            </div>
+          </div>
+          <div class="score-info">
+            <div class="score-label" id="score-label">Aguardando…</div>
+            <div class="score-desc" id="score-desc"></div>
+            <div class="phase-scores" id="phase-scores"></div>
+          </div>
+        </div>
+
+        <!-- Radar chart -->
+        <div class="radar-section">
+          <div class="section-title">Competências Avaliadas</div>
+          <div class="radar-grid">
+            <div class="radar-svg-wrap">
+              <svg id="radar-svg" viewBox="-130 -130 260 260">
+                <g id="radar-bg-rings"></g>
+                <g id="radar-axes"></g>
+                <polygon id="radar-fill" points="" fill="rgba(184,150,12,0.22)" stroke="#b8960c" stroke-width="2" stroke-linejoin="round"/>
+                <g id="radar-dots"></g>
+                <g id="radar-labels"></g>
+              </svg>
+            </div>
+            <div class="radar-legend" id="radar-legend"></div>
+          </div>
+        </div>
+
+        <!-- Momentos-chave -->
+        <div class="moments-section" id="moments-section">
+          <div class="section-title">Momentos-chave da Audiência</div>
+          <div class="moment-cards" id="moment-cards"></div>
+        </div>
+
+        <!-- Pontos fortes / melhorar -->
+        <div class="feedback-lists">
+          <div class="list-card fortes">
+            <div class="section-title">Pontos Fortes</div>
+            <div class="list-items" id="pontos-fortes"></div>
+          </div>
+          <div class="list-card melhorar">
+            <div class="section-title">Pontos a Melhorar</div>
+            <div class="list-items" id="pontos-melhorar"></div>
+          </div>
+        </div>
+
+        <!-- Dica final -->
+        <div class="dica-card" id="dica-final-card">
+          <div class="dica-icon">💡</div>
+          <div class="dica-content">
+            <div class="dica-label">Dica Final</div>
+            <div class="dica-text" id="dica-final-text"></div>
+          </div>
+        </div>
+
+        <!-- Transcript -->
+        <button class="transcript-toggle" onclick="toggleTranscript(this)">
+          <span>Ver Transcrição Completa</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="transcript-body" id="transcript-body"></div>
+
+        <!-- Actions -->
+        <div class="feedback-actions">
+          <button class="btn btn-lg" onclick="treinarNovamente()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.02"/></svg>
+            Treinar Novamente
+          </button>
+          <a href="/app" class="btn btn-lg btn-ghost">Voltar ao Chat</a>
+        </div>
+
+      </div>
+    </section>
+
+  </main><!-- end #content -->
+</div><!-- end #app -->
+
+<!-- ── HISTÓRICO PANEL ───────────────────────────────────────────────────── -->
+<div id="historico-backdrop" onclick="closeHistorico()"></div>
+<aside id="historico-panel" role="dialog" aria-label="Histórico de sessões">
+  <div class="hist-header">
+    <span class="hist-title">Histórico de Sessões</span>
+    <button class="btn btn-ghost" onclick="closeHistorico()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Fechar
+    </button>
+  </div>
+  <div class="hist-list" id="hist-list">
+    <div class="hist-empty">
+      <div class="hist-empty-icon">📂</div>
+      <div class="hist-empty-text">Nenhuma sessão ainda</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MODALS ────────────────────────────────────────────────────────────── -->
+<!-- Encerrar confirm -->
+<div class="modal-backdrop" id="modal-encerrar">
+  <div class="modal-card">
+    <div class="modal-icon">⚖️</div>
+    <div class="modal-title">Encerrar a audiência?</div>
+    <div class="modal-desc">A sessão será finalizada e você receberá o feedback completo do seu desempenho.</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-encerrar')">Cancelar</button>
+      <button class="btn btn-primary" onclick="encerrarAudiencia()">Encerrar e ver resultado</button>
+    </div>
+  </div>
+</div>
+
+<!-- Phase transition toast -->
+<div class="phase-transition-toast" id="phase-toast"></div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">Preparando audiência…</div>
+</div>
+
+<!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════════════════ */
+const STATE = {
+  token: null,
+  sessionId: null,
+  fase: null,
+  juizNome: 'MM. Juiz(a)',
+  dificuldade: 'Iniciante',
+  tipo: '',
+  papel: '',
+  messages: [],       // full transcript
+  turnCount: 0,
+  allFases: [],
+  feedbackData: null,
+};
+
+/* Phase metadata */
+const PHASES_META = [
+  { key: 'abertura',         label: 'Abertura',          desc: 'Apresentação das partes', icon: gavelIcon() },
+  { key: 'conciliacao',      label: 'Conciliação',       desc: 'Tentativa de acordo',     icon: handshakeIcon() },
+  { key: 'depoimento',       label: 'Depoimento',        desc: 'Oitiva de testemunhas',   icon: speakIcon() },
+  { key: 'alegacoes_finais', label: 'Alegações Finais',  desc: 'Argumentação final',      icon: scrollIcon() },
+  { key: 'encerramento',     label: 'Encerramento',      desc: 'Decisão e encerramento',  icon: checkIcon() },
+];
+
+function gavelIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 0 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg>`;
+}
+function handshakeIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-1"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></svg>`;
+}
+function speakIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="11" r="3"/></svg>`;
+}
+function scrollIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>`;
+}
+function checkIcon() {
+  return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  STATE.token = localStorage.getItem('capi_token');
+
+  // Dark mode
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark-mode');
+  }
+
+  renderStepper(PHASES_META.map(p => p.key), 'abertura', []);
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCREEN NAVIGATION
+═══════════════════════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DIFFICULTY SELECTION
+═══════════════════════════════════════════════════════════════════════════ */
+function selectDiff(el) {
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  STATE.dificuldade = el.dataset.diff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   INICIAR TREINAMENTO
+═══════════════════════════════════════════════════════════════════════════ */
+async function iniciarTreinamento() {
+  const tipo = document.getElementById('tipo-audiencia').value;
+  const papel = document.getElementById('papel').value;
+  const contexto = document.getElementById('contexto').value.trim();
+
+  if (!tipo) return alert('Selecione o tipo de audiência.');
+  if (!papel) return alert('Selecione seu papel na audiência.');
+
+  STATE.tipo = tipo;
+  STATE.papel = papel;
+
+  showLoading('Preparando audiência…');
+
+  try {
+    const res = await apiCall('POST', '/api/audiencia/iniciar', {
+      tipo,
+      papel,
+      contexto,
+      dificuldade: STATE.dificuldade,
+    });
+
+    STATE.sessionId = res.session_id;
+    STATE.fase = normalizeFase(res.fase);
+    STATE.juizNome = res.juiz_nome || 'MM. Juiz(a)';
+    STATE.allFases = (res.fases || PHASES_META.map(p => p.key)).map(normalizeFase);
+    STATE.messages = [];
+    STATE.turnCount = 0;
+
+    setupSimScreen();
+    showScreen('screen-sim');
+
+    // Add judge's opening message
+    if (res.mensagem_juiz) {
+      appendMessage('judge', res.mensagem_juiz);
+    }
+
+  } catch (err) {
+    hideLoading();
+    handleApiError(err, 'Não foi possível iniciar a sessão.');
+  }
+}
+
+function normalizeFase(f) {
+  if (!f) return 'abertura';
+  return f.toLowerCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function setupSimScreen() {
+  document.getElementById('judge-name').textContent = STATE.juizNome;
+  document.getElementById('topbar-phase').textContent = getPhaseLabel(STATE.fase);
+  document.getElementById('exchange-counter').textContent = 'Turno 0';
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="typing-indicator" id="typing-indicator">
+      <div class="judge-avatar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
+      <div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+    </div>
+  `;
+
+  renderStepper(STATE.allFases, STATE.fase, []);
+  renderMobilePhaseBar(STATE.allFases, STATE.fase, []);
+  renderCaseInfoCard();
+  hideLoading();
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PHASE STEPPER
+═══════════════════════════════════════════════════════════════════════════ */
+function getPhaseLabel(key) {
+  const meta = PHASES_META.find(p => p.key === key);
+  return meta ? meta.label : key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+}
+
+function getPhaseDesc(key) {
+  const meta = PHASES_META.find(p => p.key === key);
+  return meta ? meta.desc : '';
+}
+
+function getPhaseIcon(key) {
+  const meta = PHASES_META.find(p => p.key === key);
+  return meta ? meta.icon : checkIcon();
+}
+
+function renderStepper(fases, currentFase, completedFases) {
+  const container = document.getElementById('phase-stepper');
+  container.innerHTML = fases.map((f, i) => {
+    const isActive = f === currentFase;
+    const isCompleted = completedFases.includes(f);
+    const cls = isCompleted ? 'phase-step completed' : isActive ? 'phase-step active' : 'phase-step';
+    const dotContent = isCompleted ? checkIcon() : getPhaseIcon(f);
+    return `
+      <div class="${cls}" data-phase="${f}">
+        <div class="phase-dot">${dotContent}</div>
+        <div class="phase-info">
+          <div class="phase-name">${getPhaseLabel(f)} <span class="phase-badge">Atual</span></div>
+          <div class="phase-desc">${getPhaseDesc(f)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderMobilePhaseBar(fases, currentFase, completedFases) {
+  const bar = document.getElementById('mobile-phase-bar');
+  bar.innerHTML = fases.map((f) => {
+    const isActive = f === currentFase;
+    const isCompleted = completedFases.includes(f);
+    const cls = isCompleted ? 'mobile-phase-item completed' : isActive ? 'mobile-phase-item active' : 'mobile-phase-item';
+    const dotContent = isCompleted ? `<span style="color:#b8960c;font-size:10px;">✓</span>` : `<span style="font-size:10px;color:var(--text2);">${fases.indexOf(f)+1}</span>`;
+    return `<div class="${cls}"><div class="mobile-phase-dot">${dotContent}</div><div class="mobile-phase-label">${getPhaseLabel(f)}</div></div>`;
+  }).join('');
+}
+
+function renderCaseInfoCard() {
+  const card = document.getElementById('case-info-card');
+  const diffClass = STATE.dificuldade.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z]/g, '');
+  card.innerHTML = `
+    <div class="case-info-label">Informações do Caso</div>
+    <div class="case-info-row"><strong>Tipo:</strong> ${STATE.tipo}</div>
+    <div class="case-info-row"><strong>Papel:</strong> ${STATE.papel}</div>
+    <div class="case-info-row" style="margin-top:6px;">
+      <span class="badge badge-${diffClass}">${STATE.dificuldade}</span>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MESSAGE HANDLING
+═══════════════════════════════════════════════════════════════════════════ */
+function parseAIResponse(raw) {
+  // Returns array of { type: 'judge'|'adversario'|'testemunha', sender, text }
+  const parts = [];
+  let remaining = raw;
+
+  // Split on 🔴 [Adv. and 🟡 [Testemunha markers
+  const redSplit = remaining.split(/(🔴\s*\[Adv[^\]]*\][:\s]*)/);
+  const blocks = [];
+
+  // First try adversario split
+  if (remaining.includes('🔴') || remaining.includes('🟡')) {
+    // Split by color markers
+    const regex = /(🔴\s*\[Adv[^\]]*\][:\s]*)|(🟡\s*\[Testemunha[^\]]*\][:\s]*)/;
+    const tokens = remaining.split(regex).filter(t => t !== undefined);
+
+    let currentType = 'judge';
+    let currentSender = 'Juiz(a)';
+    let buffer = '';
+
+    for (const tok of tokens) {
+      if (!tok) continue;
+      if (/^🔴\s*\[Adv/.test(tok)) {
+        if (buffer.trim()) parts.push({ type: currentType, sender: currentSender, text: buffer.trim() });
+        // Extract adversary name
+        const m = tok.match(/🔴\s*\[([^\]]+)\]/);
+        currentSender = m ? m[1] : 'Adversário';
+        currentType = 'adversario';
+        buffer = '';
+      } else if (/^🟡\s*\[Testemunha/.test(tok)) {
+        if (buffer.trim()) parts.push({ type: currentType, sender: currentSender, text: buffer.trim() });
+        const m = tok.match(/🟡\s*\[([^\]]+)\]/);
+        currentSender = m ? m[1] : 'Testemunha';
+        currentType = 'testemunha';
+        buffer = '';
+      } else {
+        buffer += tok;
+      }
+    }
+
+    if (buffer.trim()) parts.push({ type: currentType, sender: currentSender, text: buffer.trim() });
+  } else {
+    parts.push({ type: 'judge', sender: STATE.juizNome || 'Juiz(a)', text: remaining.trim() });
+  }
+
+  // Assign judge name
+  return parts.map(p => {
+    if (p.type === 'judge' && p.sender === 'Juiz(a)') {
+      p.sender = STATE.juizNome || 'MM. Juiz(a)';
+    }
+    return p;
+  });
+}
+
+function appendMessage(type, text, extra = {}) {
+  const container = document.getElementById('chat-messages');
+  const typing = document.getElementById('typing-indicator');
+
+  const el = document.createElement('div');
+  el.className = `msg msg-${type}`;
+
+  let iconHTML = '';
+  let senderLabel = '';
+
+  if (type === 'judge') {
+    iconHTML = `<div class="msg-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V8a5 5 0 0 1 5-5h8a5 5 0 0 1 5 5v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>`;
+    senderLabel = extra.sender || STATE.juizNome || 'MM. Juiz(a)';
+  } else if (type === 'adversario') {
+    iconHTML = `<div class="msg-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+    senderLabel = extra.sender || 'Advogado Adversário';
+  } else if (type === 'testemunha') {
+    iconHTML = `<div class="msg-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="11" r="3"/></svg></div>`;
+    senderLabel = extra.sender || 'Testemunha';
+  } else {
+    iconHTML = `<div class="msg-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+    senderLabel = 'Você';
+  }
+
+  let dicaHTML = '';
+  if (extra.dica) {
+    dicaHTML = `<div class="msg-dica">${escHtml(extra.dica)}</div>`;
+  }
+
+  el.innerHTML = `
+    ${iconHTML}
+    <div class="msg-bubble">
+      <div class="msg-sender">${escHtml(senderLabel)}</div>
+      <div class="msg-text">${escHtml(text)}</div>
+      ${dicaHTML}
+    </div>
+  `;
+
+  container.insertBefore(el, typing);
+  container.scrollTop = container.scrollHeight;
+
+  // Track for transcript
+  STATE.messages.push({ type, sender: senderLabel, text });
+}
+
+function showTyping() {
+  const t = document.getElementById('typing-indicator');
+  t.classList.add('visible');
+  const c = document.getElementById('chat-messages');
+  c.scrollTop = c.scrollHeight;
+}
+
+function hideTyping() {
+  document.getElementById('typing-indicator').classList.remove('visible');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SEND RESPONSE
+═══════════════════════════════════════════════════════════════════════════ */
+async function sendResponse() {
+  const textarea = document.getElementById('chat-textarea');
+  const msg = textarea.value.trim();
+  if (!msg || !STATE.sessionId) return;
+
+  const sendBtn = document.getElementById('send-btn');
+  sendBtn.disabled = true;
+  textarea.value = '';
+  textarea.style.height = '';
+
+  STATE.turnCount++;
+  document.getElementById('exchange-counter').textContent = `Turno ${STATE.turnCount}`;
+
+  appendMessage('user', msg);
+  showTyping();
+
+  try {
+    const res = await apiCall('POST', '/api/audiencia/responder', {
+      session_id: STATE.sessionId,
+      mensagem: msg,
+    });
+
+    hideTyping();
+
+    // Phase change?
+    const newFase = res.fase ? normalizeFase(res.fase) : STATE.fase;
+    const phaseChanged = newFase !== STATE.fase;
+
+    if (phaseChanged) {
+      const prevFase = STATE.fase;
+      STATE.fase = newFase;
+      // Track completed
+      if (!STATE._completed) STATE._completed = [];
+      STATE._completed.push(prevFase);
+      updatePhaseUI(STATE.allFases, STATE.fase, STATE._completed);
+      showPhaseToast(getPhaseLabel(newFase));
+    }
+
+    // Parse AI response
+    const msgToRender = res.mensagem_juiz || '';
+    const parsed = parseAIResponse(msgToRender);
+    const dica = res.dica_rapida || '';
+
+    parsed.forEach((p, i) => {
+      appendMessage(p.type, p.text, {
+        sender: p.sender,
+        dica: i === parsed.length - 1 ? dica : '',
+      });
+    });
+
+    // If adversary message is separate field
+    if (res.adversario_mensagem && !msgToRender.includes('🔴')) {
+      appendMessage('adversario', res.adversario_mensagem);
+    }
+
+    // Update topbar phase
+    document.getElementById('topbar-phase').textContent = getPhaseLabel(STATE.fase);
+
+  } catch (err) {
+    hideTyping();
+    handleApiError(err, 'Erro ao enviar mensagem.');
+  } finally {
+    sendBtn.disabled = false;
+    textarea.focus();
+  }
+}
+
+function updatePhaseUI(fases, currentFase, completedFases) {
+  renderStepper(fases, currentFase, completedFases || []);
+  renderMobilePhaseBar(fases, currentFase, completedFases || []);
+}
+
+function handleTextareaKey(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    sendResponse();
+  }
+}
+
+function autoResizeTextarea(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENCERRAR
+═══════════════════════════════════════════════════════════════════════════ */
+function confirmEncerrar() {
+  openModal('modal-encerrar');
+}
+
+async function encerrarAudiencia() {
+  closeModal('modal-encerrar');
+
+  if (!STATE.sessionId) {
+    showFeedbackScreen(getMockFeedback());
+    return;
+  }
+
+  showLoading('Analisando seu desempenho…');
+
+  try {
+    const res = await apiCall('POST', '/api/audiencia/encerrar', {
+      session_id: STATE.sessionId,
+    });
+
+    hideLoading();
+    const feedback = res.feedback || getMockFeedback();
+    STATE.feedbackData = feedback;
+    showFeedbackScreen(feedback);
+    saveToHistorico(feedback);
+
+  } catch (err) {
+    hideLoading();
+    // Fallback to mock feedback for demo
+    const fb = getMockFeedback();
+    STATE.feedbackData = fb;
+    showFeedbackScreen(fb);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FEEDBACK SCREEN
+═══════════════════════════════════════════════════════════════════════════ */
+function showFeedbackScreen(fb) {
+  showScreen('screen-feedback');
+
+  document.getElementById('fb-subtitle').textContent =
+    `${STATE.tipo} • ${STATE.papel} • ${STATE.dificuldade}`;
+
+  renderScoreCircle(fb.nota_geral || 0);
+  renderPhaseScores(fb.nota_por_fase || {});
+  renderRadar(fb.competencias || []);
+  renderMoments(fb.momentos_chave || []);
+  renderLists(fb.pontos_fortes || [], fb.pontos_melhorar || []);
+  renderDicaFinal(fb.dica_final || '');
+  renderTranscript();
+}
+
+function renderScoreCircle(nota) {
+  const n = Math.max(0, Math.min(10, nota));
+  const arc = document.getElementById('score-arc');
+  const circumference = 326.7;
+  const fill = (n / 10) * circumference;
+  const offset = circumference - fill;
+
+  setTimeout(() => {
+    arc.style.strokeDashoffset = offset;
+    const color = n >= 8 ? '#27ae60' : n >= 6 ? '#b8960c' : '#c0392b';
+    arc.style.stroke = color;
+    document.getElementById('score-num').style.color = color;
+  }, 100);
+
+  document.getElementById('score-num').textContent = n.toFixed(1);
+
+  let label, desc;
+  if (n >= 9) { label = 'Excelente'; desc = 'Desempenho excepcional. Domínio completo da audiência.'; }
+  else if (n >= 8) { label = 'Ótimo'; desc = 'Muito bom desempenho. Continue praticando para a excelência.'; }
+  else if (n >= 7) { label = 'Bom'; desc = 'Bom desempenho com alguns pontos a aprimorar.'; }
+  else if (n >= 6) { label = 'Regular'; desc = 'Desempenho razoável. Identifique os pontos fracos e pratique mais.'; }
+  else { label = 'Precisa melhorar'; desc = 'Continue treinando. A prática leva à perfeição.'; }
+
+  document.getElementById('score-label').textContent = label;
+  document.getElementById('score-desc').textContent = desc;
+}
+
+function renderPhaseScores(notaPorFase) {
+  const container = document.getElementById('phase-scores');
+  const fases = STATE.allFases.length ? STATE.allFases : PHASES_META.map(p => p.key);
+  container.innerHTML = fases.map(f => {
+    const nota = notaPorFase[f] !== undefined ? notaPorFase[f] : (notaPorFase[getPhaseLabel(f)] !== undefined ? notaPorFase[getPhaseLabel(f)] : null);
+    if (nota === null) return '';
+    const pct = (nota / 10) * 100;
+    return `
+      <div class="phase-score-row">
+        <span class="phase-score-name">${getPhaseLabel(f)}</span>
+        <div class="phase-score-bar"><div class="phase-score-fill" style="width:${pct}%"></div></div>
+        <span class="phase-score-val">${nota.toFixed(1)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ─── Radar Chart (SVG) ──────────────────────────────────────────────────── */
+const COMPETENCIAS_DEFAULT = [
+  { label: 'Argumentação Jurídica',  score: 0, comment: '' },
+  { label: 'Oratória e Postura',     score: 0, comment: '' },
+  { label: 'Controle Emocional',     score: 0, comment: '' },
+  { label: 'Estratégia Processual',  score: 0, comment: '' },
+  { label: 'Domínio dos Fatos',      score: 0, comment: '' },
+  { label: 'Técnica de Perguntas',   score: 0, comment: '' },
+];
+
+function renderRadar(competencias) {
+  if (!competencias || competencias.length === 0) competencias = COMPETENCIAS_DEFAULT;
+  const n = competencias.length;
+  const R = 100; // max radius
+  const center = 0;
+
+  // Angle for each point (starting top)
+  function getPoint(i, r) {
+    const angle = (Math.PI * 2 * i / n) - Math.PI / 2;
+    return {
+      x: center + r * Math.cos(angle),
+      y: center + r * Math.sin(angle),
+    };
+  }
+
+  // Background rings
+  const rings = document.getElementById('radar-bg-rings');
+  rings.innerHTML = [2, 4, 6, 8, 10].map(v => {
+    const pts = Array.from({ length: n }, (_, i) => {
+      const p = getPoint(i, R * (v / 10));
+      return `${p.x},${p.y}`;
+    }).join(' ');
+    return `<polygon points="${pts}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+  }).join('');
+
+  // Axes
+  const axes = document.getElementById('radar-axes');
+  axes.innerHTML = Array.from({ length: n }, (_, i) => {
+    const p = getPoint(i, R);
+    return `<line x1="${center}" y1="${center}" x2="${p.x}" y2="${p.y}" stroke="var(--border)" stroke-width="1"/>`;
+  }).join('');
+
+  // Fill polygon
+  const fillPts = competencias.map((c, i) => {
+    const score = Math.max(0, Math.min(10, c.score || 0));
+    const r = R * (score / 10);
+    const p = getPoint(i, r);
+    return `${p.x},${p.y}`;
+  }).join(' ');
+  document.getElementById('radar-fill').setAttribute('points', fillPts);
+
+  // Dots
+  const dots = document.getElementById('radar-dots');
+  dots.innerHTML = competencias.map((c, i) => {
+    const score = Math.max(0, Math.min(10, c.score || 0));
+    const p = getPoint(i, R * (score / 10));
+    return `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#b8960c" stroke="var(--bg2)" stroke-width="2"/>`;
+  }).join('');
+
+  // Labels
+  const labels = document.getElementById('radar-labels');
+  labels.innerHTML = competencias.map((c, i) => {
+    const p = getPoint(i, R + 20);
+    // Multi-line label
+    const words = c.label.split(' ');
+    let lines = [];
+    let cur = '';
+    words.forEach(w => {
+      if ((cur + ' ' + w).trim().length <= 12) cur = (cur + ' ' + w).trim();
+      else { lines.push(cur); cur = w; }
+    });
+    lines.push(cur);
+
+    const dy = lines.length > 1 ? -((lines.length - 1) * 7) : 0;
+    const tspans = lines.map((l, li) =>
+      `<tspan x="${p.x}" dy="${li === 0 ? dy : 14}">${l}</tspan>`
+    ).join('');
+
+    return `<text x="${p.x}" y="${p.y}" text-anchor="middle" fill="var(--text2)" font-size="10" font-family="DM Sans, sans-serif">${tspans}</text>`;
+  }).join('');
+
+  // Legend
+  const legend = document.getElementById('radar-legend');
+  legend.innerHTML = competencias.map(c => `
+    <div class="radar-item">
+      <div class="radar-dot"></div>
+      <div>
+        <div class="radar-item-label">${escHtml(c.label)}</div>
+        ${c.comment ? `<div class="radar-item-comment">${escHtml(c.comment)}</div>` : ''}
+      </div>
+      <div class="radar-item-score">${(c.score || 0).toFixed(1)}</div>
+    </div>
+  `).join('');
+}
+
+function renderMoments(momentos) {
+  const container = document.getElementById('moment-cards');
+  if (!momentos.length) {
+    document.getElementById('moments-section').style.display = 'none';
+    return;
+  }
+  container.innerHTML = momentos.map(m => `
+    <div class="moment-card">
+      <div class="moment-phase">${escHtml(m.fase || 'Audiência')}</div>
+      <div class="moment-text">${escHtml(m.descricao || m.texto || '')}</div>
+      <div class="moment-eval">${escHtml(m.avaliacao || m.eval || '')}</div>
+    </div>
+  `).join('');
+}
+
+function renderLists(fortes, melhorar) {
+  const f = document.getElementById('pontos-fortes');
+  const m = document.getElementById('pontos-melhorar');
+
+  f.innerHTML = fortes.map(item => `
+    <div class="list-item">
+      <div class="list-item-dot"></div>
+      <span>${escHtml(typeof item === 'string' ? item : item.texto || item.text || '')}</span>
+    </div>
+  `).join('') || '<div class="list-item"><span style="color:var(--text2);font-style:italic;">Nenhum item registrado.</span></div>';
+
+  m.innerHTML = melhorar.map(item => `
+    <div class="list-item">
+      <div class="list-item-dot"></div>
+      <span>${escHtml(typeof item === 'string' ? item : item.texto || item.text || '')}</span>
+    </div>
+  `).join('') || '<div class="list-item"><span style="color:var(--text2);font-style:italic;">Nenhum item registrado.</span></div>';
+}
+
+function renderDicaFinal(dica) {
+  document.getElementById('dica-final-text').textContent = dica || 'Continue praticando para aprimorar suas habilidades de audiência.';
+}
+
+function renderTranscript() {
+  const body = document.getElementById('transcript-body');
+  body.textContent = STATE.messages.map(m =>
+    `[${m.sender}]\n${m.text}\n`
+  ).join('\n');
+}
+
+function toggleTranscript(btn) {
+  const body = document.getElementById('transcript-body');
+  const icon = btn.querySelector('svg');
+  body.classList.toggle('open');
+  icon.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
+
+function treinarNovamente() {
+  STATE.sessionId = null;
+  STATE.fase = null;
+  STATE.messages = [];
+  STATE.turnCount = 0;
+  STATE._completed = [];
+  showScreen('screen-setup');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HISTÓRICO
+═══════════════════════════════════════════════════════════════════════════ */
+function openHistorico() {
+  document.getElementById('historico-backdrop').classList.add('open');
+  document.getElementById('historico-panel').classList.add('open');
+  loadHistorico();
+}
+
+function closeHistorico() {
+  document.getElementById('historico-backdrop').classList.remove('open');
+  document.getElementById('historico-panel').classList.remove('open');
+}
+
+async function loadHistorico() {
+  const list = document.getElementById('hist-list');
+  list.innerHTML = '<div class="hist-empty"><div class="hist-empty-icon">⏳</div><div class="hist-empty-text">Carregando…</div></div>';
+
+  try {
+    const res = await apiCall('GET', '/api/audiencia/historico');
+    const sessions = res.sessions || [];
+
+    if (!sessions.length) {
+      // Check local storage fallback
+      const local = getLocalHistorico();
+      renderHistoricoList(local);
+    } else {
+      renderHistoricoList(sessions);
+    }
+  } catch (err) {
+    // Fallback to local storage
+    const local = getLocalHistorico();
+    renderHistoricoList(local);
+  }
+}
+
+function renderHistoricoList(sessions) {
+  const list = document.getElementById('hist-list');
+
+  if (!sessions.length) {
+    list.innerHTML = `
+      <div class="hist-empty">
+        <div class="hist-empty-icon">📂</div>
+        <div class="hist-empty-text">Nenhuma sessão ainda.<br>Inicie seu primeiro treinamento!</div>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = sessions.map((s, i) => {
+    const nota = s.nota || s.nota_geral || 0;
+    const notaColor = nota >= 8 ? 'var(--green)' : nota >= 6 ? 'var(--gold)' : 'var(--red)';
+    const status = s.status || 'Concluída';
+    const badgeClass = status === 'Concluída' ? 'badge-concluida' : 'badge-andamento';
+    const date = s.data ? new Date(s.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+    return `
+      <div class="hist-item" onclick="openHistoricoSession(${i}, ${JSON.stringify(s).replace(/"/g, '&quot;')})">
+        <div class="hist-nota-wrap">
+          <div class="hist-nota" style="color:${notaColor}">${nota ? nota.toFixed(1) : '—'}</div>
+          <div class="hist-nota-d">/10</div>
+        </div>
+        <div class="hist-item-info">
+          <div class="hist-item-tipo">${escHtml(s.tipo || '—')}</div>
+          <div class="hist-item-meta">
+            <span>${date}</span>
+            <span class="badge ${badgeClass}">${status}</span>
+            ${s.dificuldade ? `<span>${s.dificuldade}</span>` : ''}
+          </div>
+        </div>
+        <div class="hist-item-actions">
+          <button class="btn btn-danger" onclick="event.stopPropagation(); deleteHistoricoSession(${i})" title="Excluir">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openHistoricoSession(idx, session) {
+  closeHistorico();
+  if (session.feedback) {
+    STATE.tipo = session.tipo || '';
+    STATE.papel = session.papel || '';
+    STATE.dificuldade = session.dificuldade || 'Iniciante';
+    STATE.messages = session.transcript || [];
+    STATE.allFases = PHASES_META.map(p => p.key);
+    STATE.feedbackData = session.feedback;
+    showFeedbackScreen(session.feedback);
+  }
+}
+
+function deleteHistoricoSession(idx) {
+  const hist = getLocalHistorico();
+  hist.splice(idx, 1);
+  localStorage.setItem('capi_audiencia_historico', JSON.stringify(hist));
+  loadHistorico();
+}
+
+function getLocalHistorico() {
+  try {
+    return JSON.parse(localStorage.getItem('capi_audiencia_historico') || '[]');
+  } catch { return []; }
+}
+
+function saveToHistorico(feedback) {
+  const hist = getLocalHistorico();
+  hist.unshift({
+    data: new Date().toISOString(),
+    tipo: STATE.tipo,
+    papel: STATE.papel,
+    dificuldade: STATE.dificuldade,
+    nota: feedback.nota_geral || 0,
+    nota_geral: feedback.nota_geral || 0,
+    status: 'Concluída',
+    feedback,
+    transcript: STATE.messages,
+  });
+  // Keep max 50
+  if (hist.length > 50) hist.splice(50);
+  localStorage.setItem('capi_audiencia_historico', JSON.stringify(hist));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODAL & TOAST HELPERS
+═══════════════════════════════════════════════════════════════════════════ */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showPhaseToast(phaseName) {
+  const toast = document.getElementById('phase-toast');
+  toast.textContent = `⚖️ Nova fase: ${phaseName}`;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function showLoading(text) {
+  document.getElementById('loading-text').textContent = text || 'Carregando…';
+  document.getElementById('loading-overlay').classList.add('open');
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   API HELPER
+═══════════════════════════════════════════════════════════════════════════ */
+async function apiCall(method, path, body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (STATE.token) headers['Authorization'] = `Bearer ${STATE.token}`;
+
+  const opts = { method, headers };
+  if (body && method !== 'GET') opts.body = JSON.stringify(body);
+
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`HTTP ${res.status}: ${errText}`);
+  }
+  return res.json();
+}
+
+function handleApiError(err, fallbackMsg) {
+  console.error(err);
+  // For demo purposes, show friendly error without alert spam
+  const msg = err.message || fallbackMsg;
+  // Show as a judge message in chat if in sim screen
+  const simActive = document.getElementById('screen-sim').classList.contains('active');
+  if (simActive) {
+    appendMessage('judge', `[Sistema] ${fallbackMsg} Verifique a conexão e tente novamente.`);
+  } else {
+    alert(fallbackMsg);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════════════════════════════════════════ */
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOCK FEEDBACK (fallback / demo)
+═══════════════════════════════════════════════════════════════════════════ */
+function getMockFeedback() {
+  return {
+    nota_geral: 7.4,
+    nota_por_fase: {
+      abertura: 8.0,
+      conciliacao: 7.0,
+      depoimento: 7.5,
+      alegacoes_finais: 7.0,
+      encerramento: 7.5,
+    },
+    competencias: [
+      { label: 'Argumentação Jurídica', score: 7.5, comment: 'Fundamentos bem articulados, falta precisão em alguns momentos.' },
+      { label: 'Oratória e Postura',    score: 7.0, comment: 'Boa clareza verbal, mas pode aprimorar o tom em contraditório.' },
+      { label: 'Controle Emocional',    score: 8.0, comment: 'Manteve a compostura mesmo sob pressão.' },
+      { label: 'Estratégia Processual', score: 6.5, comment: 'Alguns movimentos estratégicos perdidos.' },
+      { label: 'Domínio dos Fatos',     score: 8.0, comment: 'Demonstrou conhecimento sólido dos fatos.' },
+      { label: 'Técnica de Perguntas',  score: 7.0, comment: 'Perguntas diretas, mas poderia explorar mais contradições.' },
+    ],
+    pontos_fortes: [
+      'Domínio da narrativa dos fatos',
+      'Boa gestão do tempo nas alegações',
+      'Controle emocional em momentos de pressão',
+      'Linguagem jurídica adequada ao contexto',
+    ],
+    pontos_melhorar: [
+      'Explorar melhor as inconsistências do depoimento da testemunha',
+      'Antecipar as objeções do adversário com argumentação prévia',
+      'Solicitar mais esclarecimentos ao juiz quando necessário',
+    ],
+    momentos_chave: [
+      {
+        fase: 'Conciliação',
+        descricao: 'Proposta de acordo rejeitada de forma assertiva',
+        avaliacao: 'Ótima firmeza na defesa do interesse do cliente',
+      },
+      {
+        fase: 'Depoimento',
+        descricao: 'Contradição identificada no depoimento da testemunha',
+        avaliacao: 'Poderia ter explorado mais o ponto com perguntas adicionais',
+      },
+      {
+        fase: 'Alegações Finais',
+        descricao: 'Síntese coerente dos argumentos principais',
+        avaliacao: 'Bem estruturado, mas podia reforçar o dano comprovado',
+      },
+    ],
+    dica_final: 'Foque em desenvolver a "escuta ativa" durante os depoimentos. Muitas vezes a melhor pergunta surge das contradições espontâneas da testemunha — esteja sempre atento ao que não foi dito.',
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYBOARD & ACCESSIBILITY
+═══════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeHistorico();
+    closeModal('modal-encerrar');
+  }
+});
+
+// Close modal on backdrop click
+document.getElementById('modal-encerrar').addEventListener('click', function(e) {
+  if (e.target === this) closeModal('modal-encerrar');
+});
+</script>
+</body>
+</html>

@@ -523,6 +523,22 @@ db.exec(`
     estimated_cost_usd REAL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS audiencia_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    tipo TEXT,
+    papel TEXT,
+    contexto TEXT,
+    dificuldade TEXT DEFAULT 'intermediario',
+    fase_atual TEXT DEFAULT 'abertura',
+    historico TEXT DEFAULT '[]',
+    feedback TEXT,
+    nota_geral REAL,
+    status TEXT DEFAULT 'ativa',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // ─── AI USAGE LOGGING ───────────────────────────────────────
@@ -3235,6 +3251,11 @@ app.get('/editor-peca.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/editor-peca.html'));
 });
 
+// Treinamento em Audiências
+app.get('/treinamento-audiencia.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/treinamento-audiencia.html'));
+});
+
 // Serve arquivos estáticos do app (CSS, JS) — após todas as rotas
 app.use(express.static(path.join(__dirname, '../frontend')));
 
@@ -3255,71 +3276,520 @@ app.get('/{*path}', (req, res) => {
 });
 
 // ─── TEXT-TO-SPEECH (ElevenLabs) ─────────────────────────────
-// ─── SIMULADOR DE AUDIÊNCIA ──────────────────────────────
-app.post('/api/audiencia', authMiddleware, async (req, res) => {
-  const { mensagem, config, history } = req.body;
-  if (!config) return res.status(400).json({ error: 'Config ausente' });
-  const { tipo, papel, contexto } = config;
+// ─── TREINAMENTO EM AUDIÊNCIAS 2.0 ───────────────────────────────────────────
 
-  const isInicio = mensagem === 'INICIAR';
-  const isFeedback = mensagem === 'ENCERRAR';
+// Helper: pick judge based on session ID (deterministic)
+function getJuizForSession(sessionId) {
+  const juizes = [
+    { nome: 'Dra. Ana Beatriz Ferreira', estilo: 'rigorosa e metódica, exige fundamentação precisa, interrompe quando o advogado divaga' },
+    { nome: 'Dr. Carlos Eduardo Mendonça', estilo: 'conciliador mas firme, tenta acordo antes de tudo, fica impaciente com litigância desnecessária' },
+    { nome: 'Dra. Fernanda Lima Castro', estilo: 'técnica e fria, faz perguntas incômodas, questiona cada afirmação sem base legal' },
+    { nome: 'Dr. Roberto Alves Pereira', estilo: 'experiente e sarcástico, já viu de tudo, pressiona advogados jovens com perguntas difíceis' }
+  ];
+  return juizes[sessionId % juizes.length];
+}
 
-  const nomeJuiz = ['Dra. Ana Beatriz Santos', 'Dr. Carlos Mendonça', 'Dra. Fernanda Lima', 'Dr. Roberto Alves'][Math.floor(Math.random() * 4)];
+// Helper: build rich system prompt per phase
+function buildAudienciaPrompt(session, fase, dificuldade) {
+  const { tipo, papel, contexto, id } = session;
+  const juiz = getJuizForSession(id);
 
-  let systemPrompt = '';
+  const dificuldadeMap = {
+    iniciante: 'Seja moderado nas objeções. Dê tempo ao advogado. Faça perguntas orientadoras quando ele errar. O adversário é competente mas não agressivo.',
+    intermediario: 'Faça objeções técnicas. O adversário cita jurisprudência e faz pressão real. O juiz questiona fundamentos. Ritmo de audiência real.',
+    veterano: 'O adversário é brilhante — cita jurisprudência específica, faz objeções procedimentais, pede a palavra frequentemente. O juiz é rigoroso, indeferindo pedidos mal fundamentados. Simule incidentes processuais inesperados.'
+  };
 
-  if (isFeedback) {
-    systemPrompt = `Você é um avaliador de simulações de audiência jurídica. Analise a performance do advogado na audiência simulada abaixo e forneça feedback estruturado em JSON: {"nota": 7, "pontos_fortes": ["...","..."], "pontos_melhorar": ["...","..."], "dica_final": "..."}`;
-  } else {
-    systemPrompt = `Você é ${nomeJuiz}, juiz(a) conduzindo uma ${tipo} no Brasil.
+  const papelAdversario = papel === 'Advogado do Autor' ? 'do Réu' : 'do Autor';
+
+  const faseInstrucoes = {
+    abertura: `FASE 1 — ABERTURA DA AUDIÊNCIA
+Você é ${juiz.nome}, juiz(a) ${juiz.estilo}.
+Abra a audiência formalmente: pregão, verificação de presença, qualificação.
+Apresente o caso brevemente.
+Conceda a palavra ao advogado do ${papel} para sustentação/exposição inicial.
+Se o advogado não fundamentar bem, INTERROMPA e peça clareza.
+O advogado adversário ainda não fala nesta fase.`,
+
+    conciliacao: `FASE 2 — TENTATIVA DE CONCILIAÇÃO
+Tente a conciliação. Pergunte às partes se há possibilidade de acordo.
+O ADVOGADO ADVERSÁRIO faz uma proposta/posição:
+🔴 [Adv. ${papelAdversario}]: "[proposta realista baseada no caso]"
+Pressione ambas as partes. Se o advogado treinando recusar, peça justificativa.
+Se aceitar termos ruins, o juiz deve alertar sobre possíveis prejuízos ao cliente.`,
+
+    depoimento: `FASE 3 — INSTRUÇÃO E DEPOIMENTOS
+Fase de produção de provas.
+Primeiro: depoimento pessoal da parte contrária. O juiz faz perguntas.
+Depois: o advogado treinando pode fazer perguntas à parte adversária (contradita/reperguntas).
+O ADVOGADO ADVERSÁRIO faz objeções quando pertinente:
+🔴 [Adv. adversário]: "Meritíssimo, OBJEÇÃO — [fundamento da objeção]"
+Simule uma TESTEMUNHA com depoimento que pode ter contradições para o advogado explorar.
+O juiz decide objeções e conduz a instrução.
+Quando for testemunha, use: 🟡 [Testemunha]: "texto"`,
+
+    alegacoes: `FASE 4 — ALEGAÇÕES FINAIS
+Conceda a palavra para alegações finais.
+O ADVOGADO ADVERSÁRIO apresenta alegações finais:
+🔴 [Adv. adversário]: "[alegações finais técnicas e persuasivas com artigos de lei]"
+Depois, conceda a palavra ao advogado treinando.
+O juiz pode fazer perguntas finais pontuais.
+AVALIE internamente a performance mas não revele ainda.`,
+
+    sentenca: `FASE 5 — ENCERRAMENTO
+O juiz anuncia que vai analisar o caso e proferir sentença.
+Faça um breve resumo do que foi apresentado.
+NÃO dê a sentença — apenas indique que os autos estão conclusos.
+Encerre a audiência formalmente.
+Adicione ao final: [AUDIÊNCIA ENCERRADA]`
+  };
+
+  return `Você está conduzindo uma simulação de ${tipo} para TREINAMENTO de advogado.
+
 CONTEXTO DO CASO: ${contexto}
 O advogado EM TREINAMENTO representa: ${papel}
+DIFICULDADE: ${dificuldadeMap[dificuldade] || dificuldadeMap.intermediario}
 
-ESTRUTURA DA AUDIÊNCIA — siga este fluxo realista:
-1. Você fala como JUIZ(A) — abre a sessão, dá a palavra, faz intervenções
-2. Quando for a vez da parte contrária, assuma brevemente o papel do advogado adversário com este formato:
-   🔴 [Advogado(a) adversário(a)]: "[alegação realista, difícil, com argumentos técnicos]"
-   Depois devolva a palavra: "Doutor(a), V.Sa. tem a palavra para rebater."
-3. Alterne entre: ouvir o advogado → juiz questiona → advogado adversário alega → juiz pede réplica → advogado treinando responde
-4. Faça o advogado adversário ser DIFÍCIL — use argumentos técnicos reais, cite jurisprudência, faça objeções
-5. O juiz também deve questionar o advogado treinando de forma rigorosa — peça fundamentos, questione provas, faça pressão
-6. Use linguagem formal de audiência brasileira
-7. ${isInicio ? 'Abra a audiência formalmente, apresente-se, conceda a palavra ao advogado do ' + papel + ' para sustentação inicial' : 'Continue a audiência a partir do que o advogado acabou de dizer — reaja como juiz e simule o adversário quando for a vez dele'}
+${faseInstrucoes[fase] || faseInstrucoes.abertura}
 
-Respostas curtas e dinâmicas (máx 3 parágrafos) para manter o ritmo real de audiência.
-Sempre termine deixando claro de quem é a vez de falar.`;
+REGRAS GERAIS:
+1. Use linguagem formal de audiência brasileira real.
+2. Quando for a vez do advogado adversário, use SEMPRE o formato: 🔴 [Adv. adversário]: "texto"
+3. Quando for testemunha, use: 🟡 [Testemunha]: "texto"
+4. Sempre termine deixando claro de quem é a vez de falar.
+5. Respostas de 2-4 parágrafos para manter ritmo dinâmico.
+6. Se o advogado treinando cometer erro processual, o juiz deve reagir realisticamente (indeferir, advertir, etc).
+7. Mantenha coerência com o que já foi dito no histórico da audiência.`;
+}
+
+// Helper: call Gemini 2.5 Flash with fallback to GPT-4.1
+async function callAudienciaAI(systemPrompt, conversationHistory, userId, feature) {
+  let raw = null;
+  let usedModel = 'gpt-4.1';
+
+  if (GEMINI_API_KEY) {
+    console.log('✨ Audiência 2.0 via Gemini 2.5 Flash...');
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 60000);
+    try {
+      const historyForGemini = [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'model', parts: [{ text: 'Entendido. Estou pronto para conduzir a simulação conforme as instruções.' }] },
+        ...conversationHistory.map(m => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }]
+        }))
+      ];
+      const gemRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: historyForGemini,
+            generationConfig: {
+              temperature: 0.85,
+              maxOutputTokens: 1500
+            }
+          }),
+          signal: ctrl.signal
+        }
+      );
+      clearTimeout(t);
+      if (!gemRes.ok) {
+        const errText = await gemRes.text().catch(() => '');
+        console.error('Gemini audiência erro:', gemRes.status, errText.slice(0, 200));
+        throw new Error('Gemini HTTP ' + gemRes.status);
+      }
+      const gemData = await gemRes.json();
+      raw = gemData.candidates?.[0]?.content?.parts?.[0]?.text || null;
+      if (raw) {
+        usedModel = 'gemini-2.5-flash';
+        const inputTokens = gemData.usageMetadata?.promptTokenCount || Math.ceil(systemPrompt.length / 4);
+        const outputTokens = gemData.usageMetadata?.candidatesTokenCount || Math.ceil(raw.length / 4);
+        const thinkingTokens = gemData.usageMetadata?.thoughtsTokenCount || 0;
+        const cost = (inputTokens * 0.000000075) + (outputTokens * 0.0000003) + (thinkingTokens * 0.0000035);
+        logAiUsage(userId, feature, usedModel, inputTokens, outputTokens, thinkingTokens, cost);
+        console.log('✅ Gemini audiência respondeu:', raw.length, 'chars');
+      }
+    } catch (gemErr) {
+      clearTimeout(t);
+      console.warn('⚠️ Gemini audiência falhou, fallback OpenAI:', gemErr.message);
+      raw = null;
+    }
   }
 
-  const messages = isFeedback
-    ? [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Avalie a performance: ' + JSON.stringify(history) }]
-    : [{ role: 'system', content: systemPrompt }, ...(history || []).slice(-10), ...(isInicio ? [] : [{ role: 'user', content: mensagem }])];
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: 'gpt-4.1', messages, temperature: 0.8, max_tokens: 800 })
-    });
-    const data = await response.json();
-    if (!response.ok) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
-    const reply = data.choices[0]?.message?.content || '';
-
-    if (isFeedback) {
-      try {
-        const feedback = JSON.parse(reply.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
-        res.json({ feedback });
-      } catch (e) {
-        res.json({ feedback: { nota: 7, pontos_fortes: ['Boa participação'], pontos_melhorar: ['Continue praticando'], dica_final: reply } });
+  // Fallback: OpenAI GPT-4.1
+  if (!raw) {
+    console.log('🟡 Audiência 2.0 via OpenAI gpt-4.1...');
+    const ctrl2 = new AbortController();
+    const t2 = setTimeout(() => ctrl2.abort(), 60000);
+    try {
+      const oaiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...conversationHistory
+      ];
+      const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          messages: oaiMessages,
+          temperature: 0.85,
+          max_tokens: 1500
+        }),
+        signal: ctrl2.signal
+      });
+      clearTimeout(t2);
+      if (!oaiRes.ok) {
+        const errData = await oaiRes.json().catch(() => ({}));
+        throw new Error(errData.error?.message || 'Erro OpenAI HTTP ' + oaiRes.status);
       }
-    } else {
-      res.json({ reply });
+      const oaiData = await oaiRes.json();
+      raw = oaiData.choices?.[0]?.message?.content || '';
+      if (raw) {
+        const inputTokens = oaiData.usage?.prompt_tokens || Math.ceil(systemPrompt.length / 4);
+        const outputTokens = oaiData.usage?.completion_tokens || Math.ceil(raw.length / 4);
+        const cost = (inputTokens * 0.000002) + (outputTokens * 0.000008);
+        logAiUsage(userId, feature, 'gpt-4.1', inputTokens, outputTokens, 0, cost);
+      }
+    } catch (oaiErr) {
+      clearTimeout(t2);
+      throw new Error('Falha em ambos os modelos: ' + oaiErr.message);
     }
+  }
+
+  return raw;
+}
+
+// Fases em ordem
+const AUDIENCIA_FASES = ['abertura', 'conciliacao', 'depoimento', 'alegacoes', 'sentenca'];
+// Exchanges per phase before auto-advancing
+const EXCHANGES_POR_FASE = { abertura: 2, conciliacao: 3, depoimento: 3, alegacoes: 2, sentenca: 1 };
+
+// Helper: get exchange count for a fase from historico
+function getExchangeCountForFase(historico, fase) {
+  return historico.filter(m => m.role === 'user' && m.fase === fase).length;
+}
+
+// Helper: determine next phase
+function getNextFase(faseAtual) {
+  const idx = AUDIENCIA_FASES.indexOf(faseAtual);
+  if (idx < 0 || idx >= AUDIENCIA_FASES.length - 1) return faseAtual;
+  return AUDIENCIA_FASES[idx + 1];
+}
+
+// ── POST /api/audiencia/iniciar ────────────────────────────────────────────────
+app.post('/api/audiencia/iniciar', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { tipo, papel, contexto, dificuldade = 'intermediario' } = req.body;
+    if (!tipo || !papel || !contexto) {
+      return res.status(400).json({ error: 'Campos obrigatórios: tipo, papel, contexto' });
+    }
+
+    // Create session in DB
+    const insert = db.prepare(
+      `INSERT INTO audiencia_sessions (user_id, tipo, papel, contexto, dificuldade, fase_atual, historico, status)
+       VALUES (?, ?, ?, ?, ?, 'abertura', '[]', 'ativa')`
+    );
+    const result = insert.run(userId, tipo, papel, contexto, dificuldade);
+    const sessionId = result.lastInsertRowid;
+
+    const session = { id: sessionId, tipo, papel, contexto, dificuldade };
+    const juiz = getJuizForSession(sessionId);
+    const systemPrompt = buildAudienciaPrompt(session, 'abertura', dificuldade);
+
+    // Generate opening
+    const openingMsg = await callAudienciaAI(
+      systemPrompt,
+      [],
+      userId,
+      'audiencia_iniciar'
+    );
+
+    // Save to historico
+    const historico = [{ role: 'assistant', content: openingMsg, fase: 'abertura', ts: new Date().toISOString() }];
+    db.prepare('UPDATE audiencia_sessions SET historico = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run(JSON.stringify(historico), sessionId);
+
+    res.json({
+      session_id: sessionId,
+      fase: 'abertura',
+      juiz_nome: juiz.nome,
+      mensagem_juiz: openingMsg,
+      fases: AUDIENCIA_FASES
+    });
   } catch (e) {
+    console.error('Audiência iniciar erro:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/audiencia/responder ──────────────────────────────────────────────
+app.post('/api/audiencia/responder', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { session_id, mensagem } = req.body;
+    if (!session_id || !mensagem) {
+      return res.status(400).json({ error: 'Campos obrigatórios: session_id, mensagem' });
+    }
+
+    // Load session
+    const session = db.prepare('SELECT * FROM audiencia_sessions WHERE id = ? AND user_id = ?').get(session_id, userId);
+    if (!session) return res.status(404).json({ error: 'Sessão não encontrada' });
+    if (session.status === 'concluida') {
+      return res.status(400).json({ error: 'Sessão já encerrada. Use /api/audiencia/encerrar para obter feedback.' });
+    }
+
+    let historico = JSON.parse(session.historico || '[]');
+    const faseAtual = session.fase_atual || 'abertura';
+
+    // Append user message
+    historico.push({ role: 'user', content: mensagem, fase: faseAtual, ts: new Date().toISOString() });
+
+    // Build conversation for AI (last 12 messages)
+    const conversationForAI = historico.slice(-12).map(m => ({ role: m.role, content: m.content }));
+
+    // Check if we need to advance phase
+    const userExchangesInFase = getExchangeCountForFase(historico, faseAtual);
+    const maxExchanges = EXCHANGES_POR_FASE[faseAtual] || 2;
+    let nextFase = faseAtual;
+    let shouldAdvance = false;
+    if (userExchangesInFase >= maxExchanges && faseAtual !== 'sentenca') {
+      nextFase = getNextFase(faseAtual);
+      shouldAdvance = true;
+    }
+
+    const sessionForPrompt = { id: session.id, tipo: session.tipo, papel: session.papel, contexto: session.contexto };
+    const systemPrompt = buildAudienciaPrompt(sessionForPrompt, nextFase, session.dificuldade);
+
+    // Add phase transition instruction if advancing
+    const phaseTransitionNote = shouldAdvance && nextFase !== faseAtual
+      ? `
+
+[TRANSIÇÃO: Encerre a fase de ${faseAtual} e inicie a fase de ${nextFase} naturalmente, sem quebrar o fluxo da audiência.]`
+      : '';
+
+    const fullPrompt = systemPrompt + phaseTransitionNote;
+
+    const resposta = await callAudienciaAI(
+      fullPrompt,
+      conversationForAI,
+      userId,
+      'audiencia_responder'
+    );
+
+    // Detect if sentenca phase ended
+    const audienciaEncerrada = resposta.includes('[AUDIÊNCIA ENCERRADA]') || nextFase === 'sentenca';
+
+    // Append AI response to historico
+    historico.push({ role: 'assistant', content: resposta, fase: nextFase, ts: new Date().toISOString() });
+
+    // Update DB
+    const newStatus = audienciaEncerrada && nextFase === 'sentenca' ? 'aguardando_feedback' : 'ativa';
+    db.prepare(
+      'UPDATE audiencia_sessions SET historico = ?, fase_atual = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    ).run(JSON.stringify(historico), nextFase, newStatus, session_id);
+
+    // Quick tip (only for iniciante difficulty)
+    let dica_rapida = null;
+    if (session.dificuldade === 'iniciante') {
+      const dicas = [
+        'Lembre-se de sempre citar o dispositivo legal que fundamenta seu argumento.',
+        'Mantenha contato visual com o juiz, não com a parte adversária.',
+        'Ao fazer perguntas à testemunha, prefira perguntas abertas.',
+        'Quando o adversário fizer uma objeção, responda antes que o juiz decida.',
+        'Organize seus argumentos em: fato → norma → consequência jurídica.'
+      ];
+      if (Math.random() < 0.4) {
+        dica_rapida = dicas[Math.floor(Math.random() * dicas.length)];
+      }
+    }
+
+    const faseIndex = AUDIENCIA_FASES.indexOf(nextFase);
+    const faseProgresso = Math.round(((faseIndex + 1) / AUDIENCIA_FASES.length) * 100);
+
+    res.json({
+      fase: nextFase,
+      fase_anterior: faseAtual,
+      fase_avancou: shouldAdvance && nextFase !== faseAtual,
+      mensagem_juiz: resposta,
+      fase_progresso: faseProgresso,
+      audiencia_encerrada: audienciaEncerrada,
+      ...(dica_rapida ? { dica_rapida } : {})
+    });
+  } catch (e) {
+    console.error('Audiência responder erro:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── POST /api/audiencia/encerrar ───────────────────────────────────────────────
+app.post('/api/audiencia/encerrar', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { session_id } = req.body;
+    if (!session_id) return res.status(400).json({ error: 'session_id obrigatório' });
+
+    const session = db.prepare('SELECT * FROM audiencia_sessions WHERE id = ? AND user_id = ?').get(session_id, userId);
+    if (!session) return res.status(404).json({ error: 'Sessão não encontrada' });
+    if (session.status === 'concluida') {
+      // Already concluded — return saved feedback
+      try {
+        const feedback = JSON.parse(session.feedback || 'null');
+        return res.json({ feedback, nota_geral: session.nota_geral, cached: true });
+      } catch {
+        return res.json({ feedback: null, nota_geral: session.nota_geral, cached: true });
+      }
+    }
+
+    const historico = JSON.parse(session.historico || '[]');
+
+    const feedbackPrompt = `Você é um professor de prática jurídica avaliando a performance de um advogado em treinamento de audiência.
+
+TRANSCRIÇÃO COMPLETA DA AUDIÊNCIA:
+${JSON.stringify(historico)}
+
+TIPO: ${session.tipo}
+PAPEL: ${session.papel}
+DIFICULDADE: ${session.dificuldade}
+
+Avalie em JSON EXATO neste formato (sem markdown, apenas JSON puro):
+{
+  "nota_geral": 7.5,
+  "competencias": {
+    "argumentacao_juridica": { "nota": 8, "comentario": "Fundamentou bem com art. 18 CDC..." },
+    "oratoria_postura": { "nota": 7, "comentario": "Boa fluência mas..." },
+    "controle_emocional": { "nota": 6, "comentario": "Perdeu a calma quando..." },
+    "estrategia_processual": { "nota": 8, "comentario": "Boa decisão ao recusar..." },
+    "dominio_fatos": { "nota": 7, "comentario": "Conhece os fatos mas..." },
+    "tecnica_perguntas": { "nota": 6, "comentario": "Perguntas poderiam ser mais incisivas..." }
+  },
+  "pontos_fortes": ["ponto 1 específico", "ponto 2", "ponto 3"],
+  "pontos_melhorar": ["ponto 1 específico", "ponto 2", "ponto 3"],
+  "momentos_chave": [
+    { "momento": "descrição do momento", "avaliacao": "avaliação do que ocorreu" },
+    { "momento": "descrição do momento", "avaliacao": "avaliação do que ocorreu" }
+  ],
+  "dica_final": "Dica prática e motivacional",
+  "nota_por_fase": {
+    "abertura": 7,
+    "conciliacao": 8,
+    "depoimento": 6,
+    "alegacoes": 7
+  }
+}`;
+
+    const feedbackRaw = await callAudienciaAI(
+      feedbackPrompt,
+      [{ role: 'user', content: 'Gere o feedback completo da audiência em JSON.' }],
+      userId,
+      'audiencia_feedback'
+    );
+
+    let feedback;
+    try {
+      const cleaned = feedbackRaw.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      feedback = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.warn('Feedback JSON parse falhou, usando fallback:', parseErr.message);
+      feedback = {
+        nota_geral: 7,
+        competencias: {},
+        pontos_fortes: ['Participou da audiência completa'],
+        pontos_melhorar: ['Continue praticando regularmente'],
+        momentos_chave: [],
+        dica_final: feedbackRaw.slice(0, 500),
+        nota_por_fase: {}
+      };
+    }
+
+    const notaGeral = feedback.nota_geral || 7;
+
+    // Update session to concluded
+    db.prepare(
+      "UPDATE audiencia_sessions SET feedback = ?, nota_geral = ?, status = 'concluida', updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+    ).run(JSON.stringify(feedback), notaGeral, session_id);
+
+    res.json({ feedback, nota_geral: notaGeral });
+  } catch (e) {
+    console.error('Audiência encerrar erro:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/audiencia/historico ───────────────────────────────────────────────
+app.get('/api/audiencia/historico', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sessions = db.prepare(
+      `SELECT id, tipo, papel, dificuldade, nota_geral, status, created_at
+       FROM audiencia_sessions
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 50`
+    ).all(userId);
+    res.json({
+      sessions: sessions.map(s => ({
+        id: s.id,
+        tipo: s.tipo,
+        papel: s.papel,
+        dificuldade: s.dificuldade,
+        data: s.created_at,
+        nota_geral: s.nota_geral,
+        status: s.status
+      }))
+    });
+  } catch (e) {
+    console.error('Audiência histórico erro:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── GET /api/audiencia/sessao/:id ──────────────────────────────────────────────
+app.get('/api/audiencia/sessao/:id', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sessionId = parseInt(req.params.id, 10);
+    if (isNaN(sessionId)) return res.status(400).json({ error: 'ID inválido' });
+
+    const session = db.prepare('SELECT * FROM audiencia_sessions WHERE id = ? AND user_id = ?').get(sessionId, userId);
+    if (!session) return res.status(404).json({ error: 'Sessão não encontrada' });
+
+    let historico = [];
+    let feedback = null;
+    try { historico = JSON.parse(session.historico || '[]'); } catch (e) { /* ignore */ }
+    try { feedback = session.feedback ? JSON.parse(session.feedback) : null; } catch (e) { /* ignore */ }
+
+    const juiz = getJuizForSession(session.id);
+
+    res.json({
+      id: session.id,
+      tipo: session.tipo,
+      papel: session.papel,
+      contexto: session.contexto,
+      dificuldade: session.dificuldade,
+      fase_atual: session.fase_atual,
+      status: session.status,
+      nota_geral: session.nota_geral,
+      juiz_nome: juiz.nome,
+      historico,
+      feedback,
+      created_at: session.created_at,
+      updated_at: session.updated_at
+    });
+  } catch (e) {
+    console.error('Audiência sessão erro:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
 
 // ─── USER STATS ───────────────────────────────────────────
+
 
 app.post('/api/tts', authMiddleware, async (req, res) => {
   const { text } = req.body;
