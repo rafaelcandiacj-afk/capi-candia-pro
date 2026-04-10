@@ -714,12 +714,6 @@
           <div class="user-name-s" id="sidebarName">—</div>
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
-        <!-- Feature 4: Controle de fonte (sidebar desktop) -->
-        <div class="font-size-ctrl" title="Tamanho da fonte">
-          <button class="font-size-btn" onclick="changeFontSize(-1)" title="Diminuir fonte">A-</button>
-          <span>Aa</span>
-          <button class="font-size-btn" onclick="changeFontSize(1)" title="Aumentar fonte">A+</button>
-        </div>
         <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border);color:var(--text-muted)">Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
@@ -779,14 +773,7 @@
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
-      <!-- Feature 4: Controle de fonte (mobile) -->
-      <div class="mobile-menu-item" style="justify-content:space-between;cursor:default">
-        <span>🔤 Tamanho da fonte</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button onclick="changeFontSize(-1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Inter',sans-serif">A-</button>
-          <button onclick="changeFontSize(1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'Inter',sans-serif">A+</button>
-        </div>
-      </div>
+
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">Sair</button>
     </div>
