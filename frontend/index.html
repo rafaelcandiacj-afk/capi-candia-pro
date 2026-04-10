@@ -2891,14 +2891,26 @@ Storytelling: [copy com narrativa]
 async function loadDashboardUso(){
   try{
     const token=localStorage.getItem('capi_token');
-    const r=await fetch('/api/user/stats',{headers:{'Authorization':'Bearer '+token}});
-    if(!r.ok) return;
-    const data=await r.json();
-    if(data.pecas>5){
-      document.getElementById('dashboardUsoText').textContent=`📊 Este mês: ${data.pecas} peças geradas · ~${data.horas}h economizadas`;
-      document.getElementById('dashboardUso').style.display='block';
+    const [r1,r2]=await Promise.all([
+      fetch('/api/user/stats',{headers:{'Authorization':'Bearer '+token}}),
+      fetch('/api/user/relatorio-mensal',{headers:{'Authorization':'Bearer '+token}})
+    ]);
+    if(!r1.ok) return;
+    const data=await r1.json();
+    if(!data.pecas||data.pecas<3) return;
+    const rel=r2.ok?await r2.json():null;
+    const dash=document.getElementById('dashboardUso');
+    const txt=document.getElementById('dashboardUsoText');
+    dash.style.display='block';
+    // Texto personalizado com áreas e streak
+    let areaStr='';
+    if(rel?.areas_mais_usadas?.length){
+      const top=rel.areas_mais_usadas.slice(0,2).map(a=>a.area).join(' · ');
+      areaStr=` &bull; <strong>${top}</strong>`;
     }
-  }catch(e){/* silencioso */}
+    const streak=rel?.streak>1?` &bull; 🔥 ${rel.streak} dias seguidos`:'';
+    txt.innerHTML=`<strong>${data.pecas} peças esse mês</strong> &bull; ${data.horas}h economizadas${areaStr}${streak}`;
+  }catch(e){}
 }
 
 // ── PEÇA LIMPA ─────────────────────────────────────────
