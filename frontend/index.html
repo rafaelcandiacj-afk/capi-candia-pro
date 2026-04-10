@@ -3707,7 +3707,11 @@ init();
 </div>
 
 <!-- Banner PWA -->
-
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:14px 16px;background:#fff;border-top:2px solid #d4a017;box-shadow:0 -4px 20px rgba(0,0,0,.12);animation:fadeUp .3s ease">
+  <div style="position:relative">
+    <button onclick="document.getElementById('pwaInstallBanner').style.display='none';localStorage.setItem('pwa_banner_dismissed','1')" style="position:absolute;top:-6px;right:-4px;background:none;border:none;font-size:1.3rem;color:#999;cursor:pointer;padding:4px 8px;line-height:1" aria-label="Fechar">&times;</button>
+    <div id="pwaBannerContent"></div>
+  </div>
 </div>
 
 <script>
