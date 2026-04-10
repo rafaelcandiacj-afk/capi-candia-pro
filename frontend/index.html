@@ -2243,21 +2243,21 @@ function gerarConteudo(){
 
 // ── FAVORITOS ──────────────────────────────────────────
 async function addFavorite(content,btn){
-  const title=prompt('Dê um título para esta tese/resposta:');
-  if(!title||!title.trim()) return;
+  // Gera título automático baseado nas primeiras palavras do conteúdo
+  const autoTitle = content.replace(/[#*`\n]/g,'').trim().substring(0,50) + (content.length>50?'...':'');
   const token=localStorage.getItem('capi_token');
   try{
     const r=await fetch('/api/favorites',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({title:title.trim(),content})
+      body:JSON.stringify({title:autoTitle,content})
     });
     if(!r.ok){const d=await r.json();throw new Error(d.error||'Erro');}
-    btn.innerHTML='⭐ Salvo!';
-    btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
-    showToast('⭐ Tese salva nos favoritos!');
+    btn.innerHTML='Salvo';
+    btn.style.color='var(--gold)';
+    showToast('Salvo em Minhas Peças');
     loadFavorites();
-  }catch(e){showToast('❌ '+e.message);}
+  }catch(e){showToast('Erro ao salvar: '+e.message);}
 }
 
 async function loadFavorites(){
