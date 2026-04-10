@@ -225,11 +225,11 @@
     .message-assistant .message-bubble strong{color:var(--gold)}
     .message-bubble em{font-style:italic;opacity:.85}
     .message-bubble ul,.message-bubble ol{margin:8px 0 8px 20px}
-    .message-bubble li{margin-bottom:4px}
+    .message-bubble li{margin-bottom:2px}
     .message-bubble h3,.message-bubble h4{font-family:'DM Sans','Inter',sans-serif;font-size:1rem;font-weight:700;color:var(--gold);margin:10px 0 4px}
     .message-bubble code{background:rgba(184,134,11,.08);border:1px solid rgba(184,134,11,.2);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:.85rem;color:#7a5800}
     .message-bubble hr{border:none;border-top:1px solid #e8e4de;margin:10px 0}
-    .message-bubble p{margin-bottom:6px}
+    .message-bubble p{margin-bottom:4px}
     .message-bubble p:last-child{margin-bottom:0}
 
     /* Typing — glowing dots */
@@ -717,12 +717,7 @@
           <div class="user-name-s" id="sidebarName">—</div>
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
-        <!-- Feature 4: Controle de fonte (sidebar desktop) -->
-        <div class="font-size-ctrl" title="Tamanho da fonte">
-          <button class="font-size-btn" onclick="changeFontSize(-1)" title="Diminuir fonte">A-</button>
-          <span>Aa</span>
-          <button class="font-size-btn" onclick="changeFontSize(1)" title="Aumentar fonte">A+</button>
-        </div>
+
         <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">🌙 Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
@@ -785,14 +780,7 @@
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
-      <!-- Feature 4: Controle de fonte (mobile) -->
-      <div class="mobile-menu-item" style="justify-content:space-between;cursor:default">
-        <span>🔤 Tamanho da fonte</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button onclick="changeFontSize(-1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'DM Sans','Inter',sans-serif">A-</button>
-          <button onclick="changeFontSize(1);event.stopPropagation()" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:2px 8px;cursor:pointer;font-weight:700;font-size:.82rem;font-family:'DM Sans','Inter',sans-serif">A+</button>
-        </div>
-      </div>
+
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">Sair</button>
     </div>
@@ -1599,7 +1587,7 @@ function formatMsg(text){
   t=t.replace(/^---$/gm,'<hr>');
   // Unordered list
   t=t.replace(/^[•\-] (.+)$/gm,'<li>$1</li>');
-  t=t.replace(/(<li>.*<\/li>)/s,'<ul>$1</ul>');
+  t=t.replace(/(<li>[\s\S]*<\/li>)/,'<ul style="margin:6px 0 6px 16px">$1</ul>');
   // Numbered list
   t=t.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');
   // Campos marcados em petições: [NOME DO RÉU], [DATA DO FATO], [COMARCA], etc.
@@ -3673,9 +3661,7 @@ init();
 </div>
 
 <!-- Banner PWA -->
-<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:#fff;border-top:2px solid #b8860b;padding:14px 16px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.15);font-family:'DM Sans','Inter',sans-serif">
-  <button onclick="document.getElementById('pwaInstallBanner').style.display='none';localStorage.setItem('pwa_banner_dismissed','1')" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#999;line-height:1">✕</button>
-  <div id="pwaBannerContent"></div>
+
 </div>
 
 <script>
