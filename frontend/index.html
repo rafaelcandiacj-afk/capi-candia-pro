@@ -1459,6 +1459,8 @@ async function sendMessage(){
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
     pendingUploadIds=[];pendingUploadNames=[];document.getElementById('fileBadgeArea').innerHTML='';
     isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+    // Restaura placeholder original
+    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
   }
 }
 
@@ -2159,9 +2161,12 @@ async function handleConvUpload(input){
       area.appendChild(badge);
     }
     loadingToast.remove();
-    // Auto-envio: dispara a mensagem automaticamente após upload
+    // Meio-termo: mostra arquivo anexado, habilita envio, foca no input com dica
     $('sendBtn').disabled = false;
-    sendMessage();
+    const chatInput = $('chatInput');
+    chatInput.setAttribute('placeholder', '💡 Escreva o que precisa ou toque em enviar →');
+    chatInput.focus();
+    showToast('📄 Arquivo pronto! Escreva instruções ou envie direto.');
   }catch(e){
     loadingToast.remove();
     showToast('❌ Erro: ' + e.message + '. Tente novamente.');
@@ -2174,6 +2179,9 @@ function removeUpload(btn, uploadId, fileName){
   if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
   btn.closest('.file-badge').remove();
   $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+  if(pendingUploadIds.length===0){
+    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
+  }
 }
 
 function clearUpload(){
