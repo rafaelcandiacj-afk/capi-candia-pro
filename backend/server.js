@@ -1160,7 +1160,7 @@ app.patch('/api/projects/:id', authMiddleware, (req, res) => {
   if (description !== undefined) db.prepare('UPDATE projects SET description = ? WHERE id = ?').run(description.substring(0, 500), req.params.id);
   if (icon !== undefined) db.prepare('UPDATE projects SET icon = ? WHERE id = ?').run(icon, req.params.id);
   if (context_note !== undefined) db.prepare('UPDATE projects SET context_note = ? WHERE id = ?').run(context_note.substring(0, 2000), req.params.id);
-  db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(req.params.id);
+  db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE id = ?").run(req.params.id);
   res.json({ success: true });
 });
 
@@ -1195,7 +1195,7 @@ app.post('/api/projects/:id/conversations', authMiddleware, (req, res) => {
     if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
     const { title } = req.body;
     const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, title || 'Nova conversa', pid);
-    db.prepare('UPDATE projects SET updated_at = datetime("now") WHERE id = ?').run(pid);
+    db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE id = ?").run(pid);
     res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa', project_id: pid });
   } catch(e) {
     console.error('Erro ao criar conversa no projeto:', e.message);
