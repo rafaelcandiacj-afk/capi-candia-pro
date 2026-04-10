@@ -3052,21 +3052,39 @@ function createAudienciaModal(){
       <label class="form-label">Tipo de audiência</label>
       <select id="audTipo" class="form-select">
         <option value="">Selecione...</option>
-        <option value="Trabalhista">Trabalhista</option>
-        <option value="Família/Divórcio">Família/Divórcio</option>
-        <option value="Cível/Indenização">Cível/Indenização</option>
-        <option value="Previdenciário">Previdenciário</option>
-        <option value="Criminal">Criminal</option>
-        <option value="Consumidor">Consumidor</option>
+        <optgroup label="Trabalhista">
+          <option value="Audiência Trabalhista — Reclamação">⚖️ Audiência Trabalhista (geral)</option>
+          <option value="Audiência de Conciliação Trabalhista">🤝 Conciliação Trabalhista</option>
+          <option value="Audiência de Instrução Trabalhista">📋 Instrução Trabalhista</option>
+        </optgroup>
+        <optgroup label="Família">
+          <option value="Audiência de Divórcio Litigioso">💔 Divórcio Litigioso</option>
+          <option value="Audiência de Guarda e Alimentos">👶 Guarda e Alimentos</option>
+          <option value="Audiência de Inventário">📜 Inventário/Herança</option>
+        </optgroup>
+        <optgroup label="Cível">
+          <option value="Audiência de Indenização por Dano Moral">💰 Indenização / Dano Moral</option>
+          <option value="Audiência de Ação de Cobrança">📄 Ação de Cobrança</option>
+          <option value="Audiência de Consumidor (CDC)">🛒 Consumidor (CDC)</option>
+        </optgroup>
+        <optgroup label="Outras">
+          <option value="Audiência Previdenciária — INSS">🏛️ Previdenciário / INSS</option>
+          <option value="Audiência Criminal">🔒 Criminal</option>
+          <option value="Audiência de Conciliação Cível">🤝 Conciliação Cível</option>
+        </optgroup>
+        <option value="Personalizada">✏️ Personalizada (descreva abaixo)</option>
       </select>
     </div>
     <div class="form-group">
-      <label class="form-label">Seu papel</label>
+      <label class="form-label">Seu papel como advogado</label>
       <select id="audPapel" class="form-select">
         <option value="">Selecione...</option>
-        <option value="Autor">Autor</option>
-        <option value="Réu">Réu</option>
-        <option value="MP">Ministério Público (MP)</option>
+        <option value="Advogado do Autor (Reclamante)">⚖️ Advogado do Autor / Reclamante</option>
+        <option value="Advogado do Réu (Reclamado)">🛡️ Advogado do Réu / Reclamado</option>
+        <option value="Advogado da Parte Autora em Família">👨‍👩‍👧 Parte Autora (Família)</option>
+        <option value="Advogado da Parte Ré em Família">👨‍👩‍👧 Parte Ré (Família)</option>
+        <option value="Defensor Criminal">🔒 Defensor Criminal</option>
+        <option value="MP">⚖️ Ministério Público (MP)</option>
       </select>
     </div>
     <div class="form-group">

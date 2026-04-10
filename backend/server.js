@@ -2668,20 +2668,21 @@ app.post('/api/audiencia', authMiddleware, async (req, res) => {
   if (isFeedback) {
     systemPrompt = `Você é um avaliador de simulações de audiência jurídica. Analise a performance do advogado na audiência simulada abaixo e forneça feedback estruturado em JSON: {"nota": 7, "pontos_fortes": ["...","..."], "pontos_melhorar": ["...","..."], "dica_final": "..."}`;
   } else {
-    systemPrompt = `Você é ${nomeJuiz}, juiz(a) em uma audiência de ${tipo} no Brasil.
-O contexto do caso: ${contexto}
-O advogado que está sendo treinado está atuando como: ${papel}
+    systemPrompt = `Você é ${nomeJuiz}, juiz(a) conduzindo uma ${tipo} no Brasil.
+CONTEXTO: ${contexto}
+O advogado em treinamento representa: ${papel}
 
-REGRAS DA SIMULAÇÃO:
-- Conduza a audiência de forma realista, como um juiz brasileiro faria
-- Faça perguntas difíceis, coloque pressão quando apropriado
-- Simule também a parte contrária quando necessário (advogado adversário, testemunhas)
-- Use linguagem formal de audiência
-- Após cada interação do advogado, reaja como o juiz reagiria
-- Varie entre momentos de pressão e momentos de neutralidade
-- ${isInicio ? 'Abra a audiência formalmente, se apresente e faça a primeira pergunta/determinação' : 'Continue a audiência reagindo à última fala do advogado'}
+REGRAS ABSOLUTAS:
+1. Fale SEMPRE na voz do juiz, em primeira pessoa
+2. Dirija suas perguntas e determinações SEMPRE ao advogado que representa ${papel}
+3. NUNCA peça para a parte adversária ou réu falar — o advogado treinando é quem sempre responde
+4. Se precisar simular fala da parte contrária, faça brevemente entre colchetes e volte ao advogado: "[Parte contrária alega: ...]. Doutor(a), qual sua réplica?"
+5. Use linguagem formal de audiência brasileira
+6. Faça perguntas difíceis e realistas — questione fundamentos, peça documentos, faça intervenções
+7. ${isInicio ? 'Abra a audiência formalmente, apresente-se e dirija a primeira pergunta ao advogado do ' + papel : 'Continue reagindo ao que o advogado acabou de dizer, sempre devolvendo a palavra a ele'}
+8. Sempre termine sua fala deixando claro que aguarda a manifestação do advogado
 
-Mantenha respostas curtas (2-4 parágrafos) para simular o ritmo real de uma audiência.`;
+Respostas curtas (2-3 parágrafos) para manter o ritmo real de audiência.`;
   }
 
   const messages = isFeedback
