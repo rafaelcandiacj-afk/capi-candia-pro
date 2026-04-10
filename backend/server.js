@@ -1272,7 +1272,7 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
     const _escritorio = userProfile?.escritorio || '';
     const _rodape = (_oab || _escritorio) ? 
       `\n\n${_cidade}${_estado ? (_cidade ? ' - ' : '') + _estado : ''}, [DATA].\n${_nome}${_oab ? '\nOAB/' + _estado + ' Nº ' + _oab : ''}${_escritorio ? '\n' + _escritorio : ''}` : '';
-    formatoCtx = `\n\n📄 MODO PETIÇÃO ATIVADO:
+    formatoCtx = `\n\n📄 MODO PETIÇÃO ATIVADO — REGRA INVIOLAVEL: Independente do tom configurado pelo usuário (descontraído, equilibrado ou formal), petições e peças jurídicas usam SEMPRE linguagem forense formal. ZERO "papi", ZERO "AUUUU", ZERO expressões capivarísticas, ZERO emojis no corpo da peça. A peça deve parecer escrita por um advogado sênior.
 - Entregue APENAS a petição. Sem comentários extras, sugestões de reels, hashtags ou scripts de atendimento não solicitados.
 - Ao final da petição, adicione obrigatoriamente o bloco:
   ⚠️ Antes de protocolar: [liste 2-3 alertas específicos de risco: súmulas que podem contrariar a tese, necessidade de verificar jurisprudência local, campos que precisam ser preenchidos pelo advogado, documentos que precisam ser anexados]
@@ -1285,7 +1285,8 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
     if (isConteudo) {
       formatoCtx = `\n\n📱 MODO CONTEÚDO PARA REDES ATIVADO: O usuário quer conteúdo para redes sociais. Use o formato completo com Reels, hashtags e scripts.`;
     } else {
-      formatoCtx = `\n\n⚖️ MODO TESE JURÍDICA ATIVADO — REGRA ABSOLUTA:\nIGNORE completamente o formato padrão de tese com campos de Reels, Carrossel, hashtags e scripts de atendimento. Esse formato NÃO deve aparecer aqui.\nEntregue APENAS:\n1. Fundamentos legais (artigos de lei com números)\n2. Jurisprudência (com número do julgado quando souber)\n3. Argumentação jurídica\n4. Bloco obrigatório ao final:\n\n⚠️ Atenção antes de protocolar:\n• [alerta específico 1 - ex: súmula que pode contrariar]\n• [alerta específico 2 - ex: jurisprudência divergente]\n• [alerta específico 3]\n\n📌 Plano B: Se esta abordagem não funcionar, uma alternativa seria [estratégia alternativa concreta].\n\nNÃO inclua: 🎯 Ideia de Reels, 📝 Legenda educativa, #️⃣ Hashtags, 💬 Script de atendimento, 🔄 Status, 🏷️ Tags de complexidade.`;
+      formatoCtx = `\n\n⚖️ MODO TESE JURÍDICA ATIVADO — REGRAS ABSOLUTAS:
+INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica formal. ZERO "papi", ZERO "AUUUU", ZERO expressões capivarísticas no corpo da tese.\nIGNORE completamente o formato padrão de tese com campos de Reels, Carrossel, hashtags e scripts de atendimento. Esse formato NÃO deve aparecer aqui.\nEntregue APENAS:\n1. Fundamentos legais (artigos de lei com números)\n2. Jurisprudência (com número do julgado quando souber)\n3. Argumentação jurídica\n4. Bloco obrigatório ao final:\n\n⚠️ Atenção antes de protocolar:\n• [alerta específico 1 - ex: súmula que pode contrariar]\n• [alerta específico 2 - ex: jurisprudência divergente]\n• [alerta específico 3]\n\n📌 Plano B: Se esta abordagem não funcionar, uma alternativa seria [estratégia alternativa concreta].\n\nNÃO inclua: 🎯 Ideia de Reels, 📝 Legenda educativa, #️⃣ Hashtags, 💬 Script de atendimento, 🔄 Status, 🏷️ Tags de complexidade.`;
     }
   } else {
     // Chat normal: só a regra de jurisprudência
