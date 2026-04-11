@@ -962,6 +962,36 @@ async function processFile(fileId) {
   }
 }
 
+// ─── ONLINE TRACKING (in-memory) ──────────────────────────────
+const _onlineUsers = new Map(); // userId -> { name, email, lastSeen }
+const ONLINE_TIMEOUT = 2 * 60 * 1000; // 2 minutos sem heartbeat = offline
+
+app.post('/api/heartbeat', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  const user = db.prepare('SELECT name, email FROM users WHERE id = ?').get(userId);
+  _onlineUsers.set(userId, {
+    name: user?.name || '',
+    email: user?.email || '',
+    lastSeen: Date.now()
+  });
+  // Atualiza last_login
+  db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(userId);
+  res.json({ ok: true });
+});
+
+app.get('/api/admin/online', adminMiddleware, (req, res) => {
+  const now = Date.now();
+  const online = [];
+  for (const [uid, data] of _onlineUsers) {
+    if (now - data.lastSeen < ONLINE_TIMEOUT) {
+      online.push({ id: uid, name: data.name, email: data.email, lastSeen: new Date(data.lastSeen).toISOString() });
+    } else {
+      _onlineUsers.delete(uid);
+    }
+  }
+  res.json({ count: online.length, users: online });
+});
+
 // ─── AUTH ─────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   const { name, email, password } = req.body;

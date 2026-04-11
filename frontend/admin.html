@@ -166,6 +166,7 @@
     <!-- OVERVIEW -->
     <div id="tab-overview" class="tab-panel active">
       <div class="stats-grid" id="statsGrid">
+        <div class="stat-card" style="border:1.5px solid #22c55e"><div class="stat-label" style="color:#22c55e;font-weight:700">🟢 Online agora</div><div class="stat-value" id="s-online" style="color:#22c55e">—</div><div class="stat-sub" id="s-online-names" style="color:#22c55e;opacity:.8;cursor:pointer" onclick="toggleOnlineList()">ver nomes</div></div>
         <div class="stat-card"><div class="stat-label">Usuários</div><div class="stat-value" id="s-users">—</div></div>
         <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-value" id="s-active">—</div></div>
         <div class="stat-card"><div class="stat-label">Mensagens hoje</div><div class="stat-value" id="s-today">—</div></div>
@@ -541,7 +542,34 @@ async function loadStats() {
   document.getElementById('s-tokens').textContent = fmtNum(d.totalTokens);
   const cost = ((d.totalTokens / 1000) * 0.0025).toFixed(2);
   document.getElementById('s-cost').textContent = '~$' + cost + ' USD estimado';
+  // Carregar online
+  loadOnlineCount();
 }
+
+let _onlineUsers = [];
+async function loadOnlineCount(){
+  try {
+    const r = await fetch('/api/admin/online', { headers: { 'x-admin-password': adminPassword } });
+    if(!r.ok) return;
+    const d = await r.json();
+    _onlineUsers = d.users || [];
+    document.getElementById('s-online').textContent = d.count;
+    document.getElementById('s-online-names').textContent = d.count > 0 ? 'ver nomes ▼' : 'ninguém agora';
+  } catch(e){}
+}
+function toggleOnlineList(){
+  const el = document.getElementById('s-online-names');
+  if(el.dataset.expanded === 'true'){
+    el.textContent = _onlineUsers.length > 0 ? 'ver nomes ▼' : 'ninguém agora';
+    el.dataset.expanded = 'false';
+  } else {
+    if(!_onlineUsers.length){ el.textContent = 'ninguém agora'; return; }
+    el.innerHTML = _onlineUsers.map(u => u.name || u.email).join('<br>');
+    el.dataset.expanded = 'true';
+  }
+}
+// Atualiza online a cada 30s
+setInterval(loadOnlineCount, 30000);
 
 async function loadKnowledge() {
   const r = await fetch('/api/admin/knowledge', { headers: { 'x-admin-password': adminPassword } });

@@ -1134,6 +1134,15 @@ function showChat(user){
   loadFavorites();
   loadTemplates();
   setTimeout(loadNotifications,1500);
+  // Heartbeat: sinaliza que o usuário está online (a cada 60s)
+  if(!window._heartbeatInterval){
+    const sendHeartbeat = ()=>{
+      const t=localStorage.getItem('capi_token');
+      if(t) fetch('/api/heartbeat',{method:'POST',headers:{'Authorization':'Bearer '+t}}).catch(()=>{});
+    };
+    sendHeartbeat();
+    window._heartbeatInterval = setInterval(sendHeartbeat, 60000);
+  }
 }
 // ── MINHAS PEÇAS ──────────────────────────────────────────
 async function openMinhasPecas(){
