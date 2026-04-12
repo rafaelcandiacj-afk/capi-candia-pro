@@ -3627,6 +3627,174 @@ app.get('/api/honorarios/:sigla', (req, res) => {
   res.json({ sigla: req.params.sigla.toUpperCase(), ...d });
 });
 
+// ─── DASHBOARD DO ADVOGADO ────────────────────────────────────
+
+// Dashboard completo — dados consolidados
+app.get('/api/dashboard', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  
+  // Perfil
+  const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId) || {};
+  
+  // Memórias agrupadas
+  const memories = db.prepare('SELECT category, insight, relevance_score, created_at FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC').all(userId);
+  const grouped = {};
+  memories.forEach(m => {
+    if (!grouped[m.category]) grouped[m.category] = [];
+    grouped[m.category].push({ insight: m.insight, score: m.relevance_score, date: m.created_at });
+  });
+  
+  // Casos ativos
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC LIMIT 20').all(userId);
+  
+  // Resumos recentes
+  const summaries = db.prepare(`
+    SELECT cs.*, c.title as conv_title 
+    FROM conversation_summaries cs 
+    JOIN conversations c ON c.id = cs.conversation_id 
+    WHERE cs.user_id = ? 
+    ORDER BY cs.created_at DESC LIMIT 15
+  `).all(userId);
+  
+  // Estatísticas
+  const agora = new Date();
+  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
+  
+  const totalConversas = db.prepare('SELECT COUNT(*) as c FROM conversations WHERE user_id = ?').get(userId)?.c || 0;
+  const totalMensagens = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(userId)?.c || 0;
+  const mensagensMes = db.prepare("SELECT COUNT(*) as c FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' AND strftime('%Y-%m', m.created_at) = ?").get(userId, mesAtual)?.c || 0;
+  const pecasSalvas = db.prepare('SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?').get(userId)?.c || 0;
+  const favoritosSalvos = db.prepare('SELECT COUNT(*) as c FROM favorites WHERE user_id = ?').get(userId)?.c || 0;
+  
+  // Dias ativos este mês
+  const diasAtivos = db.prepare(`
+    SELECT COUNT(DISTINCT date(m.created_at)) as c FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    AND strftime('%Y-%m', m.created_at) = ?
+  `).get(userId, mesAtual)?.c || 0;
+  
+  // Streak
+  const todosDias = db.prepare(`
+    SELECT DISTINCT date(m.created_at) as dia FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    ORDER BY dia DESC
+  `).all(userId).map(r => r.dia);
+  let streak = 0;
+  const hoje = new Date();
+  for (let i = 0; i < todosDias.length; i++) {
+    const esperado = new Date(hoje);
+    esperado.setDate(hoje.getDate() - i);
+    const esperadoStr = esperado.toISOString().substring(0,10);
+    if (todosDias[i] === esperadoStr) streak++;
+    else break;
+  }
+  
+  // Total de memórias
+  const totalMemorias = memories.length;
+  const totalCasosAtivos = cases.filter(c => c.status === 'ativo').length;
+  
+  res.json({
+    profile,
+    memories: grouped,
+    cases,
+    summaries,
+    stats: {
+      total_conversas: totalConversas,
+      total_mensagens: totalMensagens,
+      mensagens_mes: mensagensMes,
+      pecas_salvas: pecasSalvas,
+      favoritos: favoritosSalvos,
+      dias_ativos_mes: diasAtivos,
+      streak,
+      total_memorias: totalMemorias,
+      total_casos_ativos: totalCasosAtivos
+    }
+  });
+});
+
+// Gerenciar memórias do usuário
+app.get('/api/memory', authMiddleware, (req, res) => {
+  const memories = db.prepare('SELECT id, category, insight, relevance_score, access_count, source, created_at, updated_at FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.user.id);
+  res.json(memories);
+});
+
+app.delete('/api/memory/:id', authMiddleware, (req, res) => {
+  const mem = db.prepare('SELECT id FROM user_memory WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!mem) return res.status(404).json({ error: 'Memória não encontrada' });
+  db.prepare('DELETE FROM user_memory WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Gerenciar casos
+app.get('/api/cases', authMiddleware, (req, res) => {
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id);
+  res.json(cases);
+});
+
+app.post('/api/cases', authMiddleware, (req, res) => {
+  const { titulo, cliente, area, detalhes, proximo_passo, prazo } = req.body;
+  if (!titulo) return res.status(400).json({ error: 'Título obrigatório' });
+  const result = db.prepare('INSERT INTO user_cases (user_id, titulo, cliente, area, detalhes, proximo_passo, prazo, auto_detected) VALUES (?, ?, ?, ?, ?, ?, ?, 0)').run(
+    req.user.id, titulo, cliente || null, area || null, detalhes || null, proximo_passo || null, prazo || null
+  );
+  res.json({ success: true, id: result.lastInsertRowid });
+});
+
+app.patch('/api/cases/:id', authMiddleware, (req, res) => {
+  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
+  const { titulo, cliente, area, status, detalhes, proximo_passo, prazo } = req.body;
+  const fields = [];
+  const values = [];
+  if (titulo !== undefined) { fields.push('titulo = ?'); values.push(titulo); }
+  if (cliente !== undefined) { fields.push('cliente = ?'); values.push(cliente); }
+  if (area !== undefined) { fields.push('area = ?'); values.push(area); }
+  if (status !== undefined) { fields.push('status = ?'); values.push(status); }
+  if (detalhes !== undefined) { fields.push('detalhes = ?'); values.push(detalhes); }
+  if (proximo_passo !== undefined) { fields.push('proximo_passo = ?'); values.push(proximo_passo); }
+  if (prazo !== undefined) { fields.push('prazo = ?'); values.push(prazo); }
+  if (fields.length > 0) {
+    fields.push("updated_at = datetime('now')");
+    values.push(req.params.id);
+    db.prepare(`UPDATE user_cases SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  }
+  res.json({ success: true });
+});
+
+app.delete('/api/cases/:id', authMiddleware, (req, res) => {
+  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
+  db.prepare('DELETE FROM user_cases WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Resumos de conversas
+app.get('/api/summaries', authMiddleware, (req, res) => {
+  const summaries = db.prepare(`
+    SELECT cs.*, c.title as conv_title 
+    FROM conversation_summaries cs 
+    JOIN conversations c ON c.id = cs.conversation_id 
+    WHERE cs.user_id = ? 
+    ORDER BY cs.created_at DESC LIMIT 30
+  `).all(req.user.id);
+  res.json(summaries);
+});
+
+// Admin: ver memórias de um usuário
+app.get('/api/admin/users/:id/memory', adminMiddleware, (req, res) => {
+  const memories = db.prepare('SELECT * FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.params.id);
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY updated_at DESC').all(req.params.id);
+  const summaries = db.prepare('SELECT cs.*, c.title FROM conversation_summaries cs JOIN conversations c ON c.id = cs.conversation_id WHERE cs.user_id = ? ORDER BY cs.created_at DESC LIMIT 20').all(req.params.id);
+  res.json({ memories, cases, summaries });
+});
+
+// Dashboard HTML page
+app.get('/dashboard.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
+});
+
 // Serve landing page na raiz / — ANTES do express.static
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/landing/index.html'));
@@ -4223,170 +4391,6 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro interno TTS' });
   }
 });
-
-// ─── DASHBOARD DO ADVOGADO ────────────────────────────────────
-
-// Dashboard completo — dados consolidados
-app.get('/api/dashboard', authMiddleware, (req, res) => {
-  const userId = req.user.id;
-  
-  // Perfil
-  const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId) || {};
-  
-  // Memórias agrupadas
-  const memories = db.prepare('SELECT category, insight, relevance_score, created_at FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC').all(userId);
-  const grouped = {};
-  memories.forEach(m => {
-    if (!grouped[m.category]) grouped[m.category] = [];
-    grouped[m.category].push({ insight: m.insight, score: m.relevance_score, date: m.created_at });
-  });
-  
-  // Casos ativos
-  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC LIMIT 20').all(userId);
-  
-  // Resumos recentes
-  const summaries = db.prepare(`
-    SELECT cs.*, c.title as conv_title 
-    FROM conversation_summaries cs 
-    JOIN conversations c ON c.id = cs.conversation_id 
-    WHERE cs.user_id = ? 
-    ORDER BY cs.created_at DESC LIMIT 15
-  `).all(userId);
-  
-  // Estatísticas
-  const agora = new Date();
-  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
-  
-  const totalConversas = db.prepare('SELECT COUNT(*) as c FROM conversations WHERE user_id = ?').get(userId)?.c || 0;
-  const totalMensagens = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(userId)?.c || 0;
-  const mensagensMes = db.prepare("SELECT COUNT(*) as c FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' AND strftime('%Y-%m', m.created_at) = ?").get(userId, mesAtual)?.c || 0;
-  const pecasSalvas = db.prepare('SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?').get(userId)?.c || 0;
-  const favoritosSalvos = db.prepare('SELECT COUNT(*) as c FROM favorites WHERE user_id = ?').get(userId)?.c || 0;
-  
-  // Dias ativos este mês
-  const diasAtivos = db.prepare(`
-    SELECT COUNT(DISTINCT date(m.created_at)) as c FROM messages m
-    JOIN conversations c ON c.id = m.conversation_id
-    WHERE c.user_id = ? AND m.role = 'user'
-    AND strftime('%Y-%m', m.created_at) = ?
-  `).get(userId, mesAtual)?.c || 0;
-  
-  // Streak
-  const todosDias = db.prepare(`
-    SELECT DISTINCT date(m.created_at) as dia FROM messages m
-    JOIN conversations c ON c.id = m.conversation_id
-    WHERE c.user_id = ? AND m.role = 'user'
-    ORDER BY dia DESC
-  `).all(userId).map(r => r.dia);
-  let streak = 0;
-  const hoje = new Date();
-  for (let i = 0; i < todosDias.length; i++) {
-    const esperado = new Date(hoje);
-    esperado.setDate(hoje.getDate() - i);
-    const esperadoStr = esperado.toISOString().substring(0,10);
-    if (todosDias[i] === esperadoStr) streak++;
-    else break;
-  }
-  
-  // Total de memórias
-  const totalMemorias = memories.length;
-  const totalCasosAtivos = cases.filter(c => c.status === 'ativo').length;
-  
-  res.json({
-    profile,
-    memories: grouped,
-    cases,
-    summaries,
-    stats: {
-      total_conversas: totalConversas,
-      total_mensagens: totalMensagens,
-      mensagens_mes: mensagensMes,
-      pecas_salvas: pecasSalvas,
-      favoritos: favoritosSalvos,
-      dias_ativos_mes: diasAtivos,
-      streak,
-      total_memorias: totalMemorias,
-      total_casos_ativos: totalCasosAtivos
-    }
-  });
-});
-
-// Gerenciar memórias do usuário
-app.get('/api/memory', authMiddleware, (req, res) => {
-  const memories = db.prepare('SELECT id, category, insight, relevance_score, access_count, source, created_at, updated_at FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.user.id);
-  res.json(memories);
-});
-
-app.delete('/api/memory/:id', authMiddleware, (req, res) => {
-  const mem = db.prepare('SELECT id FROM user_memory WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!mem) return res.status(404).json({ error: 'Memória não encontrada' });
-  db.prepare('DELETE FROM user_memory WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-// Gerenciar casos
-app.get('/api/cases', authMiddleware, (req, res) => {
-  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id);
-  res.json(cases);
-});
-
-app.post('/api/cases', authMiddleware, (req, res) => {
-  const { titulo, cliente, area, detalhes, proximo_passo, prazo } = req.body;
-  if (!titulo) return res.status(400).json({ error: 'Título obrigatório' });
-  const result = db.prepare('INSERT INTO user_cases (user_id, titulo, cliente, area, detalhes, proximo_passo, prazo, auto_detected) VALUES (?, ?, ?, ?, ?, ?, ?, 0)').run(
-    req.user.id, titulo, cliente || null, area || null, detalhes || null, proximo_passo || null, prazo || null
-  );
-  res.json({ success: true, id: result.lastInsertRowid });
-});
-
-app.patch('/api/cases/:id', authMiddleware, (req, res) => {
-  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
-  const { titulo, cliente, area, status, detalhes, proximo_passo, prazo } = req.body;
-  const fields = [];
-  const values = [];
-  if (titulo !== undefined) { fields.push('titulo = ?'); values.push(titulo); }
-  if (cliente !== undefined) { fields.push('cliente = ?'); values.push(cliente); }
-  if (area !== undefined) { fields.push('area = ?'); values.push(area); }
-  if (status !== undefined) { fields.push('status = ?'); values.push(status); }
-  if (detalhes !== undefined) { fields.push('detalhes = ?'); values.push(detalhes); }
-  if (proximo_passo !== undefined) { fields.push('proximo_passo = ?'); values.push(proximo_passo); }
-  if (prazo !== undefined) { fields.push('prazo = ?'); values.push(prazo); }
-  if (fields.length > 0) {
-    fields.push("updated_at = datetime('now')");
-    values.push(req.params.id);
-    db.prepare(`UPDATE user_cases SET ${fields.join(', ')} WHERE id = ?`).run(...values);
-  }
-  res.json({ success: true });
-});
-
-app.delete('/api/cases/:id', authMiddleware, (req, res) => {
-  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
-  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
-  db.prepare('DELETE FROM user_cases WHERE id = ?').run(req.params.id);
-  res.json({ success: true });
-});
-
-// Resumos de conversas
-app.get('/api/summaries', authMiddleware, (req, res) => {
-  const summaries = db.prepare(`
-    SELECT cs.*, c.title as conv_title 
-    FROM conversation_summaries cs 
-    JOIN conversations c ON c.id = cs.conversation_id 
-    WHERE cs.user_id = ? 
-    ORDER BY cs.created_at DESC LIMIT 30
-  `).all(req.user.id);
-  res.json(summaries);
-});
-
-// Admin: ver memórias de um usuário
-app.get('/api/admin/users/:id/memory', adminMiddleware, (req, res) => {
-  const memories = db.prepare('SELECT * FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.params.id);
-  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY updated_at DESC').all(req.params.id);
-  const summaries = db.prepare('SELECT cs.*, c.title FROM conversation_summaries cs JOIN conversations c ON c.id = cs.conversation_id WHERE cs.user_id = ? ORDER BY cs.created_at DESC LIMIT 20').all(req.params.id);
-  res.json({ memories, cases, summaries });
-});
-
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
 
