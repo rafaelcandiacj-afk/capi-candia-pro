@@ -2103,6 +2103,24 @@ app.post('/api/admin/broadcast', adminMiddleware, (req, res) => {
 });
 
 // Ver mensagens de uma conversa específica (admin)
+// Export em massa para análise
+app.get('/api/admin/export-messages', adminMiddleware, (req, res) => {
+  const offset = parseInt(req.query.offset) || 0;
+  const limit = parseInt(req.query.limit) || 5000;
+  const rows = db.prepare(`
+    SELECT m.id, m.conversation_id, m.role, m.content, m.created_at,
+           c.user_id, c.title as conv_title,
+           u.name as user_name, u.email as user_email
+    FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    JOIN users u ON u.id = c.user_id
+    ORDER BY m.id ASC
+    LIMIT ? OFFSET ?
+  `).all(limit, offset);
+  const total = db.prepare('SELECT COUNT(*) as cnt FROM messages').get().cnt;
+  res.json({ total, offset, limit, count: rows.length, messages: rows });
+});
+
 app.get('/api/admin/conversations/:id/messages', adminMiddleware, (req, res) => {
   const conv = db.prepare('SELECT c.*, u.name as user_name, u.email as user_email FROM conversations c JOIN users u ON u.id = c.user_id WHERE c.id = ?').get(req.params.id);
   if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
