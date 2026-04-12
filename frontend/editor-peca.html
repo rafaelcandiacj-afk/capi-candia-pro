@@ -274,7 +274,7 @@
       opacity: 0.7;
     }
 
-    textarea, input[type="text"] {
+    textarea, input[type="text"], select {
       font-family: inherit;
       font-size: 13.5px;
       line-height: 1.65;
@@ -288,13 +288,15 @@
       transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
       outline: none;
     }
+    select { cursor: pointer; }
+    select optgroup { font-weight: 600; color: var(--gold); }
 
     textarea::placeholder, input::placeholder {
       color: var(--text2);
       opacity: 0.65;
     }
 
-    textarea:focus, input[type="text"]:focus {
+    textarea:focus, input[type="text"]:focus, select:focus {
       border-color: var(--gold);
       background: var(--bg2);
       box-shadow: 0 0 0 3px var(--gold-dim);
@@ -1020,11 +1022,72 @@
 
         <!-- Tipo de peça -->
         <div class="field">
-          <label for="input-tipo">Tipo de peça <span class="optional">(opcional)</span></label>
+          <label for="input-tipo-select">Tipo de peça <span class="optional">(opcional)</span></label>
+          <select id="input-tipo-select" onchange="if(this.value==='__custom__'){document.getElementById('input-tipo').style.display='block';document.getElementById('input-tipo').focus();}else{document.getElementById('input-tipo').style.display='none';document.getElementById('input-tipo').value=this.value;}">
+            <option value="">Selecione ou digite abaixo...</option>
+            <optgroup label="— Petições Iniciais">
+              <option value="Petição Inicial — Cível">Petição Inicial — Cível</option>
+              <option value="Petição Inicial — Trabalhista">Petição Inicial — Trabalhista</option>
+              <option value="Petição Inicial — Previdenciária">Petição Inicial — Previdenciária</option>
+              <option value="Petição Inicial — Criminal (queixa-crime)">Petição Inicial — Criminal</option>
+              <option value="Petição Inicial — Família (divórcio)">Petição Inicial — Família (divórcio)</option>
+              <option value="Petição Inicial — Família (alimentos)">Petição Inicial — Família (alimentos)</option>
+              <option value="Petição Inicial — Família (inventário)">Petição Inicial — Família (inventário)</option>
+              <option value="Petição Inicial — Família (guarda/visitas)">Petição Inicial — Família (guarda)</option>
+              <option value="Petição Inicial — Consumidor">Petição Inicial — Consumidor (CDC)</option>
+              <option value="Petição Inicial — Indenizatória">Petição Inicial — Indenizatória</option>
+              <option value="Petição Inicial — Obrigatória (fazer/não fazer)">Petição Inicial — Obrigatória</option>
+              <option value="Petição Inicial — Bancária (revisão contratual)">Petição Inicial — Bancária</option>
+              <option value="Petição Inicial — Imobiliária">Petição Inicial — Imobiliária</option>
+              <option value="Petição Inicial — Tributária">Petição Inicial — Tributária</option>
+              <option value="Petição Inicial — Administrativa">Petição Inicial — Administrativa</option>
+            </optgroup>
+            <optgroup label="— Defesas e Contestações">
+              <option value="Contestação">Contestação</option>
+              <option value="Defesa Prévia Criminal">Defesa Prévia Criminal</option>
+              <option value="Alegações Finais">Alegações Finais</option>
+              <option value="Impugnação ao Cumprimento de Sentença">Impugnação ao Cumprimento de Sentença</option>
+              <option value="Embargos à Execução">Embargos à Execução</option>
+              <option value="Embargos de Terceiro">Embargos de Terceiro</option>
+              <option value="Exceção de Pré-Executividade">Exceção de Pré-Executividade</option>
+            </optgroup>
+            <optgroup label="— Recursos">
+              <option value="Recurso de Apelação">Recurso de Apelação</option>
+              <option value="Agravo de Instrumento">Agravo de Instrumento</option>
+              <option value="Recurso Especial (STJ)">Recurso Especial (STJ)</option>
+              <option value="Recurso Extraordinário (STF)">Recurso Extraordinário (STF)</option>
+              <option value="Recurso Ordinário Trabalhista">Recurso Ordinário Trabalhista</option>
+              <option value="Embargos de Declaração">Embargos de Declaração</option>
+              <option value="Contrarrazões">Contrarrazões</option>
+            </optgroup>
+            <optgroup label="— Ações Especiais">
+              <option value="Habeas Corpus">Habeas Corpus</option>
+              <option value="Mandado de Segurança">Mandado de Segurança</option>
+              <option value="Ação Rescisória">Ação Rescisória</option>
+              <option value="Ação Monitória">Ação Monitória</option>
+              <option value="Tutela Cautelar Antecedente">Tutela Cautelar Antecedente</option>
+              <option value="Tutela de Urgência Antecipada">Tutela de Urgência Antecipada</option>
+            </optgroup>
+            <optgroup label="— Execução e Cumprimento">
+              <option value="Cumprimento de Sentença">Cumprimento de Sentença</option>
+              <option value="Execução de Título Extrajudicial">Execução de Título Extrajudicial</option>
+              <option value="Execução de Alimentos">Execução de Alimentos</option>
+            </optgroup>
+            <optgroup label="— Peças Administrativas">
+              <option value="Recurso Administrativo INSS">Recurso Administrativo INSS</option>
+              <option value="Impugnação de Auto de Infração">Impugnação de Auto de Infração</option>
+              <option value="Defesa Administrativa">Defesa Administrativa</option>
+              <option value="Parecer Jurídico">Parecer Jurídico</option>
+              <option value="Contrato / Instrumento Particular">Contrato / Instrumento Particular</option>
+              <option value="Notificação Extrajudicial">Notificação Extrajudicial</option>
+            </optgroup>
+            <option value="__custom__">✍️ Outro tipo (digitar)</option>
+          </select>
           <input
             type="text"
             id="input-tipo"
-            placeholder="ex.: inicial cível, agravo, exceção de pré-executividade..."
+            placeholder="Digite o tipo de peça..."
+            style="display:none;margin-top:6px"
           />
         </div>
 
@@ -1207,7 +1270,9 @@ async function gerarPeca() {
   if (isGenerating) return;
 
   isGenerating   = true;
-  currentTipo    = document.getElementById('input-tipo').value.trim();
+  const tipoSelect = document.getElementById('input-tipo-select');
+  const tipoInput = document.getElementById('input-tipo');
+  currentTipo = (tipoSelect && tipoSelect.value && tipoSelect.value !== '__custom__') ? tipoSelect.value : (tipoInput ? tipoInput.value.trim() : '');
   currentVara    = document.getElementById('input-vara').value.trim();
 
   // Build prompt payload
@@ -1432,7 +1497,18 @@ function carregarPeca(p) {
   autoExpand(ta);
 
   // Fill tipo/vara if available
-  document.getElementById('input-tipo').value = p.tipo_peca || '';
+  const tipoSel = document.getElementById('input-tipo-select');
+  const tipoInp = document.getElementById('input-tipo');
+  const tipoPeca = p.tipo_peca || '';
+  // Try to match in select options first
+  let matched = false;
+  if (tipoSel) {
+    for (let opt of tipoSel.options) {
+      if (opt.value === tipoPeca) { tipoSel.value = tipoPeca; matched = true; break; }
+    }
+    if (!matched && tipoPeca) { tipoSel.value = '__custom__'; tipoInp.style.display = 'block'; tipoInp.value = tipoPeca; }
+    else if (matched) { tipoInp.style.display = 'none'; tipoInp.value = tipoPeca; }
+  } else { tipoInp.value = tipoPeca; }
 
   if (p.secoes && p.secoes.length > 0) {
     generatedSections = p.secoes;
