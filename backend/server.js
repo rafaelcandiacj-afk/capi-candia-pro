@@ -1521,13 +1521,13 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
     try {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout
-      // Usa modelo fine-tuned CAPI para chat (treinado com dados reais de advogados brasileiros)
-      const chatModel = (isPeticao || isTese) ? 'gpt-4.1' : CAPI_FINETUNED_MODEL;
+      // Fine-tuned CAPI disponível mas mantemos gpt-4.1 em produção até base crescer
+      // Para ativar fine-tuned: trocar 'gpt-4.1' por CAPI_FINETUNED_MODEL abaixo
       response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
         body: JSON.stringify({
-          model: chatModel,
+          model: 'gpt-4.1',
           messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
           temperature: 0.75,
           max_tokens: maxTok
@@ -1637,12 +1637,8 @@ Retorne APENAS um JSON array de 4 strings.` },
       const chatUserMsg = messages[messages.length - 1]?.content || '';
       const chatInputTokens = Math.round(fullSystemPrompt.length / 3.5) + Math.round(chatUserMsg.length / 3.5);
       const chatOutputTokens = Math.round(reply.length / 3.5);
-      // Fine-tuned gpt-4.1-mini: input $0.40/M, output $1.60/M (vs gpt-4.1: $2/$8)
-      const usedChatModel = (isPeticao || isTese) ? 'gpt-4.1' : CAPI_FINETUNED_MODEL;
-      const chatCost = usedChatModel.includes('mini') 
-        ? (chatInputTokens/1e6)*0.40 + (chatOutputTokens/1e6)*1.60
-        : (chatInputTokens/1e6)*2.00 + (chatOutputTokens/1e6)*8.00;
-      logAiUsage(userId, 'chat', usedChatModel, chatInputTokens, chatOutputTokens, 0, chatCost);
+      const chatCost = (chatInputTokens/1e6)*2.00 + (chatOutputTokens/1e6)*8.00;
+      logAiUsage(userId, 'chat', 'gpt-4.1', chatInputTokens, chatOutputTokens, 0, chatCost);
     } catch(e) { console.error('Erro log chat usage:', e.message); }
 
     // MEMÓRIA DO ADVOGADO — extrai insights em background (não bloqueia a resposta)
