@@ -3631,6 +3631,7 @@ app.get('/api/honorarios/:sigla', (req, res) => {
 
 // Dashboard completo — dados consolidados
 app.get('/api/dashboard', authMiddleware, (req, res) => {
+  try {
   const userId = req.user.id;
   
   // Perfil
@@ -3645,7 +3646,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   });
   
   // Casos ativos
-  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC LIMIT 20').all(userId);
+  const cases = db.prepare("SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = 'ativo' THEN 0 ELSE 1 END, updated_at DESC LIMIT 20").all(userId);
   
   // Resumos recentes
   const summaries = db.prepare(`
@@ -3712,6 +3713,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       total_casos_ativos: totalCasosAtivos
     }
   });
+  } catch(e) { console.error('Dashboard error:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 // Gerenciar memórias do usuário
@@ -3729,8 +3731,10 @@ app.delete('/api/memory/:id', authMiddleware, (req, res) => {
 
 // Gerenciar casos
 app.get('/api/cases', authMiddleware, (req, res) => {
-  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id);
-  res.json(cases);
+  try {
+    const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = ? THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id, 'ativo');
+    res.json(cases);
+  } catch(e) { console.error('Cases error:', e.message); res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/cases', authMiddleware, (req, res) => {
