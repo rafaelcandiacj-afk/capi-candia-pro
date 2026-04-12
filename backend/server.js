@@ -3633,40 +3633,43 @@ app.get('/api/honorarios/:sigla', (req, res) => {
 app.get('/api/dashboard', authMiddleware, (req, res) => {
   try {
   const userId = req.user.id;
-  
-  // Perfil
+
+  // ── Perfil ──────────────────────────────────────────────────────
   const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId) || {};
-  
-  // Memórias agrupadas
-  const memories = db.prepare('SELECT category, insight, relevance_score, created_at FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC').all(userId);
+
+  // ── Memórias agrupadas ──────────────────────────────────────────
+  const memoriesRaw = db.prepare('SELECT category, insight, relevance_score, created_at FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC').all(userId);
   const grouped = {};
-  memories.forEach(m => {
+  memoriesRaw.forEach(m => {
     if (!grouped[m.category]) grouped[m.category] = [];
     grouped[m.category].push({ insight: m.insight, score: m.relevance_score, date: m.created_at });
   });
-  
-  // Casos ativos
+
+  // ── Casos ativos ────────────────────────────────────────────────
   const cases = db.prepare("SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = 'ativo' THEN 0 ELSE 1 END, updated_at DESC LIMIT 20").all(userId);
-  
-  // Resumos recentes
+
+  // ── Resumos recentes ────────────────────────────────────────────
   const summaries = db.prepare(`
-    SELECT cs.*, c.title as conv_title 
-    FROM conversation_summaries cs 
-    JOIN conversations c ON c.id = cs.conversation_id 
-    WHERE cs.user_id = ? 
+    SELECT cs.*, c.title as conv_title
+    FROM conversation_summaries cs
+    JOIN conversations c ON c.id = cs.conversation_id
+    WHERE cs.user_id = ?
     ORDER BY cs.created_at DESC LIMIT 15
   `).all(userId);
-  
-  // Estatísticas
+
+  // ── Datas e períodos ────────────────────────────────────────────
   const agora = new Date();
   const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
-  
+
+  // ── Stats básicos existentes ────────────────────────────────────
   const totalConversas = db.prepare('SELECT COUNT(*) as c FROM conversations WHERE user_id = ?').get(userId)?.c || 0;
   const totalMensagens = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(userId)?.c || 0;
   const mensagensMes = db.prepare("SELECT COUNT(*) as c FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' AND strftime('%Y-%m', m.created_at) = ?").get(userId, mesAtual)?.c || 0;
   const pecasSalvas = db.prepare('SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?').get(userId)?.c || 0;
   const favoritosSalvos = db.prepare('SELECT COUNT(*) as c FROM favorites WHERE user_id = ?').get(userId)?.c || 0;
-  
+  const totalMemorias = memoriesRaw.length;
+  const totalCasosAtivos = cases.filter(c => c.status === 'ativo').length;
+
   // Dias ativos este mês
   const diasAtivos = db.prepare(`
     SELECT COUNT(DISTINCT date(m.created_at)) as c FROM messages m
@@ -3674,7 +3677,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     WHERE c.user_id = ? AND m.role = 'user'
     AND strftime('%Y-%m', m.created_at) = ?
   `).get(userId, mesAtual)?.c || 0;
-  
+
   // Streak
   const todosDias = db.prepare(`
     SELECT DISTINCT date(m.created_at) as dia FROM messages m
@@ -3691,17 +3694,313 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     if (todosDias[i] === esperadoStr) streak++;
     else break;
   }
-  
-  // Total de memórias
-  const totalMemorias = memories.length;
-  const totalCasosAtivos = cases.filter(c => c.status === 'ativo').length;
-  
+
+  // ── Dias como membro / primeiro uso ────────────────────────────
+  const userRow = db.prepare('SELECT created_at FROM users WHERE id = ?').get(userId);
+  const primeiroUso = userRow?.created_at || agora.toISOString();
+  const diasComoMembro = Math.floor((agora - new Date(primeiroUso)) / (1000 * 60 * 60 * 24));
+
+  // ── ai_usage_log para horas economizadas e ferramentas ──────────
+  const usageLogs = db.prepare(`
+    SELECT feature, model, input_tokens, output_tokens, created_at
+    FROM ai_usage_log WHERE user_id = ?
+  `).all(userId);
+
+  const usageLogsMes = usageLogs.filter(u => {
+    const m = u.created_at ? u.created_at.substring(0, 7) : '';
+    return m === mesAtual;
+  });
+
+  // Calcular horas economizadas
+  function calcHorasFromLog(logs) {
+    let horas = 0;
+    for (const u of logs) {
+      const feat = u.feature || '';
+      const outTok = u.output_tokens || 0;
+      if (feat === 'peca_gerar') {
+        horas += 2;
+      } else if (feat === 'audiencia_iniciar' || feat === 'audiencia_responder') {
+        horas += 0.5;
+      } else if (feat === 'chat') {
+        if (outTok > 1500) horas += 1.5;
+        else if (outTok > 500) horas += 0.5;
+        else horas += 0.25;
+      } else if (feat === 'memory_extraction') {
+        horas += 0.1;
+      } else {
+        if (outTok > 1500) horas += 1.5;
+        else if (outTok > 500) horas += 0.5;
+        else horas += 0.25;
+      }
+    }
+    return Math.round(horas * 100) / 100;
+  }
+
+  const horasEconomizadasTotal = calcHorasFromLog(usageLogs);
+  const horasEconomizadasMes = calcHorasFromLog(usageLogsMes);
+  const minutosPorDiaMedia = diasAtivos > 0
+    ? Math.round((horasEconomizadasMes * 60) / diasAtivos)
+    : 0;
+
+  // ── Valor financeiro ────────────────────────────────────────────
+  // Extrair valor/hora do estado do advogado a partir de HONORARIOS
+  let valorHoraAdvogado = 250; // default R$250
+  const estadoAdv = profile.estado || '';
+  if (estadoAdv && HONORARIOS[estadoAdv]) {
+    const consultaStr = HONORARIOS[estadoAdv].consulta || '';
+    // Tentar extrair primeiro valor numérico de R$ NN ou R$NN
+    const match = consultaStr.match(/R\$\s?([\d.,]+)/);
+    if (match) {
+      const num = parseFloat(match[1].replace('.', '').replace(',', '.'));
+      if (!isNaN(num) && num > 0) valorHoraAdvogado = num;
+    }
+  }
+  const valorGeradoMes = Math.round(horasEconomizadasMes * valorHoraAdvogado);
+  const valorGeradoTotal = Math.round(horasEconomizadasTotal * valorHoraAdvogado);
+
+  // ── Ranking ─────────────────────────────────────────────────────
+  // Usuários ativos nos últimos 30 dias por contagem de mensagens
+  const rankingRows = db.prepare(`
+    SELECT m.user_id, COUNT(*) as cnt
+    FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE m.role = 'user'
+    AND m.created_at >= datetime('now', '-30 days')
+    GROUP BY m.user_id
+    ORDER BY cnt DESC
+  `).all();
+  const totalUsuariosAtivos = rankingRows.length;
+  const posicaoRanking = rankingRows.findIndex(r => r.user_id === userId) + 1;
+  const percentil = totalUsuariosAtivos > 0 && posicaoRanking > 0
+    ? Math.round(((totalUsuariosAtivos - posicaoRanking) / totalUsuariosAtivos) * 100)
+    : 0;
+
+  // ── Breakdown por ferramenta (ai_usage_log + message keywords) ──
+  const countFeature = (feat) => usageLogs.filter(u => u.feature === feat).length;
+
+  const totalPeticoes = countFeature('peca_gerar');
+  const totalAudiencias = db.prepare('SELECT COUNT(*) as c FROM audiencia_sessions WHERE user_id = ?').get(userId)?.c || 0;
+
+  // Contar teses, conteúdos, honorários via títulos de conversa e message_analytics
+  const chipUsages = db.prepare(`
+    SELECT chip_used, COUNT(*) as cnt FROM message_analytics
+    WHERE user_id = ? AND chip_used IS NOT NULL
+    GROUP BY chip_used
+  `).all(userId);
+  const chipMap = {};
+  chipUsages.forEach(r => { chipMap[r.chip_used.toLowerCase()] = r.cnt; });
+
+  // Somar chips relacionados a cada ferramenta
+  function sumChips(keywords) {
+    let total = 0;
+    for (const [chip, cnt] of Object.entries(chipMap)) {
+      if (keywords.some(k => chip.includes(k))) total += cnt;
+    }
+    return total;
+  }
+
+  const totalTeses = sumChips(['tese', 'thesis', 'argumento', 'fundament']) +
+    db.prepare(`SELECT COUNT(*) as c FROM conversations WHERE user_id = ? AND (title LIKE '%tese%' OR title LIKE '%argum%')`).get(userId)?.c || 0;
+  const totalConteudos = sumChips(['instagram', 'conteúdo', 'conteudo', 'reels', 'marketing', 'post']) +
+    db.prepare(`SELECT COUNT(*) as c FROM conversations WHERE user_id = ? AND (title LIKE '%instagram%' OR title LIKE '%conteúdo%' OR title LIKE '%reels%')`).get(userId)?.c || 0;
+  const totalHonorarios = sumChips(['honorár', 'honorario', 'cobrar', 'valor', 'fee']) +
+    db.prepare(`SELECT COUNT(*) as c FROM conversations WHERE user_id = ? AND (title LIKE '%honorár%' OR title LIKE '%cobrar%' OR title LIKE '%valores%')`).get(userId)?.c || 0;
+  const totalCalculos = sumChips(['cálculo', 'calculo', 'calcul', 'parcela', 'juros', 'correção']) +
+    db.prepare(`SELECT COUNT(*) as c FROM conversations WHERE user_id = ? AND (title LIKE '%cálculo%' OR title LIKE '%calcul%' OR title LIKE '%juros%')`).get(userId)?.c || 0;
+
+  // Chat: mensagens do usuário que não são chips
+  const totalChatMsgs = totalMensagens;
+
+  // ── Uso por ferramenta (array para gráfico) ─────────────────────
+  const usoFerramentas = [
+    { ferramenta: 'Chat Jurídico', count: totalChatMsgs, icone: '💬' },
+    { ferramenta: 'Petições', count: totalPeticoes, icone: '📝' },
+    { ferramenta: 'Teses', count: totalTeses, icone: '⚖️' },
+    { ferramenta: 'Conteúdo Instagram', count: totalConteudos, icone: '📱' },
+    { ferramenta: 'Honorários', count: totalHonorarios, icone: '💰' },
+    { ferramenta: 'Simulação Audiência', count: totalAudiencias, icone: '🎓' },
+    { ferramenta: 'Cálculos', count: totalCalculos, icone: '🔢' },
+  ];
+
+  // ── Evolução mensal (últimos 6 meses) ───────────────────────────
+  const evolucao = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(agora.getFullYear(), agora.getMonth() - i, 1);
+    const mesStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const msgsMes = db.prepare(`
+      SELECT COUNT(*) as c FROM messages m
+      JOIN conversations c ON c.id = m.conversation_id
+      WHERE c.user_id = ? AND m.role = 'user'
+      AND strftime('%Y-%m', m.created_at) = ?
+    `).get(userId, mesStr)?.c || 0;
+    const pecasMes = usageLogs.filter(u =>
+      u.feature === 'peca_gerar' && u.created_at && u.created_at.substring(0, 7) === mesStr
+    ).length;
+    const logsMes = usageLogs.filter(u => u.created_at && u.created_at.substring(0, 7) === mesStr);
+    const horasMes = calcHorasFromLog(logsMes);
+    evolucao.push({ mes: mesStr, mensagens: msgsMes, peticoes: pecasMes, horas_economizadas: horasMes });
+  }
+
+  // ── Badges ──────────────────────────────────────────────────────
+  // Primeiro registro de mensagem do usuário
+  const primeiraMsg = db.prepare(`
+    SELECT m.created_at FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    ORDER BY m.created_at ASC LIMIT 1
+  `).get(userId);
+  const primeiraPeca = db.prepare('SELECT created_at FROM pecas_salvas WHERE user_id = ? ORDER BY created_at ASC LIMIT 1').get(userId) ||
+    (totalPeticoes > 0 ? usageLogs.filter(u => u.feature === 'peca_gerar').sort((a,b) => a.created_at < b.created_at ? -1 : 1)[0] : null);
+  const primeiraAudiencia = db.prepare('SELECT created_at FROM audiencia_sessions WHERE user_id = ? ORDER BY created_at ASC LIMIT 1').get(userId);
+
+  // Calcular max streak histórico
+  let maxStreak = 0;
+  let curStreakCount = 0;
+  for (let i = 0; i < todosDias.length; i++) {
+    if (i === 0) { curStreakCount = 1; continue; }
+    const prev = new Date(todosDias[i-1]);
+    const curr = new Date(todosDias[i]);
+    const diffDays = Math.round((prev - curr) / (1000 * 60 * 60 * 24));
+    if (diffDays === 1) {
+      curStreakCount++;
+    } else {
+      if (curStreakCount > maxStreak) maxStreak = curStreakCount;
+      curStreakCount = 1;
+    }
+  }
+  if (curStreakCount > maxStreak) maxStreak = curStreakCount;
+
+  // Quantas ferramentas distintas foram usadas
+  const featuresUsadas = new Set(usageLogs.map(u => u.feature).filter(Boolean));
+  const totalFerramentasUsadas = featuresUsadas.size + (totalTeses > 0 ? 1 : 0) + (totalConteudos > 0 ? 1 : 0);
+
+  const badges = [
+    {
+      id: 'first_msg',
+      titulo: 'Primeira Conversa',
+      descricao: 'Iniciou sua jornada com a Capi',
+      icone: '🚀',
+      conquistado: totalMensagens >= 1,
+      data: primeiraMsg?.created_at || null,
+    },
+    {
+      id: '10_msgs',
+      titulo: '10 Consultas',
+      descricao: 'Realizou 10 consultas jurídicas',
+      icone: '📚',
+      conquistado: totalMensagens >= 10,
+      data: totalMensagens >= 10 ? (db.prepare(`SELECT m.created_at FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' ORDER BY m.created_at ASC LIMIT 1 OFFSET 9`).get(userId)?.created_at || null) : null,
+    },
+    {
+      id: '50_msgs',
+      titulo: '50 Consultas',
+      descricao: 'Realizou 50 consultas jurídicas',
+      icone: '⭐',
+      conquistado: totalMensagens >= 50,
+      data: totalMensagens >= 50 ? (db.prepare(`SELECT m.created_at FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' ORDER BY m.created_at ASC LIMIT 1 OFFSET 49`).get(userId)?.created_at || null) : null,
+    },
+    {
+      id: '100_msgs',
+      titulo: 'Centurião Jurídico',
+      descricao: 'Realizou 100 consultas com a Capi',
+      icone: '🏅',
+      conquistado: totalMensagens >= 100,
+      data: totalMensagens >= 100 ? (db.prepare(`SELECT m.created_at FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' ORDER BY m.created_at ASC LIMIT 1 OFFSET 99`).get(userId)?.created_at || null) : null,
+    },
+    {
+      id: 'streak_3',
+      titulo: '3 Dias Seguidos',
+      descricao: 'Usou a Capi 3 dias consecutivos',
+      icone: '🔆',
+      conquistado: maxStreak >= 3,
+      data: maxStreak >= 3 ? (todosDias[todosDias.length - 1] || null) : null,
+    },
+    {
+      id: 'streak_7',
+      titulo: '7 Dias Seguidos',
+      descricao: 'Usou a Capi 7 dias consecutivos',
+      icone: '🔥',
+      conquistado: maxStreak >= 7,
+      data: maxStreak >= 7 ? (todosDias[todosDias.length - 1] || null) : null,
+    },
+    {
+      id: 'streak_30',
+      titulo: '30 Dias de Fogo',
+      descricao: '30 dias seguidos com a Capi',
+      icone: '🏆',
+      conquistado: maxStreak >= 30,
+      data: maxStreak >= 30 ? (todosDias[todosDias.length - 1] || null) : null,
+    },
+    {
+      id: 'first_peca',
+      titulo: 'Primeira Petição',
+      descricao: 'Gerou sua primeira peça jurídica',
+      icone: '📝',
+      conquistado: totalPeticoes >= 1 || pecasSalvas >= 1,
+      data: primeiraPeca?.created_at || null,
+    },
+    {
+      id: '5_pecas',
+      titulo: 'Advogado Produtivo',
+      descricao: 'Gerou 5 ou mais petições',
+      icone: '📋',
+      conquistado: totalPeticoes >= 5,
+      data: totalPeticoes >= 5 ? (usageLogs.filter(u => u.feature === 'peca_gerar').sort((a,b) => a.created_at < b.created_at ? -1 : 1)[4]?.created_at || null) : null,
+    },
+    {
+      id: 'first_audiencia',
+      titulo: 'Estreia na Audiência',
+      descricao: 'Participou da primeira simulação de audiência',
+      icone: '🎓',
+      conquistado: totalAudiencias >= 1,
+      data: primeiraAudiencia?.created_at || null,
+    },
+    {
+      id: 'explorer',
+      titulo: 'Explorador',
+      descricao: 'Usou 4 ou mais ferramentas diferentes',
+      icone: '🧭',
+      conquistado: totalFerramentasUsadas >= 4,
+      data: totalFerramentasUsadas >= 4 ? primeiraMsg?.created_at || null : null,
+    },
+    {
+      id: 'memoravel',
+      titulo: 'Memorável',
+      descricao: 'A Capi conhece você muito bem (10+ memórias)',
+      icone: '🧠',
+      conquistado: totalMemorias >= 10,
+      data: totalMemorias >= 10 ? (memoriesRaw[9]?.created_at || null) : null,
+    },
+    {
+      id: 'top_10',
+      titulo: 'Top 10%',
+      descricao: 'Está entre os 10% mais ativos da plataforma',
+      icone: '🥇',
+      conquistado: percentil >= 90,
+      data: percentil >= 90 ? primeiraMsg?.created_at || null : null,
+    },
+    {
+      id: 'membro_30',
+      titulo: 'Membro Dedicado',
+      descricao: 'Usa a Capi há 30 dias ou mais',
+      icone: '🎂',
+      conquistado: diasComoMembro >= 30,
+      data: diasComoMembro >= 30 ? (() => {
+        const d30 = new Date(primeiroUso);
+        d30.setDate(d30.getDate() + 30);
+        return d30.toISOString().substring(0,10);
+      })() : null,
+    },
+  ];
+
+  // ── Resposta final ──────────────────────────────────────────────
   res.json({
     profile,
     memories: grouped,
     cases,
     summaries,
     stats: {
+      // Existentes
       total_conversas: totalConversas,
       total_mensagens: totalMensagens,
       mensagens_mes: mensagensMes,
@@ -3710,8 +4009,33 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       dias_ativos_mes: diasAtivos,
       streak,
       total_memorias: totalMemorias,
-      total_casos_ativos: totalCasosAtivos
-    }
+      total_casos_ativos: totalCasosAtivos,
+      // Tempo economizado
+      horas_economizadas_mes: horasEconomizadasMes,
+      horas_economizadas_total: horasEconomizadasTotal,
+      minutos_por_dia_media: minutosPorDiaMedia,
+      // Valor financeiro
+      valor_gerado_mes: valorGeradoMes,
+      valor_gerado_total: valorGeradoTotal,
+      valor_hora_advogado: valorHoraAdvogado,
+      // Ranking
+      percentil,
+      posicao_ranking: posicaoRanking || 0,
+      total_usuarios_ativos: totalUsuariosAtivos,
+      // Ferramentas
+      total_peticoes: totalPeticoes,
+      total_teses: totalTeses,
+      total_conteudos: totalConteudos,
+      total_honorarios: totalHonorarios,
+      total_audiencias: totalAudiencias,
+      total_calculos: totalCalculos,
+      // Membership
+      dias_como_membro: diasComoMembro,
+      primeiro_uso: primeiroUso,
+    },
+    evolucao,
+    uso_ferramentas: usoFerramentas,
+    badges,
   });
   } catch(e) { console.error('Dashboard error:', e.message); res.status(500).json({ error: e.message }); }
 });
