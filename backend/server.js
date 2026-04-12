@@ -1445,8 +1445,8 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao') || lastMsgLower.includes('inicial') || lastMsgLower.includes('contestação') || lastMsgLower.includes('contestacao') || lastMsgLower.includes('recurso') || lastMsgLower.includes('embargos') || lastMsgLower.includes('mandado de segurança') || lastMsgLower.includes('habeas corpus') || lastMsgLower.includes('agravo') || lastMsgLower.includes('apelação') || lastMsgLower.includes('apelacao') || lastMsgLower.includes('impugnação') || lastMsgLower.includes('réplica') || lastMsgLower.includes('replica') || lastMsgLower.includes('contrarrazões') || lastMsgLower.includes('contrarrazoes');
   const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese') || lastMsgLower.includes('argumentação') || lastMsgLower.includes('argumentacao') || lastMsgLower.includes('fundamentação') || lastMsgLower.includes('fundamentacao');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  // Respostas mais generosas para evitar truncamento (12.9% truncavam antes)
-  const maxTok = isPeticao ? 16000 : isTese ? 8000 : temDocumento ? 6000 : 2500;
+  // Premium: petições sem corte, teses completas, análise profunda
+  const maxTok = isPeticao ? 32000 : isTese ? 16000 : temDocumento ? 8000 : 2500;
 
   // ── FORMATO LIMPO: instrução por tipo de peça (itens 3, 4, 6, 7) ──
   let formatoCtx = '';
