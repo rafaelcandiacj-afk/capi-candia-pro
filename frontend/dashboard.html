@@ -805,6 +805,99 @@
       font-style: italic;
     }
 
+    /* ─── Activity Calendar ─────────────────────────────────────────── */
+    .calendar-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-6);
+    }
+    .calendar-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      justify-content: flex-start;
+    }
+    .calendar-day {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--color-surface-3);
+      transition: all var(--t-fast);
+      cursor: default;
+      position: relative;
+    }
+    .calendar-day:hover {
+      transform: scale(1.4);
+      z-index: 2;
+    }
+    .calendar-day[data-level="1"] { background: rgba(196,162,101,0.25); }
+    .calendar-day[data-level="2"] { background: rgba(196,162,101,0.45); }
+    .calendar-day[data-level="3"] { background: rgba(196,162,101,0.70); }
+    .calendar-day[data-level="4"] { background: var(--color-brand); }
+    .calendar-legend {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-3);
+      margin-top: var(--sp-4);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+    .calendar-legend-squares {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .calendar-legend-sq {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+    .calendar-tooltip {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-surface-3);
+      border: 1px solid var(--color-border-strong);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--color-text);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--t-fast);
+      z-index: 10;
+    }
+    .calendar-day:hover .calendar-tooltip { opacity: 1; }
+    .calendar-stats-row {
+      display: flex;
+      gap: var(--sp-6);
+      margin-bottom: var(--sp-5);
+      flex-wrap: wrap;
+    }
+    .calendar-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .calendar-stat-value {
+      font-size: var(--text-lg);
+      font-weight: 700;
+      color: var(--color-brand);
+    }
+    .calendar-stat-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 500;
+    }
+    @media (max-width: 600px) {
+      .calendar-day { width: 11px; height: 11px; }
+    }
+
     /* ─── Stats Cards ────────────────────────────────────────────────── */
     .stats-scroll-wrapper {
       overflow-x: auto;
@@ -1649,9 +1742,9 @@
             <span class="hero-economy-sub" id="hero-equiv-mes">calculando…</span>
           </div>
           <div class="hero-economy-item">
-            <span class="hero-economy-label">💰 Valor total gerado</span>
-            <span class="hero-economy-value" id="hero-valor-total">—</span>
-            <span class="hero-economy-sub" id="hero-valor-mes">este mês: —</span>
+            <span class="hero-economy-label">✅ Tarefas concluídas</span>
+            <span class="hero-economy-value" id="hero-tarefas-total">—</span>
+            <span class="hero-economy-sub" id="hero-tarefas-mes">este mês: —</span>
           </div>
           <div class="hero-economy-item">
             <span class="hero-economy-label">🏆 Seu ranking</span>
@@ -1743,7 +1836,25 @@
 
       <div class="divider"></div>
 
-      <!-- ── 5. Stats Grid ── -->
+      <!-- ── 5. Calendário de Atividade ── -->
+      <section aria-labelledby="calendar-section-label">
+        <div class="section-header">
+          <div class="section-title-group">
+            <div class="section-icon" aria-hidden="true">📅</div>
+            <h2 class="section-title" id="calendar-section-label">
+              Sua Consistência
+              <span class="section-count" id="calendar-subtitle"></span>
+            </h2>
+          </div>
+        </div>
+        <div class="calendar-card" id="calendar-container">
+          <div class="skeleton" style="height:120px; border-radius:12px;"></div>
+        </div>
+      </section>
+
+      <div class="divider"></div>
+
+      <!-- ── 6. Stats Grid ── -->
       <section aria-labelledby="stats-section-label">
         <div class="section-header">
           <div class="section-title-group">
@@ -2139,6 +2250,7 @@
       renderEvolution(dashData.evolucao || []);
       renderToolBreakdown(dashData.uso_ferramentas || []);
       renderBadges(dashData.badges || []);
+      renderCalendar(dashData.calendario || []);
       renderStats(dashData.stats);
       allMemories = buildMemoryList(dashData.memories);
       renderMemories(allMemories);
@@ -2176,17 +2288,18 @@
     if (stats) {
       // Economy strip
       const horasMes = stats.horas_economizadas_mes || 0;
-      const valorTotal = stats.valor_gerado_total || 0;
-      const valorMes = stats.valor_gerado_mes || 0;
       const percentil = stats.percentil || 0;
       const pos = stats.posicao_ranking || 0;
       const total = stats.total_usuarios_ativos || 0;
-      const valorHora = stats.valor_hora_advogado || 0;
+
+      const tarefasTotal = stats.tarefas_total || 0;
+      const tarefasMes = stats.tarefas_mes || 0;
+      const multiplicador = stats.multiplicador_produtividade || 0;
 
       const heroHorasMes = document.getElementById('hero-horas-mes');
       const heroEquivMes = document.getElementById('hero-equiv-mes');
-      const heroValorTotal = document.getElementById('hero-valor-total');
-      const heroValorMes = document.getElementById('hero-valor-mes');
+      const heroTarefasTotal = document.getElementById('hero-tarefas-total');
+      const heroTarefasMes = document.getElementById('hero-tarefas-mes');
       const heroPercentil = document.getElementById('hero-percentil');
       const heroRankingPos = document.getElementById('hero-ranking-pos');
 
@@ -2194,12 +2307,12 @@
       setTimeout(() => {
         animateCounter(heroHorasMes, horasMes, 1000, (v) => fmtHours(v));
       }, 600);
-      heroEquivMes.textContent = `≈ ${fmtMoney(horasMes * valorHora)} em produtividade`;
+      heroEquivMes.textContent = multiplicador > 0 ? `${multiplicador}x mais que a média` : 'calculando...';
 
       setTimeout(() => {
-        animateCounter(heroValorTotal, valorTotal, 1200, (v) => fmtMoney(Math.round(v)));
+        animateCounter(heroTarefasTotal, tarefasTotal, 1200, (v) => fmtNum(Math.round(v)));
       }, 700);
-      heroValorMes.textContent = `este mês: ${fmtMoney(valorMes)}`;
+      heroTarefasMes.textContent = `este mês: ${fmtNum(tarefasMes)}`;
 
       heroPercentil.textContent = `Top ${percentil || 0}%`;
       heroRankingPos.textContent = pos && total ? `#${fmtNum(pos)} de ${fmtNum(total)} advogados` : 'Calculando ranking…';
@@ -2229,9 +2342,9 @@
 
     const horasTotal = stats.horas_economizadas_total || 0;
     const horasMes = stats.horas_economizadas_mes || 0;
-    const valorTotal = stats.valor_gerado_total || 0;
-    const valorMes = stats.valor_gerado_mes || 0;
-    const valorHora = stats.valor_hora_advogado || 0;
+    const tarefasTotal = stats.tarefas_total || 0;
+    const tarefasMes = stats.tarefas_mes || 0;
+    const multiplicador = stats.multiplicador_produtividade || 0;
     const percentil = stats.percentil || 0;
     const pos = stats.posicao_ranking || 0;
     const total = stats.total_usuarios_ativos || 0;
@@ -2257,18 +2370,18 @@
 
       <div class="economy-card" style="animation-delay:0.2s">
         <div class="economy-card-label">
-          <span class="economy-card-icon">💰</span>
-          Valor Gerado
+          <span class="economy-card-icon">✅</span>
+          Tarefas Concluídas
         </div>
-        <div class="economy-big-number" id="ec-valor-total">R$ 0</div>
+        <div class="economy-big-number" id="ec-tarefas-total">0</div>
         <div class="economy-sub-row">
           <span class="economy-sub-item">
             <span class="economy-sub-dot"></span>
-            Este mês: <span class="economy-sub-value">${fmtMoney(valorMes)}</span>
+            Este mês: <span class="economy-sub-value">${fmtNum(tarefasMes)}</span>
           </span>
-          ${valorHora ? `<span class="economy-sub-item">
+          ${multiplicador > 0 ? `<span class="economy-sub-item">
             <span class="economy-sub-dot"></span>
-            Base: <span class="economy-sub-value">${fmtMoney(valorHora)}/h</span>
+            <span class="economy-sub-value" style="color:var(--color-success)">${multiplicador}x</span> mais que a média
           </span>` : ''}
         </div>
       </div>
@@ -2299,8 +2412,8 @@
       const ecHorasEl = document.getElementById('ec-horas-total');
       if (ecHorasEl) animateCounter(ecHorasEl, horasTotal, 1400, (v) => fmtHours(v));
 
-      const ecValorEl = document.getElementById('ec-valor-total');
-      if (ecValorEl) animateCounter(ecValorEl, valorTotal, 1500, (v) => fmtMoney(Math.round(v)));
+      const ecTarefasEl = document.getElementById('ec-tarefas-total');
+      if (ecTarefasEl) animateCounter(ecTarefasEl, tarefasTotal, 1500, (v) => fmtNum(Math.round(v)));
 
       const ecPercentilEl = document.getElementById('ec-percentil');
       if (ecPercentilEl) animateCounter(ecPercentilEl, percentil, 1000, (v) => Math.round(v).toLocaleString('pt-BR'));
@@ -2534,6 +2647,77 @@
         bar.style.width = `${target}%`;
       });
     }, 200);
+  }
+
+  /* ── Calendar ───────────────────────────────────────────────────── */
+  function renderCalendar(calendario) {
+    const container = document.getElementById('calendar-container');
+    const subtitle = document.getElementById('calendar-subtitle');
+
+    if (!calendario || calendario.length === 0) {
+      container.innerHTML = `
+        <div class="calendar-card">
+          <div class="empty-state">
+            <div class="mascot">🦫</div>
+            <p class="title">Calendário em construção</p>
+            <p>Continue usando a Capi para ver sua consistência.</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const diasAtivos = calendario.filter(d => d.count > 0).length;
+    const totalInteracoes = calendario.reduce((s, d) => s + d.count, 0);
+    const melhorDia = calendario.reduce((best, d) => d.count > best.count ? d : best, { count: 0 });
+
+    subtitle.textContent = ` · ${diasAtivos} dias ativos nos últimos 90`;
+
+    // Build calendar squares
+    const squares = calendario.map(d => {
+      const dateObj = new Date(d.dia + 'T12:00:00');
+      const dayStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'short' });
+      const tooltip = d.count > 0
+        ? `${dayStr} (${weekday}) — ${d.count} interaç${d.count !== 1 ? 'ões' : 'ão'}`
+        : `${dayStr} (${weekday}) — sem atividade`;
+      return `<div class="calendar-day" data-level="${d.nivel}" title="">
+        <div class="calendar-tooltip">${tooltip}</div>
+      </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="calendar-card">
+        <div class="calendar-stats-row">
+          <div class="calendar-stat">
+            <span class="calendar-stat-value">${fmtNum(diasAtivos)}</span>
+            <span class="calendar-stat-label">Dias ativos</span>
+          </div>
+          <div class="calendar-stat">
+            <span class="calendar-stat-value">${fmtNum(totalInteracoes)}</span>
+            <span class="calendar-stat-label">Interações totais</span>
+          </div>
+          <div class="calendar-stat">
+            <span class="calendar-stat-value">${melhorDia.count > 0 ? fmtNum(melhorDia.count) : '—'}</span>
+            <span class="calendar-stat-label">Recorde num dia</span>
+          </div>
+        </div>
+        <div class="calendar-grid">
+          ${squares}
+        </div>
+        <div class="calendar-legend">
+          <span>Menos</span>
+          <div class="calendar-legend-squares">
+            <div class="calendar-legend-sq" style="background:var(--color-surface-3)"></div>
+            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.25)"></div>
+            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.45)"></div>
+            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.70)"></div>
+            <div class="calendar-legend-sq" style="background:var(--color-brand)"></div>
+          </div>
+          <span>Mais</span>
+        </div>
+      </div>
+    `;
   }
 
   /* ── Badges ─────────────────────────────────────────────────────── */
