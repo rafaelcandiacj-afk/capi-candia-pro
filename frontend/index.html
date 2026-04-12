@@ -723,6 +723,16 @@ if(window.visualViewport){
           <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">📋 Cível</div>
           <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">🛒 Consumidor</div>
           <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">🏠 Imobiliário</div>
+          <div class="area-chip" data-value="Digital" onclick="toggleAreaChip(this)">💻 Digital</div>
+          <div class="area-chip" data-value="Administrativo" onclick="toggleAreaChip(this)">🏗️ Administrativo</div>
+          <div class="area-chip" data-value="Ambiental" onclick="toggleAreaChip(this)">🌿 Ambiental</div>
+          <div class="area-chip" data-value="Bancário" onclick="toggleAreaChip(this)">🏦 Bancário</div>
+          <div class="area-chip" data-value="Eleitoral" onclick="toggleAreaChip(this)">🗳️ Eleitoral</div>
+          <div class="area-chip" data-value="Saúde" onclick="toggleAreaChip(this)">🩺 Saúde</div>
+          <div class="area-chip" data-value="Militar" onclick="toggleAreaChip(this)">🎖️ Militar</div>
+          <div class="area-chip" data-value="Agrário" onclick="toggleAreaChip(this)">🌾 Agrário</div>
+          <div class="area-chip" data-value="Internacional" onclick="toggleAreaChip(this)">🌐 Internacional</div>
+          <div class="area-chip" data-value="Desportivo" onclick="toggleAreaChip(this)">⚽ Desportivo</div>
           <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">➕ Outra</div>
         </div>
       </div>
@@ -2660,19 +2670,34 @@ function gerarTese(){
 }
 
 // ── MONTE SEU CONTEÚDO ──────────────────────────────────
-function openConteudoModal(){document.getElementById('conteudoModal').classList.remove('hidden');}
+function openConteudoModal(){
+  document.getElementById('conteudoModal').classList.remove('hidden');
+  // Show/hide custom area input based on select
+  const sel=document.getElementById('conteudo_area');
+  const cust=document.getElementById('conteudo_area_custom');
+  if(sel&&cust){
+    sel.onchange=function(){cust.style.display=this.value?'none':'block';};
+    cust.style.display=sel.value?'none':'block';
+  }
+}
 function closeConteudoModal(){document.getElementById('conteudoModal').classList.add('hidden');}
 
 function gerarConteudo(){
   const tipo=document.getElementById('conteudo_tipo').value;
-  const area=document.getElementById('conteudo_area').value.trim();
+  const areaSelect=document.getElementById('conteudo_area').value;
+  const areaCustomEl=document.getElementById('conteudo_area_custom');
+  const area=areaSelect||(areaCustomEl?areaCustomEl.value.trim():'');
   const objetivo=document.getElementById('conteudo_objetivo').value;
+  const tomEl=document.getElementById('conteudo_tom');
+  const tom=tomEl?tomEl.value:'';
   const diferencial=document.getElementById('conteudo_diferencial').value.trim();
   if(!tipo){showToast('Selecione o tipo de conteúdo');return;}
   if(!area){showToast('Informe a área jurídica');return;}
   if(!objetivo){showToast('Selecione o objetivo');return;}
   closeConteudoModal();
-  const prompt='Crie um conteúdo jurídico EDUCATIVO no estilo Rafael Cândia para:\n\n📱 Tipo: '+tipo+'\n⚖️ Área: '+area+'\n🎯 Objetivo: '+objetivo+'\n✨ Diferencial: '+(diferencial||'Nenhum informado')+'\n\nENTREGUE:\n1. Roteiro/estrutura do conteúdo\n2. Legenda educativa (informativa, sem captação direta de clientela)\n3. Hashtags estratégicas\n4. Dica de arte visual\n5. Script de atendimento (apenas para quem JÁ entrou em contato) — IMPORTANTE: o script é para o ADVOGADO usar com o CLIENTE, portanto use linguagem profissional e respeitosa (ex: "Olá", "Prezado", "Pode me contar mais sobre seu caso?"). NUNCA use gírias como "papi", "capivarístico" ou "vergonha não paga boleto" no script de atendimento ao cliente.\n\nREGRAS ÉTICAS OAB OBRIGATÓRIAS:\n- Conteúdo deve ser educativo e informativo (Provimento 205/2021)\n- Proibido: copy de captação, promessa de resultados, abordagem ativa de leads frios\n- Use linguagem do Rafael no roteiro e legenda — direto, impactante, sem juridiquês, mas dentro da ética.';
+  let prompt='Crie um conteúdo jurídico EDUCATIVO no estilo Rafael Cândia para:\n\n📱 Tipo: '+tipo+'\n⚖️ Área: '+area+'\n🎯 Objetivo: '+objetivo;
+  if(tom) prompt+='\n🎤 Tom: '+tom;
+  prompt+='\n✨ Diferencial: '+(diferencial||'Nenhum informado')+'\n\nENTREGUE:\n1. Roteiro/estrutura do conteúdo\n2. Legenda educativa (informativa, sem captação direta de clientela)\n3. Hashtags estratégicas\n4. Dica de arte visual\n5. Script de atendimento (apenas para quem JÁ entrou em contato) — IMPORTANTE: o script é para o ADVOGADO usar com o CLIENTE, portanto use linguagem profissional e respeitosa (ex: "Olá", "Prezado", "Pode me contar mais sobre seu caso?"). NUNCA use gírias como "papi", "capivarístico" ou "vergonha não paga boleto" no script de atendimento ao cliente.\n\nREGRAS ÉTICAS OAB OBRIGATÓRIAS:\n- Conteúdo deve ser educativo e informativo (Provimento 205/2021)\n- Proibido: copy de captação, promessa de resultados, abordagem ativa de leads frios\n- Use linguagem do Rafael no roteiro e legenda — direto, impactante, sem juridiquês, mas dentro da ética.';
   $('chatInput').value=prompt;
   $('sendBtn').disabled=false;
   sendMessage();
@@ -2790,11 +2815,18 @@ function openGame() {
           <option value="Família">Direito de Família</option>
           <option value="Previdenciário">Direito Previdenciário</option>
           <option value="Trabalhista">Direito Trabalhista</option>
-          <option value="Criminal">Direito Criminal</option>
+          <option value="Criminal">Direito Criminal / Penal</option>
           <option value="Consumidor">Direito do Consumidor</option>
           <option value="Civil">Direito Civil</option>
           <option value="Empresarial">Direito Empresarial</option>
           <option value="Tributário">Direito Tributário</option>
+          <option value="Imobiliário">Direito Imobiliário</option>
+          <option value="Digital">Direito Digital / LGPD</option>
+          <option value="Bancário">Direito Bancário</option>
+          <option value="Administrativo">Direito Administrativo</option>
+          <option value="Ambiental">Direito Ambiental</option>
+          <option value="Saúde">Direito da Saúde</option>
+          <option value="Agrário">Direito Agrário</option>
         </select>
       </div>
       <div id="gameHint" style="font-size:13px;color:#b8860b;margin-bottom:12px;min-height:18px;text-align:center"></div>
@@ -3706,13 +3738,23 @@ init();
         <option value="Direito de Família">Direito de Família</option>
         <option value="Direito Previdenciário">Direito Previdenciário</option>
         <option value="Direito Trabalhista">Direito Trabalhista</option>
-        <option value="Direito Criminal">Direito Criminal</option>
+        <option value="Direito Criminal">Direito Criminal / Penal</option>
         <option value="Direito do Consumidor">Direito do Consumidor</option>
         <option value="Direito Civil">Direito Civil</option>
         <option value="Direito Empresarial">Direito Empresarial</option>
         <option value="Direito Tributário">Direito Tributário</option>
         <option value="Direito Imobiliário">Direito Imobiliário</option>
-        <option value="Direito Digital">Direito Digital</option>
+        <option value="Direito Digital">Direito Digital / LGPD</option>
+        <option value="Direito Administrativo">Direito Administrativo</option>
+        <option value="Direito Ambiental">Direito Ambiental</option>
+        <option value="Direito Bancário">Direito Bancário / Financeiro</option>
+        <option value="Direito da Saúde">Direito da Saúde / Médico</option>
+        <option value="Direito Eleitoral">Direito Eleitoral</option>
+        <option value="Direito Militar">Direito Militar</option>
+        <option value="Direito Agrário">Direito Agrário</option>
+        <option value="Direito Internacional">Direito Internacional</option>
+        <option value="Direito Desportivo">Direito Desportivo</option>
+        <option value="Direito Marítimo">Direito Marítimo / Portuário</option>
       </select>
     </div>
     <div class="form-group">
@@ -3756,12 +3798,23 @@ init();
         <option value="Família">Família</option>
         <option value="Previdenciário">Previdenciário</option>
         <option value="Trabalhista">Trabalhista</option>
-        <option value="Criminal">Criminal</option>
+        <option value="Criminal">Criminal / Penal</option>
         <option value="Consumidor">Consumidor</option>
         <option value="Civil">Civil</option>
         <option value="Empresarial">Empresarial</option>
         <option value="Tributário">Tributário</option>
         <option value="Imobiliário">Imobiliário</option>
+        <option value="Digital">Digital / LGPD</option>
+        <option value="Administrativo">Administrativo</option>
+        <option value="Ambiental">Ambiental</option>
+        <option value="Bancário">Bancário / Financeiro</option>
+        <option value="Saúde">Saúde / Médico</option>
+        <option value="Eleitoral">Eleitoral</option>
+        <option value="Militar">Militar</option>
+        <option value="Agrário">Agrário</option>
+        <option value="Internacional">Internacional</option>
+        <option value="Desportivo">Desportivo</option>
+        <option value="Marítimo">Marítimo / Portuário</option>
         <option value="Generalista">Generalista</option>
       </select>
     </div>
@@ -3853,25 +3906,63 @@ init();
       <label>Tipo de conteúdo</label>
       <select id="conteudo_tipo" class="form-select">
         <option value="">Selecione...</option>
-        <option value="Reels">Reels</option>
-        <option value="Carrossel">Carrossel</option>
+        <option value="Reels">Reels (vídeo curto)</option>
+        <option value="Carrossel">Carrossel (slides)</option>
         <option value="Story">Story</option>
-        <option value="Post Feed">Post Feed</option>
-        <option value="Thread">Thread</option>
+        <option value="Post Feed">Post Feed (imagem + legenda)</option>
+        <option value="Thread">Thread (texto longo)</option>
+        <option value="Vídeo longo (YouTube/IGTV)">Vídeo longo (YouTube/IGTV)</option>
+        <option value="Artigo (blog/LinkedIn)">Artigo (blog/LinkedIn)</option>
+        <option value="E-mail marketing">E-mail marketing</option>
+        <option value="Newsletter">Newsletter</option>
       </select>
     </div>
     <div class="form-group">
       <label>Área jurídica</label>
-      <input type="text" id="conteudo_area" class="form-input" placeholder="Ex: Direito do Consumidor, Previdenciário...">
+      <select id="conteudo_area" class="form-select">
+        <option value="">Selecione ou digite abaixo...</option>
+        <option value="Direito de Família">Família</option>
+        <option value="Direito Previdenciário">Previdenciário</option>
+        <option value="Direito Trabalhista">Trabalhista</option>
+        <option value="Direito Criminal">Criminal / Penal</option>
+        <option value="Direito do Consumidor">Consumidor</option>
+        <option value="Direito Civil">Civil</option>
+        <option value="Direito Empresarial">Empresarial</option>
+        <option value="Direito Tributário">Tributário</option>
+        <option value="Direito Imobiliário">Imobiliário</option>
+        <option value="Direito Digital / LGPD">Digital / LGPD</option>
+        <option value="Direito Administrativo">Administrativo</option>
+        <option value="Direito Ambiental">Ambiental</option>
+        <option value="Direito Bancário">Bancário / Financeiro</option>
+        <option value="Direito da Saúde">Saúde / Médico</option>
+        <option value="Direito Eleitoral">Eleitoral</option>
+        <option value="Direito Agrário">Agrário</option>
+      </select>
+      <input type="text" id="conteudo_area_custom" class="form-input" placeholder="Ou digite uma área específica..." style="margin-top:6px;display:none">
     </div>
     <div class="form-group">
       <label>Objetivo</label>
       <select id="conteudo_objetivo" class="form-select">
         <option value="">Selecione...</option>
-        <option value="Atrair clientes">Atrair clientes</option>
+        <option value="Atrair clientes">Atrair clientes (captação ética)</option>
         <option value="Construir autoridade">Construir autoridade</option>
         <option value="Viralizar">Viralizar</option>
-        <option value="Educar">Educar</option>
+        <option value="Educar">Educar o público</option>
+        <option value="Engajamento">Aumentar engajamento</option>
+        <option value="Posicionar como referência">Posicionar como referência na área</option>
+        <option value="Gerar Confiança">Gerar confiança / humanizar</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tom desejado (opcional)</label>
+      <select id="conteudo_tom" class="form-select">
+        <option value="">Usar tom padrão</option>
+        <option value="Direto e impactante">Direto e impactante</option>
+        <option value="Didático e acessível">Didático e acessível</option>
+        <option value="Empático e acolhedor">Empático e acolhedor</option>
+        <option value="Técnico com autoridade">Técnico com autoridade</option>
+        <option value="Provocativo e engajador">Provocativo e engajador</option>
+        <option value="Humor inteligente">Humor inteligente</option>
       </select>
     </div>
     <div class="form-group">
@@ -3920,20 +4011,63 @@ init();
         <label class="form-label">Que peça vamos construir?</label>
         <select id="pet_tipo" class="form-select">
           <option value="">Selecione...</option>
-          <option value="Petição Inicial — Cível">Petição Inicial — Cível</option>
-          <option value="Petição Inicial — Trabalhista">Petição Inicial — Trabalhista</option>
-          <option value="Petição Inicial — Previdenciária">Petição Inicial — Previdenciária</option>
-          <option value="Petição Inicial — Criminal (queixa-crime)">Petição Inicial — Criminal (queixa-crime)</option>
-          <option value="Petição Inicial — Família (divórcio)">Petição Inicial — Família (divórcio)</option>
-          <option value="Petição Inicial — Família (alimentos)">Petição Inicial — Família (alimentos)</option>
-          <option value="Petição Inicial — Família (inventário)">Petição Inicial — Família (inventário)</option>
-          <option value="Contestação">Contestação</option>
-          <option value="Recurso de Apelação">Recurso de Apelação</option>
-          <option value="Agravo de Instrumento">Agravo de Instrumento</option>
-          <option value="Habeas Corpus">Habeas Corpus</option>
-          <option value="Mandado de Segurança">Mandado de Segurança</option>
-          <option value="Impugnação ao Cumprimento de Sentença">Impugnação ao Cumprimento de Sentença</option>
-          <option value="Embargos à Execução">Embargos à Execução</option>
+          <optgroup label="— Petições Iniciais">
+            <option value="Petição Inicial — Cível">Petição Inicial — Cível</option>
+            <option value="Petição Inicial — Trabalhista">Petição Inicial — Trabalhista</option>
+            <option value="Petição Inicial — Previdenciária">Petição Inicial — Previdenciária</option>
+            <option value="Petição Inicial — Criminal (queixa-crime)">Petição Inicial — Criminal (queixa-crime)</option>
+            <option value="Petição Inicial — Família (divórcio)">Petição Inicial — Família (divórcio)</option>
+            <option value="Petição Inicial — Família (alimentos)">Petição Inicial — Família (alimentos)</option>
+            <option value="Petição Inicial — Família (inventário)">Petição Inicial — Família (inventário)</option>
+            <option value="Petição Inicial — Família (guarda/visitas)">Petição Inicial — Família (guarda/visitas)</option>
+            <option value="Petição Inicial — Consumidor">Petição Inicial — Consumidor (CDC)</option>
+            <option value="Petição Inicial — Indenizatória (danos morais/materiais)">Petição Inicial — Indenizatória</option>
+            <option value="Petição Inicial — Obrigatória (fazer/não fazer)">Petição Inicial — Obrigatória (fazer/não fazer)</option>
+            <option value="Petição Inicial — Bancária (revisão contratual)">Petição Inicial — Bancária (revisão contratual)</option>
+            <option value="Petição Inicial — Imobiliária (despejo/posses)">Petição Inicial — Imobiliária</option>
+            <option value="Petição Inicial — Tributária">Petição Inicial — Tributária</option>
+            <option value="Petição Inicial — Administrativa">Petição Inicial — Administrativa</option>
+          </optgroup>
+          <optgroup label="— Defesas e Contestações">
+            <option value="Contestação">Contestação</option>
+            <option value="Defesa Prévia Criminal">Defesa Prévia Criminal</option>
+            <option value="Alegações Finais">Alegações Finais</option>
+            <option value="Impugnação ao Cumprimento de Sentença">Impugnação ao Cumprimento de Sentença</option>
+            <option value="Embargos à Execução">Embargos à Execução</option>
+            <option value="Embargos de Terceiro">Embargos de Terceiro</option>
+            <option value="Exceção de Pré-Executividade">Exceção de Pré-Executividade</option>
+          </optgroup>
+          <optgroup label="— Recursos">
+            <option value="Recurso de Apelação">Recurso de Apelação</option>
+            <option value="Agravo de Instrumento">Agravo de Instrumento</option>
+            <option value="Recurso Especial (STJ)">Recurso Especial (STJ)</option>
+            <option value="Recurso Extraordinário (STF)">Recurso Extraordinário (STF)</option>
+            <option value="Recurso Ordinário Trabalhista">Recurso Ordinário Trabalhista</option>
+            <option value="Embargos de Declaração">Embargos de Declaração</option>
+            <option value="Contrarrazões">Contrarrazões</option>
+          </optgroup>
+          <optgroup label="— Ações Especiais">
+            <option value="Habeas Corpus">Habeas Corpus</option>
+            <option value="Mandado de Segurança">Mandado de Segurança</option>
+            <option value="Ação Rescisória">Ação Rescisória</option>
+            <option value="Ação Monitória">Ação Monitória</option>
+            <option value="Tutela Cautelar Antecedente">Tutela Cautelar Antecedente</option>
+            <option value="Tutela de Urgência Antecipada">Tutela de Urgência Antecipada</option>
+            <option value="Reclamação Constitucional">Reclamação Constitucional</option>
+          </optgroup>
+          <optgroup label="— Execução e Cumprimento">
+            <option value="Cumprimento de Sentença">Cumprimento de Sentença</option>
+            <option value="Execução de Título Extrajudicial">Execução de Título Extrajudicial</option>
+            <option value="Execução de Alimentos">Execução de Alimentos</option>
+          </optgroup>
+          <optgroup label="— Peças Administrativas">
+            <option value="Recurso Administrativo INSS">Recurso Administrativo INSS</option>
+            <option value="Impugnação de Auto de Infração">Impugnação de Auto de Infração</option>
+            <option value="Defesa Administrativa">Defesa Administrativa</option>
+            <option value="Parecer Jurídico">Parecer Jurídico</option>
+            <option value="Contrato">Contrato / Instrumento Particular</option>
+            <option value="Notificação Extrajudicial">Notificação Extrajudicial</option>
+          </optgroup>
           <option value="Outro">Outro tipo de peça</option>
         </select>
       </div>
@@ -4035,11 +4169,19 @@ init();
         <option value="civel">⚖️ Cível</option>
         <option value="trabalhista">👷 Trabalhista</option>
         <option value="familia">👨‍👩‍👧 Família</option>
-        <option value="criminal">🔒 Criminal</option>
-        <option value="previdenciario">🏛️ Previdenciário/INSS</option>
+        <option value="criminal">🔒 Criminal / Penal</option>
+        <option value="previdenciario">🏛️ Previdenciário / INSS</option>
         <option value="tributario">📊 Tributário</option>
         <option value="consumidor">🛒 Consumidor</option>
         <option value="empresarial">🏢 Empresarial</option>
+        <option value="imobiliario">🏠 Imobiliário</option>
+        <option value="digital">💻 Digital / LGPD</option>
+        <option value="administrativo">🏗️ Administrativo</option>
+        <option value="ambiental">🌿 Ambiental</option>
+        <option value="bancario">🏦 Bancário / Financeiro</option>
+        <option value="saude">🩺 Saúde / Médico</option>
+        <option value="eleitoral">🗳️ Eleitoral</option>
+        <option value="agrario">🌾 Agrário</option>
       </select>
     </div>
 
