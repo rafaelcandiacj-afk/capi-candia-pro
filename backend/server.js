@@ -3742,69 +3742,6 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     ? Math.round((horasEconomizadasMes * 60) / diasAtivos)
     : 0;
 
-  // ── Tarefas concluídas (substitui valor financeiro) ────────────
-  const tarefasConcluidas = {
-    total: usageLogs.filter(u => u.feature !== 'memory_extraction').length,
-    este_mes: usageLogsMes.filter(u => u.feature !== 'memory_extraction').length,
-    breakdown: {
-      consultas: usageLogs.filter(u => u.feature === 'chat').length,
-      peticoes: totalPeticoes,
-      audiencias: totalAudiencias,
-      teses: totalTeses,
-      honorarios: totalHonorarios,
-      conteudos: totalConteudos,
-      calculos: totalCalculos,
-    }
-  };
-
-  // ── Produtividade vs média ─────────────────────────────────────
-  const mediaMensagensGeral = totalUsuariosAtivos > 0
-    ? Math.round(db.prepare(`
-        SELECT AVG(cnt) as avg FROM (
-          SELECT COUNT(*) as cnt FROM messages m
-          JOIN conversations c ON c.id = m.conversation_id
-          WHERE m.role = 'user' AND m.created_at >= datetime('now', '-30 days')
-          GROUP BY c.user_id
-        )
-      `).get()?.avg || 0)
-    : 0;
-  const minhasMensagens30d = db.prepare(`
-    SELECT COUNT(*) as c FROM messages m
-    JOIN conversations c ON c.id = m.conversation_id
-    WHERE c.user_id = ? AND m.role = 'user'
-    AND m.created_at >= datetime('now', '-30 days')
-  `).get(userId)?.c || 0;
-  const multiplicadorProdutividade = mediaMensagensGeral > 0
-    ? Math.round((minhasMensagens30d / mediaMensagensGeral) * 10) / 10
-    : 0;
-
-  // ── Calendário de atividade (últimos 90 dias) ──────────────────
-  const diasCalendario = db.prepare(`
-    SELECT date(m.created_at) as dia, COUNT(*) as cnt
-    FROM messages m
-    JOIN conversations c ON c.id = m.conversation_id
-    WHERE c.user_id = ? AND m.role = 'user'
-    AND m.created_at >= datetime('now', '-90 days')
-    GROUP BY date(m.created_at)
-    ORDER BY dia ASC
-  `).all(userId);
-  // Converter para mapa dia -> nivel (0-4)
-  const maxAtividadeDia = Math.max(...diasCalendario.map(d => d.cnt), 1);
-  const calendarioMap = {};
-  diasCalendario.forEach(d => {
-    const nivel = Math.min(4, Math.ceil((d.cnt / maxAtividadeDia) * 4));
-    calendarioMap[d.dia] = { count: d.cnt, nivel };
-  });
-  // Gerar array dos últimos 90 dias
-  const calendario = [];
-  for (let i = 89; i >= 0; i--) {
-    const d = new Date(agora);
-    d.setDate(d.getDate() - i);
-    const diaStr = d.toISOString().substring(0, 10);
-    const info = calendarioMap[diaStr] || { count: 0, nivel: 0 };
-    calendario.push({ dia: diaStr, count: info.count, nivel: info.nivel });
-  }
-
   // ── Ranking ─────────────────────────────────────────────────────
   // Usuários ativos nos últimos 30 dias por contagem de mensagens
   const rankingRows = db.prepare(`
@@ -3868,6 +3805,69 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     { ferramenta: 'Simulação Audiência', count: totalAudiencias, icone: '🎓' },
     { ferramenta: 'Cálculos', count: totalCalculos, icone: '🔢' },
   ];
+
+  // ── Tarefas concluídas (substitui valor financeiro) ────────────
+  const tarefasConcluidas = {
+    total: usageLogs.filter(u => u.feature !== 'memory_extraction').length,
+    este_mes: usageLogsMes.filter(u => u.feature !== 'memory_extraction').length,
+    breakdown: {
+      consultas: usageLogs.filter(u => u.feature === 'chat').length,
+      peticoes: totalPeticoes,
+      audiencias: totalAudiencias,
+      teses: totalTeses,
+      honorarios: totalHonorarios,
+      conteudos: totalConteudos,
+      calculos: totalCalculos,
+    }
+  };
+
+  // ── Produtividade vs média ─────────────────────────────────────
+  const mediaMensagensGeral = totalUsuariosAtivos > 0
+    ? Math.round(db.prepare(`
+        SELECT AVG(cnt) as avg FROM (
+          SELECT COUNT(*) as cnt FROM messages m
+          JOIN conversations c ON c.id = m.conversation_id
+          WHERE m.role = 'user' AND m.created_at >= datetime('now', '-30 days')
+          GROUP BY c.user_id
+        )
+      `).get()?.avg || 0)
+    : 0;
+  const minhasMensagens30d = db.prepare(`
+    SELECT COUNT(*) as c FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    AND m.created_at >= datetime('now', '-30 days')
+  `).get(userId)?.c || 0;
+  const multiplicadorProdutividade = mediaMensagensGeral > 0
+    ? Math.round((minhasMensagens30d / mediaMensagensGeral) * 10) / 10
+    : 0;
+
+  // ── Calendário de atividade (últimos 90 dias) ──────────────────
+  const diasCalendario = db.prepare(`
+    SELECT date(m.created_at) as dia, COUNT(*) as cnt
+    FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    AND m.created_at >= datetime('now', '-90 days')
+    GROUP BY date(m.created_at)
+    ORDER BY dia ASC
+  `).all(userId);
+  // Converter para mapa dia -> nivel (0-4)
+  const maxAtividadeDia = Math.max(...diasCalendario.map(d => d.cnt), 1);
+  const calendarioMap = {};
+  diasCalendario.forEach(d => {
+    const nivel = Math.min(4, Math.ceil((d.cnt / maxAtividadeDia) * 4));
+    calendarioMap[d.dia] = { count: d.cnt, nivel };
+  });
+  // Gerar array dos últimos 90 dias
+  const calendario = [];
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date(agora);
+    d.setDate(d.getDate() - i);
+    const diaStr = d.toISOString().substring(0, 10);
+    const info = calendarioMap[diaStr] || { count: 0, nivel: 0 };
+    calendario.push({ dia: diaStr, count: info.count, nivel: info.nivel });
+  }
 
   // ── Evolução mensal (últimos 6 meses) ───────────────────────────
   const evolucao = [];
