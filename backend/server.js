@@ -1442,10 +1442,11 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   const lastMsgContent = messages[messages.length-1]?.content || '';
   const lastMsgLower = lastMsgContent.toLowerCase();
   // Petição e tese precisam de mais tokens (são peças completas)
-  const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao');
-  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese');
+  const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao') || lastMsgLower.includes('inicial') || lastMsgLower.includes('contestação') || lastMsgLower.includes('contestacao') || lastMsgLower.includes('recurso') || lastMsgLower.includes('embargos') || lastMsgLower.includes('mandado de segurança') || lastMsgLower.includes('habeas corpus') || lastMsgLower.includes('agravo') || lastMsgLower.includes('apelação') || lastMsgLower.includes('apelacao') || lastMsgLower.includes('impugnação') || lastMsgLower.includes('réplica') || lastMsgLower.includes('replica') || lastMsgLower.includes('contrarrazões') || lastMsgLower.includes('contrarrazoes');
+  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese') || lastMsgLower.includes('argumentação') || lastMsgLower.includes('argumentacao') || lastMsgLower.includes('fundamentação') || lastMsgLower.includes('fundamentacao');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
-  const maxTok = isPeticao ? 16000 : isTese ? 4000 : temDocumento ? 4000 : 1800;
+  // Respostas mais generosas para evitar truncamento (12.9% truncavam antes)
+  const maxTok = isPeticao ? 16000 : isTese ? 8000 : temDocumento ? 6000 : 2500;
 
   // ── FORMATO LIMPO: instrução por tipo de peça (itens 3, 4, 6, 7) ──
   let formatoCtx = '';
@@ -1590,20 +1591,26 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: `Você é a Capi, assistente jurídica estratégica. Analise a conversa abaixo e gere EXATAMENTE 3 sugestões de próximos passos PRÁTICOS E JURÍDICOS para o advogado.
+            { role: 'system', content: `Você é a Capi, assistente jurídica estratégica. Gere EXATAMENTE 4 sugestões de próximos passos para o advogado.
 
-REGRAS OBRIGATÓRIAS:
-- As sugestões devem ser 100% relacionadas ao tema da conversa
-- Sempre ações que um advogado faria de verdade no contexto jurídico/advocacia
-- Máximo 8 palavras cada
-- Começar com verbo de ação concreto
-- NUNCA sugerir: grupos de apoio, autocuidado, meditação, técnicas emocionais ou qualquer coisa não jurídica
-- Se o tema for emocional/motivacional, sugira: "Montar rotina semanal de atendimentos", "Definir meta de honorários do mês", "Criar conteúdo sobre sua área para Instagram"
-- Se for petição: sugira recursos, embargos, estratégias processuais
-- Se for tese: sugira petição, conteúdo, honorários
-- Se for honorários: sugira proposta, contrato, estratégia de cobrança
+REGRAS:
+- 100% relacionadas ao tema da conversa
+- Máximo 7 palavras cada, começar com verbo
+- NUNCA sugerir autocuidado, meditação ou qualquer coisa não jurídica
+- Sugestões devem ser IRRESISTÍVEIS — o advogado deve querer clicar
 
-Retorne APENAS um JSON array de 3 strings. Exemplo: ["Gerar embargos de declaração", "Calcular honorários de sucumbência", "Criar tese alternativa para o caso"]` },
+CONTEXTO POR TIPO:
+- Petição/peça → recurso, embargos, estratégia alternativa, baixar DOCX
+- Tese → petição com a tese, conteúdo Instagram, honorários
+- Honorários → proposta, contrato, estratégia de cobrança
+- Conteúdo Instagram → criar sequência da semana, carrossel, reel, stories
+- Análise de documento → estratégia processual, petição, checklist
+- Cálculo → petição com os valores, honorários, proposta ao cliente
+- Consulta geral → tese aprofundada, petição, conteúdo para redes
+
+A 4ª sugestão SEMPRE deve ser algo diferente do tema atual para expandir o uso (ex: se falou de tese, sugira conteúdo Instagram; se falou de petição, sugira honorários).
+
+Retorne APENAS um JSON array de 4 strings.` },
             { role: 'user', content: 'Pergunta do advogado: "' + (messages[messages.length-1]?.content||'').substring(0,300) + '" / Resposta da Capi: "' + reply.substring(0,500) + '"' }
           ],
           temperature: 0.6,
@@ -1614,7 +1621,7 @@ Retorne APENAS um JSON array de 3 strings. Exemplo: ["Gerar embargos de declara�
         const sugData = await sugResponse.json();
         const sugText = sugData.choices[0]?.message?.content || '[]';
         const parsed = JSON.parse(sugText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
-        if (Array.isArray(parsed)) suggestions = parsed.slice(0, 3);
+        if (Array.isArray(parsed)) suggestions = parsed.slice(0, 4);
       }
     } catch (e) {
       console.error('Erro ao gerar sugestões:', e.message);
