@@ -1511,10 +1511,12 @@
   function formatRelativeDate(dateStr) {
     if (!dateStr) return '';
     try {
-      const d = new Date(dateStr);
+      // Server returns UTC dates without Z suffix — append Z to parse correctly
+      const d = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
       const now = new Date();
       const diffMs = now - d;
       const diffDays = Math.floor(diffMs / 86400000);
+      if (diffDays < 0) return 'Hoje';
       if (diffDays === 0) return 'Hoje';
       if (diffDays === 1) return 'Ontem';
       if (diffDays < 7) return `${diffDays} dias atrás`;
@@ -1584,7 +1586,13 @@
   /* ── Hero ───────────────────────────────────────────────────────── */
   function renderHero(profile, stats) {
     if (!profile) return;
-    const name = profile.nome ? profile.nome.split(' ')[0] : 'Advogado';
+    // Pega primeiro nome real (pula Dr./Dra./Prof.)
+    let name = 'Advogado';
+    if (profile.nome) {
+      const parts = profile.nome.trim().split(/\s+/);
+      const prefixes = ['dr.','dra.','prof.','dr','dra','prof'];
+      name = parts.find(p => !prefixes.includes(p.toLowerCase())) || parts[0];
+    }
     document.getElementById('hero-name').textContent = name;
     document.getElementById('header-welcome-text').textContent = `Olá, ${name}`;
 
@@ -1998,8 +2006,8 @@
       list.innerHTML = `
         <div class="empty-state">
           <div class="mascot">💬</div>
-          <p class="title">Nenhuma conversa registrada</p>
-          <p>Comece a conversar com a Capi e seus resumos aparecerão aqui automaticamente.</p>
+          <p class="title">Resumos sendo gerados</p>
+          <p>A Capi resume automaticamente suas conversas mais longas. Continue usando e os resumos aparecerão aqui em breve.</p>
         </div>
       `;
       countLabel.textContent = '';
@@ -2092,8 +2100,11 @@
       await API.put('/api/profile', body);
       document.getElementById('profile-display-name').textContent = body.nome || 'Seu Nome';
       document.getElementById('profile-display-area').textContent = body.area || '–';
-      document.getElementById('hero-name').textContent = body.nome ? body.nome.split(' ')[0] : 'Advogado';
-      document.getElementById('header-welcome-text').textContent = `Olá, ${body.nome ? body.nome.split(' ')[0] : 'Advogado'}`;
+      const prefixes2 = ['dr.','dra.','prof.','dr','dra','prof'];
+      const savedParts = (body.nome || '').trim().split(/\s+/);
+      const savedName = savedParts.find(p => !prefixes2.includes(p.toLowerCase())) || savedParts[0] || 'Advogado';
+      document.getElementById('hero-name').textContent = savedName;
+      document.getElementById('header-welcome-text').textContent = `Olá, ${savedName}`;
 
       const msg = document.getElementById('profile-save-msg');
       msg.classList.add('visible');
