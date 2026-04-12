@@ -576,7 +576,6 @@
       border: 1px solid var(--color-border);
       border-radius: var(--radius-xl);
       padding: var(--sp-6);
-      overflow: hidden;
     }
     .chart-legend {
       display: flex;
@@ -2413,8 +2412,8 @@
         </div>
       </div>
       <div class="chart-area">
-        <div class="chart-svg-wrap" style="height:${H}px">
-          <svg width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <div class="chart-svg-wrap">
+          <svg width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stop-color="#C4A265"/>
