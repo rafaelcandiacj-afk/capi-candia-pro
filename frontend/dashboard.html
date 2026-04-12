@@ -1737,14 +1737,14 @@
         <!-- Economy highlight strip -->
         <div class="hero-economy-strip" id="hero-economy-strip">
           <div class="hero-economy-item">
-            <span class="hero-economy-label">⏱ Economizado este mês</span>
-            <span class="hero-economy-value" id="hero-horas-mes">—</span>
-            <span class="hero-economy-sub" id="hero-equiv-mes">calculando…</span>
-          </div>
-          <div class="hero-economy-item">
             <span class="hero-economy-label">✅ Tarefas concluídas</span>
             <span class="hero-economy-value" id="hero-tarefas-total">—</span>
             <span class="hero-economy-sub" id="hero-tarefas-mes">este mês: —</span>
+          </div>
+          <div class="hero-economy-item">
+            <span class="hero-economy-label">📊 Produtividade vs Média</span>
+            <span class="hero-economy-value" id="hero-produtividade">—</span>
+            <span class="hero-economy-sub" id="hero-prod-sub">calculando…</span>
           </div>
           <div class="hero-economy-item">
             <span class="hero-economy-label">🏆 Seu ranking</span>
@@ -2287,7 +2287,6 @@
 
     if (stats) {
       // Economy strip
-      const horasMes = stats.horas_economizadas_mes || 0;
       const percentil = stats.percentil || 0;
       const pos = stats.posicao_ranking || 0;
       const total = stats.total_usuarios_ativos || 0;
@@ -2296,23 +2295,23 @@
       const tarefasMes = stats.tarefas_mes || 0;
       const multiplicador = stats.multiplicador_produtividade || 0;
 
-      const heroHorasMes = document.getElementById('hero-horas-mes');
-      const heroEquivMes = document.getElementById('hero-equiv-mes');
       const heroTarefasTotal = document.getElementById('hero-tarefas-total');
       const heroTarefasMes = document.getElementById('hero-tarefas-mes');
+      const heroProdutividade = document.getElementById('hero-produtividade');
+      const heroProdSub = document.getElementById('hero-prod-sub');
       const heroPercentil = document.getElementById('hero-percentil');
       const heroRankingPos = document.getElementById('hero-ranking-pos');
 
       // Animate hero numbers
       setTimeout(() => {
-        animateCounter(heroHorasMes, horasMes, 1000, (v) => fmtHours(v));
+        animateCounter(heroTarefasTotal, tarefasTotal, 1000, (v) => fmtNum(Math.round(v)));
       }, 600);
-      heroEquivMes.textContent = multiplicador > 0 ? `${multiplicador}x mais que a média` : 'calculando...';
-
-      setTimeout(() => {
-        animateCounter(heroTarefasTotal, tarefasTotal, 1200, (v) => fmtNum(Math.round(v)));
-      }, 700);
       heroTarefasMes.textContent = `este mês: ${fmtNum(tarefasMes)}`;
+
+      heroProdutividade.textContent = multiplicador > 0 ? `${multiplicador}x` : '—';
+      heroProdSub.textContent = multiplicador > 0
+        ? `${fmtNum(stats.minhas_mensagens_30d || 0)} vs ${fmtNum(stats.media_plataforma_30d || 0)} média`
+        : 'use mais para calcular';
 
       heroPercentil.textContent = `Top ${percentil || 0}%`;
       heroRankingPos.textContent = pos && total ? `#${fmtNum(pos)} de ${fmtNum(total)} advogados` : 'Calculando ranking…';
@@ -2340,8 +2339,6 @@
       return;
     }
 
-    const horasTotal = stats.horas_economizadas_total || 0;
-    const horasMes = stats.horas_economizadas_mes || 0;
     const tarefasTotal = stats.tarefas_total || 0;
     const tarefasMes = stats.tarefas_mes || 0;
     const multiplicador = stats.multiplicador_produtividade || 0;
@@ -2352,18 +2349,23 @@
     grid.innerHTML = `
       <div class="economy-card" style="animation-delay:0.1s">
         <div class="economy-card-label">
-          <span class="economy-card-icon">⏱</span>
-          Tempo Economizado
+          <span class="economy-card-icon">📊</span>
+          Produtividade vs Média
         </div>
-        <div class="economy-big-number" id="ec-horas-total">0h</div>
+        <div class="economy-big-number" id="ec-produtividade">${multiplicador > 0 ? multiplicador + 'x' : '—'}</div>
         <div class="economy-sub-row">
           <span class="economy-sub-item">
             <span class="economy-sub-dot"></span>
-            Este mês: <span class="economy-sub-value">${fmtHours(horasMes)}</span>
+            Você: <span class="economy-sub-value">${fmtNum(stats.minhas_mensagens_30d || 0)} interações</span>
           </span>
           <span class="economy-sub-item">
             <span class="economy-sub-dot"></span>
-            Média: <span class="economy-sub-value">${fmtNum(stats.minutos_por_dia_media || 0)} min/dia</span>
+            Média: <span class="economy-sub-value">${fmtNum(stats.media_plataforma_30d || 0)} interações</span>
+          </span>
+        </div>
+        <div class="economy-sub-row" style="margin-top:var(--sp-2)">
+          <span class="economy-sub-item" style="font-size:0.75rem;opacity:0.7">
+            Últimos 30 dias entre ${fmtNum(total)} advogados
           </span>
         </div>
       </div>
@@ -2409,9 +2411,6 @@
 
     // Animate numbers with slight delay after render
     setTimeout(() => {
-      const ecHorasEl = document.getElementById('ec-horas-total');
-      if (ecHorasEl) animateCounter(ecHorasEl, horasTotal, 1400, (v) => fmtHours(v));
-
       const ecTarefasEl = document.getElementById('ec-tarefas-total');
       if (ecTarefasEl) animateCounter(ecTarefasEl, tarefasTotal, 1500, (v) => fmtNum(Math.round(v)));
 
