@@ -2670,7 +2670,7 @@
     const totalInteracoes = calendario.reduce((s, d) => s + d.count, 0);
     const melhorDia = calendario.reduce((best, d) => d.count > best.count ? d : best, { count: 0 });
 
-    subtitle.textContent = ` · ${diasAtivos} dias ativos nos últimos 90`;
+    subtitle.textContent = ` · ${diasAtivos} ${diasAtivos === 1 ? 'dia ativo' : 'dias ativos'} nos últimos 90`;
 
     // Build calendar squares
     const squares = calendario.map(d => {

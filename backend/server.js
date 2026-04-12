@@ -3698,7 +3698,8 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   // ── Dias como membro / primeiro uso ────────────────────────────
   const userRow = db.prepare('SELECT created_at FROM users WHERE id = ?').get(userId);
   const primeiroUso = userRow?.created_at || agora.toISOString();
-  const diasComoMembro = Math.floor((agora - new Date(primeiroUso)) / (1000 * 60 * 60 * 24));
+  const diasComoMembroRaw = Math.floor((agora - new Date(primeiroUso)) / (1000 * 60 * 60 * 24));
+  const diasComoMembro = userRow?.created_at ? Math.max(1, diasComoMembroRaw) : 0;
 
   // ── ai_usage_log para horas economizadas e ferramentas ──────────
   const usageLogs = db.prepare(`
