@@ -542,6 +542,37 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS conversation_summaries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    conversation_id INTEGER NOT NULL UNIQUE,
+    summary TEXT NOT NULL,
+    key_topics TEXT,
+    action_items TEXT,
+    emotional_tone TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (conversation_id) REFERENCES conversations(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS user_cases (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    titulo TEXT NOT NULL,
+    cliente TEXT,
+    area TEXT,
+    status TEXT DEFAULT 'ativo',
+    detalhes TEXT,
+    proximo_passo TEXT,
+    prazo TEXT,
+    auto_detected INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
 // ─── AI USAGE LOGGING ───────────────────────────────────────
 function logAiUsage(userId, feature, model, inputTokens, outputTokens, thinkingTokens, costUsd) {
   try {
@@ -555,6 +586,11 @@ if (!userProfileCols.includes('estado')) db.prepare('ALTER TABLE user_profiles A
 if (!userProfileCols.includes('tom_preferido')) db.prepare("ALTER TABLE user_profiles ADD COLUMN tom_preferido TEXT DEFAULT 'equilibrado'").run();
 if (!userProfileCols.includes('oab')) db.prepare('ALTER TABLE user_profiles ADD COLUMN oab TEXT').run();
 if (!userProfileCols.includes('escritorio')) db.prepare('ALTER TABLE user_profiles ADD COLUMN escritorio TEXT').run();
+
+// Migração: user_memory extras
+try { db.prepare('ALTER TABLE user_memory ADD COLUMN relevance_score REAL DEFAULT 1.0').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE user_memory ADD COLUMN access_count INTEGER DEFAULT 0').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE user_memory ADD COLUMN source TEXT DEFAULT "chat"').run(); } catch(e) {}
 
 // Inserir prompt padrão se não existir
 const existingPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get();
@@ -1262,18 +1298,47 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const userProfile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
   let profileCtx = '';
   const hasProfile = userProfile && userProfile.nome;
-  // Carrega memórias acumuladas do advogado
-  const userMemories = db.prepare('SELECT category, insight FROM user_memory WHERE user_id = ? ORDER BY updated_at DESC LIMIT 40').all(req.user.id);
+
+  // Carrega memórias com scoring de relevância
+  const userMemories = db.prepare('SELECT id, category, insight, relevance_score, access_count FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC LIMIT 60').all(req.user.id);
+
+  // Carrega resumos de conversas recentes (últimas 10)
+  const recentSummaries = db.prepare('SELECT summary, key_topics, action_items, emotional_tone, created_at FROM conversation_summaries WHERE user_id = ? ORDER BY created_at DESC LIMIT 10').all(req.user.id);
+
+  // Carrega casos ativos
+  const activeCases = db.prepare('SELECT titulo, cliente, area, detalhes, proximo_passo, prazo, updated_at FROM user_cases WHERE user_id = ? AND status = ? ORDER BY updated_at DESC LIMIT 10').all(req.user.id, 'ativo');
+
   if (hasProfile) {
+    // Memórias agrupadas por categoria
     let memoriesText = '';
     if (userMemories.length > 0) {
       const grouped = {};
       userMemories.forEach(m => { if (!grouped[m.category]) grouped[m.category] = []; grouped[m.category].push(m.insight); });
-      memoriesText = '\n- Memórias acumuladas sobre este advogado:\n' +
-        Object.entries(grouped).map(([cat, items]) => `  [${cat}] ${items.slice(0,5).join(' | ')}`).join('\n');
+      memoriesText = '\n- Memórias sobre este advogado:\n' +
+        Object.entries(grouped).map(([cat, items]) => `  [${cat}] ${items.slice(0,6).join(' | ')}`).join('\n');
+
+      // Marca memórias como acessadas (boost relevance)
+      const memIds = userMemories.slice(0, 40).map(m => m.id);
+      if (memIds.length > 0) {
+        db.prepare(`UPDATE user_memory SET access_count = access_count + 1 WHERE id IN (${memIds.join(',')})`).run();
+      }
     }
 
-    // ── TERMÔMETRO DE TOM (item 1) ──
+    // Resumos de conversas recentes
+    let summariesText = '';
+    if (recentSummaries.length > 0) {
+      summariesText = '\n\n📋 HISTÓRICO RECENTE DE CONVERSAS:\n' +
+        recentSummaries.slice(0, 5).map((s, i) => `  ${i+1}. ${s.summary}${s.action_items ? ' [Pendente: ' + s.action_items + ']' : ''}`).join('\n');
+    }
+
+    // Casos ativos
+    let casesText = '';
+    if (activeCases.length > 0) {
+      casesText = '\n\n📂 CASOS ATIVOS DO ADVOGADO:\n' +
+        activeCases.map(c => `  • ${c.titulo}${c.cliente ? ' (Cliente: ' + c.cliente + ')' : ''}${c.area ? ' [' + c.area + ']' : ''}${c.proximo_passo ? ' → Próx: ' + c.proximo_passo : ''}${c.prazo ? ' ⏰ ' + c.prazo : ''}`).join('\n');
+    }
+
+    // Termômetro de tom
     const tom = userProfile.tom_preferido || 'equilibrado';
     let tomInstrucao = '';
     if (tom === 'descontraido') {
@@ -1284,7 +1349,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       tomInstrucao = '\n\n🌡️ TOM DE COMUNICAÇÃO: EQUILIBRADO — Tom amigável mas profissional. Pode usar "papi" com moderação (1x por resposta no máximo). Evite excesso de informalidade.';
     }
 
-    // ── TOM POR EXPERIÊNCIA (item 5) ──
+    // Tom por experiência
     let expInstrucao = '';
     const anosExp = parseInt(userProfile.anos_experiencia) || 0;
     if (anosExp >= 1 && anosExp <= 3) {
@@ -1295,7 +1360,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
       expInstrucao = '\n\n📚 NÍVEL DE EXPERIÊNCIA: SÊNIOR (10+ anos) — Vá direto ao ponto. Sem explicações básicas. Use linguagem técnica avançada, citações doutrinárias e terminologia forense sem simplificações.';
     }
 
-    // ── VERIFICAÇÃO GEOGRÁFICA (item 9) ──
+    // Verificação geográfica
     let geoInstrucao = '';
     if (userProfile.estado) {
       geoInstrucao = `\n\n📍 LOCALIZAÇÃO: O advogado atua no estado de ${userProfile.estado}. Adapte quando relevante: tabela de custas estaduais, competência dos TJs/TRTs locais, legislação estadual específica (ex: ITCMD do ${userProfile.estado}, lei estadual aplicável, jurisprudência do TJ${userProfile.estado}).`;
@@ -1308,13 +1373,10 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
 - Cidade: ${userProfile.cidade || 'não informada'}
 - Estado: ${userProfile.estado || 'não informado'}
 - OAB: ${userProfile.oab || 'não informado'}
-- Escritório: ${userProfile.escritorio || 'não informado'}${memoriesText}
+- Escritório: ${userProfile.escritorio || 'não informado'}${memoriesText}${summariesText}${casesText}
 
-REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias para personalizar respostas e demonstrar que lembra do advogado.${tomInstrucao}${expInstrucao}${geoInstrucao}${
-      '' // rodapé movido para formatoCtx de petição
-    }`;
+REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar. Chame-o pelo nome (${userProfile.nome}) e use a área (${userProfile.area || 'Direito'}) como contexto padrão. USE as memórias, resumos e casos ativos para personalizar respostas e demonstrar que lembra do advogado. Faça referências naturais: "Como naquele caso que você mencionou...", "Lembro que você estava trabalhando em...", "Pelo seu perfil de atuação em...".${tomInstrucao}${expInstrucao}${geoInstrucao}`;
   } else {
-    // Sem perfil: NUNCA perguntar nome/área diretamente
     profileCtx = '\n\nREGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem ele é pelo perfil. Se não souber, continue sem perguntar.';
   }
   
@@ -1641,52 +1703,200 @@ Retorne APENAS um JSON array de 4 strings.` },
       logAiUsage(userId, 'chat', 'gpt-4.1', chatInputTokens, chatOutputTokens, 0, chatCost);
     } catch(e) { console.error('Erro log chat usage:', e.message); }
 
-    // MEMÓRIA DO ADVOGADO — extrai insights em background (não bloqueia a resposta)
-    if (hasProfile) {
-      setImmediate(async () => {
-        try {
-          const userMsg = messages[messages.length - 1]?.content || '';
-          const memResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              messages: [
-                { role: 'system', content: `Você é um sistema de memória para uma IA jurídica. Analise a conversa e extraia APENAS insights relevantes e duráveis sobre o advogado. Categorias possíveis: "casos" (tipos de caso que trabalha), "clientes" (perfil dos clientes), "preferencias" (como prefere trabalhar), "especialidade" (subáreas de atuação), "escritorio" (tamanho, localização, estrutura), "estilo" (como escreve petições, argumentação preferida), "desafios" (dificuldades recorrentes). Retorne APENAS um JSON array de objetos {category, insight} com no máximo 3 insights. Se não houver insights relevantes, retorne []. Exemplo: [{"category":"casos","insight":"Trabalha com ações de dano moral contra planos de saúde"},{"category":"clientes","insight":"Atende principalmente classe média"}]. NUNCA inclua informações já básicas como nome ou área principal.` },
-                { role: 'user', content: `Pergunta do advogado: "${userMsg.substring(0, 300)}"
-Resposta da Capi: "${reply.substring(0, 500)}"` }
-              ],
-              temperature: 0.3,
-              max_tokens: 300
-            })
-          });
-          if (memResponse.ok) {
-            const memData = await memResponse.json();
-            const memText = memData.choices[0]?.message?.content || '[]';
+    // ─── MEMÓRIA TURBINADA — extrai insights + resumo + casos em background ───
+    setImmediate(async () => {
+      try {
+        const memUserMsg = messages[messages.length - 1]?.content || '';
+        const memReply = reply;
+        const memUserId = userId;
+        
+        // 1. EXTRAÇÃO DE INSIGHTS (upgraded — mais contexto, gpt-4.1-nano para economia)
+        const memResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1-nano',
+            messages: [
+              { role: 'system', content: `Você é o sistema de memória de longo prazo da CAPI, uma IA jurídica brasileira. Analise a conversa completa e extraia insights RELEVANTES e DURÁVEIS sobre o advogado.
+
+CATEGORIAS (use exatamente estas):
+- "casos": tipos de caso, processos específicos, resultados obtidos
+- "clientes": perfil dos clientes, segmento, poder aquisitivo
+- "preferencias": como prefere trabalhar, horários, ferramentas
+- "especialidade": subáreas, nichos, teses favoritas
+- "escritorio": estrutura, sócios, funcionários, localização
+- "estilo": tom de petições, argumentação preferida, nível técnico
+- "desafios": dificuldades recorrentes, pontos fracos, frustrações
+- "conquistas": vitórias, resultados, marcos profissionais
+- "networking": referências a colegas, juízes, contatos
+- "metas": objetivos profissionais, planos futuros
+
+REGRAS:
+- Máximo 5 insights por análise
+- Cada insight deve ter 15-80 palavras
+- NUNCA guarde nome, área principal, ou dados já no perfil básico
+- Guarde DETALHES ESPECÍFICOS (ex: "Ganhou causa contra Unimed por negativa de home care" não apenas "trabalha com planos de saúde")
+- Se não houver insights relevantes, retorne []
+
+Retorne APENAS um JSON array: [{category, insight, importance}]
+importance: 1-5 (5=muito importante, ex: vitória em caso; 1=detalhe menor)` },
+              { role: 'user', content: `Conversa completa:
+Advogado: "${memUserMsg.substring(0, 800)}"
+CAPI: "${memReply.substring(0, 800)}"` }
+            ],
+            temperature: 0.2,
+            max_tokens: 500
+          })
+        });
+        
+        if (memResponse.ok) {
+          const memData = await memResponse.json();
+          const memText = memData.choices[0]?.message?.content || '[]';
+          try {
             const insights = JSON.parse(memText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
             if (Array.isArray(insights) && insights.length > 0) {
-              const upsertMemory = db.prepare(`
-                INSERT INTO user_memory (user_id, category, insight, updated_at)
-                VALUES (?, ?, ?, datetime('now'))
-                ON CONFLICT DO NOTHING
-              `);
-              // Evita duplicatas verificando se insight similar já existe
-              const existing = db.prepare('SELECT insight FROM user_memory WHERE user_id = ?').all(userId).map(r => r.insight.toLowerCase());
-              insights.forEach(({ category, insight }) => {
+              const existing = db.prepare('SELECT insight FROM user_memory WHERE user_id = ?').all(memUserId).map(r => r.insight.toLowerCase());
+              insights.forEach(({ category, insight, importance }) => {
                 if (category && insight && insight.length > 10) {
-                  const isDuplicate = existing.some(e => e.includes(insight.toLowerCase().substring(0, 20)));
+                  const isDuplicate = existing.some(e => {
+                    const words = insight.toLowerCase().split(' ').filter(w => w.length > 4);
+                    const matchCount = words.filter(w => e.includes(w)).length;
+                    return matchCount >= Math.min(3, words.length * 0.6);
+                  });
                   if (!isDuplicate) {
-                    db.prepare('INSERT INTO user_memory (user_id, category, insight) VALUES (?, ?, ?)').run(userId, category, insight);
+                    db.prepare('INSERT INTO user_memory (user_id, category, insight, relevance_score, source) VALUES (?, ?, ?, ?, ?)').run(
+                      memUserId, category, insight, importance || 1.0, 'chat'
+                    );
                   }
                 }
               });
             }
-          }
-        } catch (memErr) {
-          // Silencioso — memória é best-effort
+          } catch(parseErr) { /* JSON parse error — silencioso */ }
+          
+          // Log do custo da memória
+          try {
+            const memInputTok = Math.round((memUserMsg.length + memReply.length) / 3.5) + 300;
+            const memOutputTok = Math.round((memText.length) / 3.5);
+            logAiUsage(memUserId, 'memory_extraction', 'gpt-4.1-nano', memInputTok, memOutputTok, 0, (memInputTok/1e6)*0.10 + (memOutputTok/1e6)*0.40);
+          } catch(e) {}
         }
-      });
-    }
+        
+        // 2. DETECÇÃO DE CASOS ATIVOS — procura menções a processos, clientes, prazos
+        try {
+          const caseResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+            body: JSON.stringify({
+              model: 'gpt-4.1-nano',
+              messages: [
+                { role: 'system', content: `Analise se o advogado mencionou um CASO ATIVO ou CLIENTE ESPECÍFICO. Extraia apenas se for concreto (não hipotético).
+
+Se houver caso concreto, retorne: {"found": true, "titulo": "breve título do caso", "cliente": "nome se mencionado", "area": "área jurídica", "detalhes": "contexto relevante", "proximo_passo": "se mencionou próximo passo", "prazo": "se mencionou prazo/data"}
+Se não houver caso concreto: {"found": false}` },
+                { role: 'user', content: `Advogado: "${memUserMsg.substring(0, 500)}"\nCAPI: "${memReply.substring(0, 300)}"` }
+              ],
+              temperature: 0.1,
+              max_tokens: 200
+            })
+          });
+          
+          if (caseResponse.ok) {
+            const caseData = await caseResponse.json();
+            const caseText = caseData.choices[0]?.message?.content || '{}';
+            try {
+              const caseInfo = JSON.parse(caseText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+              if (caseInfo.found && caseInfo.titulo) {
+                // Verifica se caso similar já existe
+                const existingCases = db.prepare('SELECT titulo FROM user_cases WHERE user_id = ? AND status = ?').all(memUserId, 'ativo').map(r => r.titulo.toLowerCase());
+                const isDupCase = existingCases.some(t => {
+                  const words = caseInfo.titulo.toLowerCase().split(' ').filter(w => w.length > 3);
+                  return words.filter(w => t.includes(w)).length >= 2;
+                });
+                if (!isDupCase) {
+                  db.prepare('INSERT INTO user_cases (user_id, titulo, cliente, area, detalhes, proximo_passo, prazo) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+                    memUserId, caseInfo.titulo, caseInfo.cliente || null, caseInfo.area || null,
+                    caseInfo.detalhes || null, caseInfo.proximo_passo || null, caseInfo.prazo || null
+                  );
+                }
+              }
+            } catch(e) { /* parse error */ }
+          }
+        } catch(e) { /* case detection error — silencioso */ }
+        
+        // 3. RESUMO DE CONVERSA — salva ao atingir 6+ mensagens
+        try {
+          const msgCount = db.prepare('SELECT COUNT(*) as c FROM messages WHERE conversation_id = ?').get(convId)?.c || 0;
+          const existingSummary = db.prepare('SELECT id FROM conversation_summaries WHERE conversation_id = ?').get(convId);
+          
+          if (msgCount >= 6 && !existingSummary) {
+            const convMsgs = db.prepare('SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 30').all(convId);
+            const convText = convMsgs.map(m => `${m.role === 'user' ? 'Advogado' : 'CAPI'}: ${m.content.substring(0, 200)}`).join('\n');
+            
+            const sumResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+              body: JSON.stringify({
+                model: 'gpt-4.1-nano',
+                messages: [
+                  { role: 'system', content: `Resuma esta conversa jurídica em 2-3 frases objetivas. Inclua: tema principal, conclusão/resultado, e qualquer ação pendente. Retorne JSON: {"summary": "...", "key_topics": "tópico1, tópico2", "action_items": "item1; item2 (ou null)", "emotional_tone": "satisfeito|frustrado|neutro|urgente|exploratório"}` },
+                  { role: 'user', content: convText.substring(0, 2000) }
+                ],
+                temperature: 0.2,
+                max_tokens: 300
+              })
+            });
+            
+            if (sumResponse.ok) {
+              const sumData = await sumResponse.json();
+              const sumText = sumData.choices[0]?.message?.content || '{}';
+              try {
+                const sumInfo = JSON.parse(sumText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+                if (sumInfo.summary) {
+                  db.prepare('INSERT INTO conversation_summaries (user_id, conversation_id, summary, key_topics, action_items, emotional_tone) VALUES (?, ?, ?, ?, ?, ?)').run(
+                    memUserId, convId, sumInfo.summary, sumInfo.key_topics || null, sumInfo.action_items || null, sumInfo.emotional_tone || 'neutro'
+                  );
+                }
+              } catch(e) {}
+            }
+          } else if (existingSummary && msgCount >= 12 && msgCount % 6 === 0) {
+            // Atualiza resumo a cada 6 mensagens adicionais
+            const convMsgs = db.prepare('SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 40').all(convId);
+            const convText = convMsgs.map(m => `${m.role === 'user' ? 'Advogado' : 'CAPI'}: ${m.content.substring(0, 200)}`).join('\n');
+            
+            const sumResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+              body: JSON.stringify({
+                model: 'gpt-4.1-nano',
+                messages: [
+                  { role: 'system', content: `Resuma esta conversa jurídica em 2-3 frases objetivas. Inclua: tema principal, conclusão/resultado, e qualquer ação pendente. Retorne JSON: {"summary": "...", "key_topics": "tópico1, tópico2", "action_items": "item1; item2 (ou null)", "emotional_tone": "satisfeito|frustrado|neutro|urgente|exploratório"}` },
+                  { role: 'user', content: convText.substring(0, 2000) }
+                ],
+                temperature: 0.2,
+                max_tokens: 300
+              })
+            });
+            
+            if (sumResponse.ok) {
+              const sumData = await sumResponse.json();
+              const sumText = sumData.choices[0]?.message?.content || '{}';
+              try {
+                const sumInfo = JSON.parse(sumText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
+                if (sumInfo.summary) {
+                  db.prepare('UPDATE conversation_summaries SET summary = ?, key_topics = ?, action_items = ?, emotional_tone = ? WHERE conversation_id = ?').run(
+                    sumInfo.summary, sumInfo.key_topics || null, sumInfo.action_items || null, sumInfo.emotional_tone || 'neutro', convId
+                  );
+                }
+              } catch(e) {}
+            }
+          }
+        } catch(e) { /* summary error — silencioso */ }
+        
+      } catch (memErr) {
+        // Silencioso — memória é best-effort
+        console.error('Memory system error:', memErr.message);
+      }
+    });
 
   } catch (e) {
     console.error('Erro chat endpoint:', e.message, e.stack?.split('\n')[1]);
@@ -4013,6 +4223,170 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Erro interno TTS' });
   }
 });
+
+// ─── DASHBOARD DO ADVOGADO ────────────────────────────────────
+
+// Dashboard completo — dados consolidados
+app.get('/api/dashboard', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  
+  // Perfil
+  const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(userId) || {};
+  
+  // Memórias agrupadas
+  const memories = db.prepare('SELECT category, insight, relevance_score, created_at FROM user_memory WHERE user_id = ? ORDER BY relevance_score DESC, updated_at DESC').all(userId);
+  const grouped = {};
+  memories.forEach(m => {
+    if (!grouped[m.category]) grouped[m.category] = [];
+    grouped[m.category].push({ insight: m.insight, score: m.relevance_score, date: m.created_at });
+  });
+  
+  // Casos ativos
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC LIMIT 20').all(userId);
+  
+  // Resumos recentes
+  const summaries = db.prepare(`
+    SELECT cs.*, c.title as conv_title 
+    FROM conversation_summaries cs 
+    JOIN conversations c ON c.id = cs.conversation_id 
+    WHERE cs.user_id = ? 
+    ORDER BY cs.created_at DESC LIMIT 15
+  `).all(userId);
+  
+  // Estatísticas
+  const agora = new Date();
+  const mesAtual = `${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}`;
+  
+  const totalConversas = db.prepare('SELECT COUNT(*) as c FROM conversations WHERE user_id = ?').get(userId)?.c || 0;
+  const totalMensagens = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(userId)?.c || 0;
+  const mensagensMes = db.prepare("SELECT COUNT(*) as c FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.user_id = ? AND m.role = 'user' AND strftime('%Y-%m', m.created_at) = ?").get(userId, mesAtual)?.c || 0;
+  const pecasSalvas = db.prepare('SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?').get(userId)?.c || 0;
+  const favoritosSalvos = db.prepare('SELECT COUNT(*) as c FROM favorites WHERE user_id = ?').get(userId)?.c || 0;
+  
+  // Dias ativos este mês
+  const diasAtivos = db.prepare(`
+    SELECT COUNT(DISTINCT date(m.created_at)) as c FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    AND strftime('%Y-%m', m.created_at) = ?
+  `).get(userId, mesAtual)?.c || 0;
+  
+  // Streak
+  const todosDias = db.prepare(`
+    SELECT DISTINCT date(m.created_at) as dia FROM messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.user_id = ? AND m.role = 'user'
+    ORDER BY dia DESC
+  `).all(userId).map(r => r.dia);
+  let streak = 0;
+  const hoje = new Date();
+  for (let i = 0; i < todosDias.length; i++) {
+    const esperado = new Date(hoje);
+    esperado.setDate(hoje.getDate() - i);
+    const esperadoStr = esperado.toISOString().substring(0,10);
+    if (todosDias[i] === esperadoStr) streak++;
+    else break;
+  }
+  
+  // Total de memórias
+  const totalMemorias = memories.length;
+  const totalCasosAtivos = cases.filter(c => c.status === 'ativo').length;
+  
+  res.json({
+    profile,
+    memories: grouped,
+    cases,
+    summaries,
+    stats: {
+      total_conversas: totalConversas,
+      total_mensagens: totalMensagens,
+      mensagens_mes: mensagensMes,
+      pecas_salvas: pecasSalvas,
+      favoritos: favoritosSalvos,
+      dias_ativos_mes: diasAtivos,
+      streak,
+      total_memorias: totalMemorias,
+      total_casos_ativos: totalCasosAtivos
+    }
+  });
+});
+
+// Gerenciar memórias do usuário
+app.get('/api/memory', authMiddleware, (req, res) => {
+  const memories = db.prepare('SELECT id, category, insight, relevance_score, access_count, source, created_at, updated_at FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.user.id);
+  res.json(memories);
+});
+
+app.delete('/api/memory/:id', authMiddleware, (req, res) => {
+  const mem = db.prepare('SELECT id FROM user_memory WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!mem) return res.status(404).json({ error: 'Memória não encontrada' });
+  db.prepare('DELETE FROM user_memory WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Gerenciar casos
+app.get('/api/cases', authMiddleware, (req, res) => {
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = "ativo" THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id);
+  res.json(cases);
+});
+
+app.post('/api/cases', authMiddleware, (req, res) => {
+  const { titulo, cliente, area, detalhes, proximo_passo, prazo } = req.body;
+  if (!titulo) return res.status(400).json({ error: 'Título obrigatório' });
+  const result = db.prepare('INSERT INTO user_cases (user_id, titulo, cliente, area, detalhes, proximo_passo, prazo, auto_detected) VALUES (?, ?, ?, ?, ?, ?, ?, 0)').run(
+    req.user.id, titulo, cliente || null, area || null, detalhes || null, proximo_passo || null, prazo || null
+  );
+  res.json({ success: true, id: result.lastInsertRowid });
+});
+
+app.patch('/api/cases/:id', authMiddleware, (req, res) => {
+  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
+  const { titulo, cliente, area, status, detalhes, proximo_passo, prazo } = req.body;
+  const fields = [];
+  const values = [];
+  if (titulo !== undefined) { fields.push('titulo = ?'); values.push(titulo); }
+  if (cliente !== undefined) { fields.push('cliente = ?'); values.push(cliente); }
+  if (area !== undefined) { fields.push('area = ?'); values.push(area); }
+  if (status !== undefined) { fields.push('status = ?'); values.push(status); }
+  if (detalhes !== undefined) { fields.push('detalhes = ?'); values.push(detalhes); }
+  if (proximo_passo !== undefined) { fields.push('proximo_passo = ?'); values.push(proximo_passo); }
+  if (prazo !== undefined) { fields.push('prazo = ?'); values.push(prazo); }
+  if (fields.length > 0) {
+    fields.push("updated_at = datetime('now')");
+    values.push(req.params.id);
+    db.prepare(`UPDATE user_cases SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  }
+  res.json({ success: true });
+});
+
+app.delete('/api/cases/:id', authMiddleware, (req, res) => {
+  const c = db.prepare('SELECT id FROM user_cases WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!c) return res.status(404).json({ error: 'Caso não encontrado' });
+  db.prepare('DELETE FROM user_cases WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// Resumos de conversas
+app.get('/api/summaries', authMiddleware, (req, res) => {
+  const summaries = db.prepare(`
+    SELECT cs.*, c.title as conv_title 
+    FROM conversation_summaries cs 
+    JOIN conversations c ON c.id = cs.conversation_id 
+    WHERE cs.user_id = ? 
+    ORDER BY cs.created_at DESC LIMIT 30
+  `).all(req.user.id);
+  res.json(summaries);
+});
+
+// Admin: ver memórias de um usuário
+app.get('/api/admin/users/:id/memory', adminMiddleware, (req, res) => {
+  const memories = db.prepare('SELECT * FROM user_memory WHERE user_id = ? ORDER BY category, relevance_score DESC').all(req.params.id);
+  const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY updated_at DESC').all(req.params.id);
+  const summaries = db.prepare('SELECT cs.*, c.title FROM conversation_summaries cs JOIN conversations c ON c.id = cs.conversation_id WHERE cs.user_id = ? ORDER BY cs.created_at DESC LIMIT 20').all(req.params.id);
+  res.json({ memories, cases, summaries });
+});
+
 
 app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
 

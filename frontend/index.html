@@ -798,6 +798,7 @@ if(window.visualViewport){
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
 
+        <button class="btn-logout" onclick="window.location.href='/dashboard.html'" title="Dashboard" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">📊</button>
         <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">🌙 Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
@@ -827,6 +828,7 @@ if(window.visualViewport){
             <button class="nav-mais-item" onclick="openGame();closeNavMais()">Desafio do Atendimento</button>
             <button class="nav-mais-item" onclick="openPrescricaoModal();closeNavMais()">Prescrição</button>
             <button class="nav-mais-item" onclick="openMinhasPecas();closeNavMais()">Minhas Peças</button>
+            <button class="nav-mais-item" onclick="window.location.href='/dashboard.html';closeNavMais()" style="border-top:1px solid var(--border);font-weight:600;color:var(--gold)">📊 Meu Dashboard</button>
           </div>
         </div>
         <div class="header-divider"></div>
@@ -854,9 +856,11 @@ if(window.visualViewport){
       <button class="teses-btn" onclick="window.location.href='/treinamento-audiencia.html'">Treinamento em Audiências</button>
       <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
       <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
+      <button class="teses-btn" onclick="window.location.href='/dashboard.html'" style="font-weight:600">📊 Dashboard</button>
     </div>
     <!-- Dropdown menu mobile -->
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
+      <button class="mobile-menu-item" onclick="window.location.href='/dashboard.html';closeMobileMenu()" style="font-weight:600;color:#b8860b">📊 Meu Dashboard</button>
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
