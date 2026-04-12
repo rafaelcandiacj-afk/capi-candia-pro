@@ -2169,7 +2169,7 @@
     document.getElementById('header-welcome-text').textContent = `Olá, ${name}`;
 
     const parts = [];
-    if (profile.area) parts.push(profile.area);
+    if (profile.area) parts.push(profile.area.replace(/,\s*$/, ''));
     if (profile.cidade && profile.estado) parts.push(`${profile.cidade} / ${profile.estado}`);
     if (profile.oab) parts.push(`OAB ${profile.oab}`);
     document.getElementById('hero-area').textContent = parts.length ? parts.join(' · ') : 'Perfil em construção';
@@ -2339,8 +2339,8 @@
     const maxHoras = Math.max(...data.map(d => d.horas_economizadas || 0), 1);
 
     const W = 600;
-    const H = 200;
-    const PADDING = { top: 20, right: 20, bottom: 50, left: 50 };
+    const H = 240;
+    const PADDING = { top: 20, right: 20, bottom: 60, left: 50 };
     const chartW = W - PADDING.left - PADDING.right;
     const chartH = H - PADDING.top - PADDING.bottom;
     const barGroupW = chartW / data.length;
@@ -3041,7 +3041,7 @@
   /* ── Profile ────────────────────────────────────────────────────── */
   function renderProfile(profile) {
     document.getElementById('profile-display-name').textContent = profile.nome || 'Seu Nome';
-    document.getElementById('profile-display-area').textContent = profile.area || '–';
+    document.getElementById('profile-display-area').textContent = (profile.area || '–').replace(/,\s*$/, '');
 
     const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
     setVal('profile-nome',      profile.nome);
