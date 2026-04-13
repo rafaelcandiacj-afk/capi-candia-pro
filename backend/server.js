@@ -4644,8 +4644,14 @@ app.get('/api/capitreino/historico', authMiddleware, (req, res) => {
   }
 });
 
-// Serve arquivos estáticos do app (CSS, JS) — após todas as rotas
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Serve arquivos estáticos do app — HTML sem cache, demais com cache
+app.use(express.static(path.join(__dirname, '../frontend'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // Catch-all SPA — deve ficar após todas as rotas de API
 app.get('/api/user/stats', authMiddleware, (req, res) => {

@@ -1617,7 +1617,17 @@ async function sendMessage(){
   }
 }
 
+// Limpa sugestões e botões de ação de TODAS as mensagens anteriores
+function cleanupOlderAssistantUI(){
+  // Remove TODAS as sugestões — a nova msg vai criar as suas
+  document.querySelectorAll('#chatMessages .ctx-suggestions').forEach(el=>el.remove());
+  // Esconde botões de ação de msgs anteriores
+  document.querySelectorAll('#chatMessages .msg-actions.visible').forEach(el=>el.classList.remove('visible'));
+}
+
 function appendMessage(role,content,suggestions,uploadFiles){
+  // Qualquer nova mensagem (user ou assistant) limpa UI das anteriores
+  cleanupOlderAssistantUI();
   const imgSrc=(CAPI_LOGO_SRC||document.querySelector('.auth-logo-img').src);
   const user=JSON.parse(localStorage.getItem('capi_user')||'{}');
   const wrapper=document.createElement('div');
@@ -1676,8 +1686,6 @@ function appendMessage(role,content,suggestions,uploadFiles){
   msgContent.appendChild(ts);
   // Botões de ação apenas para mensagens do assistente
   if(role==='assistant'){
-    // Esconde botões de ações das mensagens anteriores
-    document.querySelectorAll('.msg-actions.visible').forEach(el=>el.classList.remove('visible'));
     const actions=document.createElement('div');
     actions.className='msg-actions visible';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
@@ -1733,9 +1741,8 @@ function appendMessage(role,content,suggestions,uploadFiles){
     audioContainer.innerHTML=`<audio id="${audioId}" controls style="width:100%;max-width:380px;height:36px;border-radius:20px;outline:none;" src=""></audio>`;
     msgContent.appendChild(actions);
     msgContent.appendChild(audioContainer);
-    // Contextual suggestions — só mostra na última msg, remove das anteriores
+    // Contextual suggestions — cleanup já feito pelo cleanupOlderAssistantUI()
     if(suggestions&&suggestions.length){
-      document.querySelectorAll('.ctx-suggestions').forEach(el=>el.remove());
       const chipsDiv=document.createElement('div');
       chipsDiv.className='ctx-suggestions';
       const chipsRow=document.createElement('div');
