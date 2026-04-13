@@ -1784,7 +1784,7 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 55000); // 55s timeout
+      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
       // Fine-tuned CAPI disponível mas mantemos gpt-4.1 em produção até base crescer
       // Para ativar fine-tuned: trocar 'gpt-4.1' por CAPI_FINETUNED_MODEL abaixo
       response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1804,7 +1804,7 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
       if (attempt === 2) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
       console.log(`⚠️ Tentativa ${attempt} falhou, tentando novamente...`);
     } catch(fetchErr) {
-      if (attempt === 2) return res.status(504).json({ error: 'Tempo esgotado. Tente novamente com uma pergunta mais curta.' });
+      if (attempt === 2) return res.status(504).json({ error: 'A resposta está demorando mais que o normal. Tente uma pergunta mais curta ou envie novamente.' });
       console.log(`⚠️ Timeout tentativa ${attempt}, retentando...`);
     }
   }
@@ -2572,7 +2572,7 @@ async function extractPdfText(filePath) {
     const os = require('os');
     const tmpDir = fs.mkdtempSync(require('path').join(os.tmpdir(), 'pdf_ocr_'));
     // Converte até 3 páginas em imagem (resolução 150dpi para equilibrar qualidade/tamanho)
-    execSync(`pdftoppm -r 150 -l 3 -png "${filePath}" "${tmpDir}/page"`, { timeout: 30000 });
+    execSync(`pdftoppm -r 150 -l 3 -png "${filePath}" "${tmpDir}/page"`, { timeout: 60000 });
     const pages = fs.readdirSync(tmpDir).filter(f => f.endsWith('.png')).sort();
     if (pages.length === 0) throw new Error('Nenhuma página convertida');
 
@@ -2606,43 +2606,48 @@ async function extractPdfText(filePath) {
 
 // Processa um arquivo e retorna o texto extraído
 async function processUploadedFile(file) {
-  const ext = require('path').extname(file.originalname).toLowerCase();
-  const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
-  let extractedText = '';
+  try {
+    const ext = require('path').extname(file.originalname).toLowerCase();
+    const isImage = ['.jpg', '.jpeg', '.png', '.webp'].includes(ext);
+    let extractedText = '';
 
-  if (ext === '.txt' || ext === '.md') {
-    extractedText = fs.readFileSync(file.path, 'utf8');
-  } else if (ext === '.pdf') {
-    const result = await extractPdfText(file.path);
-    extractedText = result.text;
-  } else if (ext === '.docx') {
-    try {
-      const mammoth = require('mammoth');
-      const result = await mammoth.extractRawText({ path: file.path });
-      extractedText = result.value;
-    } catch(e) {
-      extractedText = fs.readFileSync(file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+    if (ext === '.txt' || ext === '.md') {
+      extractedText = fs.readFileSync(file.path, 'utf8');
+    } else if (ext === '.pdf') {
+      const result = await extractPdfText(file.path);
+      extractedText = result.text;
+    } else if (ext === '.docx') {
+      try {
+        const mammoth = require('mammoth');
+        const result = await mammoth.extractRawText({ path: file.path });
+        extractedText = result.value;
+      } catch(e) {
+        extractedText = fs.readFileSync(file.path, 'utf8').replace(/[^\x20-\x7E\n\r\t\u00C0-\u024F]/g, ' ');
+      }
+    } else if (isImage) {
+      const imageBase64 = fs.readFileSync(file.path).toString('base64');
+      const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+      const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: 'gpt-4.1',
+          messages: [{ role: 'user', content: [
+            { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente.' },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+          ]}],
+          max_tokens: 5000
+        })
+      });
+      const visionData = await visionResp.json();
+      extractedText = visionData.choices?.[0]?.message?.content || '';
     }
-  } else if (isImage) {
-    const imageBase64 = fs.readFileSync(file.path).toString('base64');
-    const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
-    const visionResp = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({
-        model: 'gpt-4.1',
-        messages: [{ role: 'user', content: [
-          { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente.' },
-          { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
-        ]}],
-        max_tokens: 5000
-      })
-    });
-    const visionData = await visionResp.json();
-    extractedText = visionData.choices?.[0]?.message?.content || '';
-  }
 
-  return extractedText.substring(0, 100000);
+    return extractedText.substring(0, 100000);
+  } catch(e) {
+    console.error('Erro ao processar arquivo:', file.originalname, e.message);
+    return `[Erro ao extrair texto do arquivo ${file.originalname}. O arquivo foi recebido mas não foi possível ler o conteúdo automaticamente. Formato: ${require('path').extname(file.originalname)}]`;
+  }
 }
 
 // Endpoint único — aceita 1 arquivo (mantém compatibilidade) ou múltiplos via 'files'

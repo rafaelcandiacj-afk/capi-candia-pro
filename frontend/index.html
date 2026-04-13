@@ -1605,6 +1605,10 @@ function sendSuggestion(btn){
 }
 
 async function sendMessage(){
+  if (uploadsInProgress > 0) {
+    showToast('Aguarde o upload terminar antes de enviar...');
+    return;
+  }
   const text=$('chatInput').value.trim();
   const hasUploads = pendingUploadIds.length > 0;
   if((!text && !hasUploads)||isLoading) return;
@@ -1614,7 +1618,12 @@ async function sendMessage(){
   const uploadFileNames = [...pendingUploadNames];
   const welcome=$('welcomeScreen');
   if(welcome) welcome.remove();
-  convHistory.push({role:'user',content:finalText});
+  if (hasUploads && pendingUploadNames.length > 0) {
+    const uploadNote = '\n\n[Documentos anexados: ' + pendingUploadNames.join(', ') + ']';
+    convHistory.push({role:'user', content: finalText + uploadNote});
+  } else {
+    convHistory.push({role:'user', content: finalText});
+  }
   appendMessage('user',finalText,null,uploadFileNames);
   $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;
   isLoading=true;
@@ -1627,7 +1636,12 @@ async function sendMessage(){
       body:JSON.stringify({messages:convHistory,conversation_id:currentConvId,upload_ids:hasUploads?pendingUploadIds:undefined,project_id:_activeProjectId||undefined})
     });
     if(res.status===401){removeTyping(typingEl);isLoading=false;logout();return;}
-    const data=await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch(parseErr) {
+      throw new Error('Erro de comunicação com o servidor. Tente novamente.');
+    }
     if(!res.ok) throw new Error(data.error||'Erro ao obter resposta.');
     const reply=data.reply||data.response||data.message||'';
     if(data.conversation_id && !currentConvId){
@@ -1636,13 +1650,24 @@ async function sendMessage(){
       if(_activeProjectId) loadProjects(); // refresh projetos
     }
     convHistory.push({role:'assistant',content:reply});
+    if (hasUploads && pendingUploadNames.length > 0) {
+      const docsNote = `[Contexto: O usuário enviou ${pendingUploadNames.length} documento(s): ${pendingUploadNames.join(', ')}. O conteúdo dos documentos já foi analisado na resposta anterior.]`;
+      convHistory.push({role:'system', content: docsNote});
+    }
     removeTyping(typingEl);appendMessage('assistant',reply,data.suggestions||[]);
   }catch(err){
     removeTyping(typingEl);
     const errMsg = err.message || '';
-    const msgErro = errMsg.includes('timeout') || errMsg.includes('esgotado')
-      ? '⚠️ A pergunta demorou demais para processar. Tente simplificar um pouco ou envie novamente — o Capi está aqui!'
-      : '⚠️ Ocorreu um erro de conexão. Tente enviar a mensagem novamente.';
+    let msgErro;
+    if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg.includes('network')) {
+      msgErro = '⚠️ Problema de conexão com a internet. Verifique sua rede e tente novamente.';
+    } else if (errMsg.includes('timeout') || errMsg.includes('esgotado') || errMsg.includes('504') || errMsg.includes('demorando')) {
+      msgErro = '⚠️ A resposta está demorando. Tente simplificar a pergunta ou enviar novamente.';
+    } else if (errMsg.includes('503') || errMsg.includes('overloaded')) {
+      msgErro = '⚠️ O servidor está com muita demanda. Tente novamente em alguns segundos.';
+    } else {
+      msgErro = '⚠️ Ocorreu um erro. Tente enviar a mensagem novamente.';
+    }
     appendMessage('assistant', msgErro);
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
@@ -2102,6 +2127,7 @@ async function deleteProject(id){
 // ── ESTADO GLOBAL EXTRA ──────────────────────────────────────
 let pendingUploadIds = [];
 let pendingUploadNames = [];
+let uploadsInProgress = 0;
 let userProfile = {};
 
 // ── NOTIFICAÇÕES ─────────────────────────────────────────────
@@ -2810,6 +2836,7 @@ async function handleConvUpload(input){
     const progressEl = badge.querySelector('.fb-progress');
     progressEl.style.width = '30%';
 
+    uploadsInProgress++;
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -2837,6 +2864,8 @@ async function handleConvUpload(input){
 
     } catch(e) {
       updateBadgeError(badge, e.message);
+    } finally {
+      uploadsInProgress--;
     }
   }
 
