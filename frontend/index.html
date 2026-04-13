@@ -2357,13 +2357,31 @@ async function confirmSaveTemplate(){
 }
 
 // ── TOAST ────────────────────────────────────────────────────
-function showToast(msg){
+function showToast(msg,duration){
   const t=document.createElement('div');
-  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--green);border-radius:20px;padding:10px 20px;color:var(--green);font-size:.83rem;z-index:400;animation:fadeUp .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.3)';
-  t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--green);border-radius:20px;padding:10px 20px;color:var(--green);font-size:.83rem;z-index:400;animation:fadeUp .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw;text-align:center';
+  if(msg.includes('<a ')) t.innerHTML=msg; else t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(()=>t.remove(),msg.includes('pronto') ? 5000 : 3000);
+  const ms=duration||( msg.includes('pronto') ? 5000 : 3000);
+  setTimeout(()=>t.remove(),ms);
 }
+
+// ── CAPITREINO REMINDER ─────────────────────────────────────
+async function checkCapiTreinoReminder(){
+  if(sessionStorage.getItem('ct_reminder_shown')) return;
+  try{
+    const token=localStorage.getItem('capi_token');
+    if(!token) return;
+    const resp=await fetch('/api/capitreino/reminder-check',{headers:{'Authorization':'Bearer '+token}});
+    if(!resp.ok) return;
+    const data=await resp.json();
+    if(data.should_remind && data.missoes_pendentes>0){
+      sessionStorage.setItem('ct_reminder_shown','true');
+      showToast('\u{1F3CB}\uFE0F Voc\u00ea tem '+data.missoes_pendentes+' miss\u00e3o(\u00f5es) pendente(s) hoje! <a href="/capitreino.html" style="color:#DAA520;font-weight:700;text-decoration:underline">Ir para CapiTreino</a>',8000);
+    }
+  }catch(e){}
+}
+setTimeout(checkCapiTreinoReminder,5000);
 
 // ── COPIAR / COMPARTILHAR ────────────────────────────────────
 function copyMessage(text, btn){

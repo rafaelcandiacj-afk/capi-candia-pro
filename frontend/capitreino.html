@@ -21,15 +21,31 @@
 html{font-size:16px;-webkit-tap-highlight-color:transparent}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
+/* ─── PREMIUM ICON SYSTEM ─── */
+.ct-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ct-icon-flame{width:18px;height:18px;background:linear-gradient(0deg,#FF5722,#FF9800,#FFC107);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 23c-4.97 0-9-3.58-9-8 0-2.52.74-4.6 2.2-6.17C6.5 7.5 8 5.5 8 3c0 0 2 1 3 3 .56 1.12.8 2.2.8 3.2 0 .75-.13 1.47-.37 2.13C12.34 9.12 14 7 14 4l1 1c2.44 2.44 4 5.64 4 9 0 4.97-3.13 9-7 9z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 23c-4.97 0-9-3.58-9-8 0-2.52.74-4.6 2.2-6.17C6.5 7.5 8 5.5 8 3c0 0 2 1 3 3 .56 1.12.8 2.2.8 3.2 0 .75-.13 1.47-.37 2.13C12.34 9.12 14 7 14 4l1 1c2.44 2.44 4 5.64 4 9 0 4.97-3.13 9-7 9z'/%3E%3C/svg%3E") center/contain no-repeat}
+.ct-icon-star{width:16px;height:16px;background:linear-gradient(135deg,#FFD700,#FFA000);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'/%3E%3C/svg%3E") center/contain no-repeat}
+.ct-icon-chest{width:40px;height:40px;border-radius:8px;position:relative;background:linear-gradient(180deg,#B8860B 0%,#8B6914 40%,#DAA520 42%,#B8860B 44%,#6B4C11 100%);box-shadow:0 2px 12px rgba(218,165,32,.3);border:1px solid rgba(218,165,32,.3)}
+.ct-icon-chest::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FFA000);box-shadow:0 0 6px rgba(255,215,0,.5)}
+.ct-icon-chest.opened{background:linear-gradient(180deg,#4CAF50 0%,#388E3C 40%,#66BB6A 42%,#4CAF50 44%,#2E7D32 100%);box-shadow:0 2px 12px var(--green-glow);border-color:rgba(76,175,80,.3)}
+.ct-icon-chest.opened::after{background:linear-gradient(135deg,#A5D6A7,#66BB6A)}
+.ct-icon-chest.ready{animation:bauShake 1s ease infinite}
+.ct-icon-trilha{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;letter-spacing:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.ct-icon-level{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.ct-icon-level-lg{width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.ct-icon-mission-type{width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;flex-shrink:0}
+/* Background subtle pattern */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(218,165,32,.02),transparent 50%),radial-gradient(circle at 80% 20%,rgba(218,165,32,.02),transparent 50%);pointer-events:none;z-index:0}
+
 /* ─── HEADER ─── */
-.ct-header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg) 0%,rgba(13,13,13,.95) 100%);backdrop-filter:blur(20px);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(218,165,32,.15)}
+.ct-header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg) 0%,rgba(13,13,13,.95) 100%);backdrop-filter:blur(20px);padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(218,165,32,.15)}
 .ct-back{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid rgba(218,165,32,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);text-decoration:none;font-size:18px;transition:var(--transition);flex-shrink:0}
 .ct-back:hover{background:var(--gold);color:var(--bg)}
-.ct-logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+.ct-logo{font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px;text-transform:uppercase}
 .ct-header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
-.ct-streak-badge{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(255,87,34,.15),rgba(255,152,0,.1));border:1px solid rgba(255,87,34,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#FF9800}
-.ct-streak-badge.active .flame{animation:flamePulse 1s ease infinite}
-.ct-xp-badge{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--gold)}
+.ct-streak-badge{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(255,87,34,.15),rgba(255,152,0,.1));border:1px solid rgba(255,87,34,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#FF9800}
+.ct-streak-badge.active .ct-icon-flame{animation:flamePulse 1s ease infinite}
+.ct-xp-badge{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--gold)}
 
 @keyframes flamePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
 
@@ -52,13 +68,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 .ct-trilha-arrow{margin-left:auto;color:var(--text3);font-size:14px}
 
 /* ─── MAIN CONTENT ─── */
-.ct-main{padding:16px;max-width:600px;margin:0 auto}
+.ct-main{padding:20px 16px;max-width:600px;margin:0 auto}
 
 /* ─── MISSOES SECTION ─── */
-.ct-section-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.ct-section-title .emoji{font-size:20px}
+.ct-section-title{font-size:14px;font-weight:800;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:1px}
 
-.ct-mission-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;transition:var(--transition);position:relative;overflow:hidden}
+.ct-mission-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;transition:var(--transition);position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .ct-mission-card.completed{border-color:rgba(76,175,80,.3);background:linear-gradient(135deg,rgba(76,175,80,.05),var(--bg2))}
 .ct-mission-card.completed::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--green)}
 
@@ -89,44 +104,60 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
 
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 
-/* ─── BAU (CHEST) ─── */
-.ct-bau-section{margin-top:20px;margin-bottom:20px}
-.ct-bau-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px solid rgba(218,165,32,.15);border-radius:var(--radius-xl);padding:24px;text-align:center;position:relative;overflow:hidden}
+/* ─── BAU (CHEST) PREMIUM ─── */
+.ct-bau-section{margin-top:24px;margin-bottom:24px}
+.ct-bau-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px solid rgba(218,165,32,.15);border-radius:var(--radius-xl);padding:28px 24px;text-align:center;position:relative;overflow:hidden}
+.ct-bau-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(218,165,32,.04),transparent 70%);pointer-events:none}
 .ct-bau-card.ready{border-color:var(--gold);animation:bauGlow 2s ease infinite}
 .ct-bau-card.opened{border-color:rgba(76,175,80,.3)}
-.ct-bau-emoji{font-size:48px;margin-bottom:8px;display:inline-block}
-.ct-bau-card.ready .ct-bau-emoji{animation:bauShake 1s ease infinite}
-.ct-bau-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ct-bau-icon-wrap{margin-bottom:12px;display:inline-block}
+.ct-bau-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .ct-bau-sub{font-size:13px;color:var(--text3);margin-bottom:16px}
-.ct-bau-progress{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:12px}
-.ct-bau-dot{width:12px;height:12px;border-radius:50%;background:var(--bg4);border:1px solid rgba(255,255,255,.1);transition:var(--transition)}
+.ct-bau-progress{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
+.ct-bau-dot{width:14px;height:14px;border-radius:50%;background:var(--bg4);border:1px solid rgba(255,255,255,.1);transition:var(--transition)}
 .ct-bau-dot.done{background:var(--green);border-color:var(--green);box-shadow:0 0 8px var(--green-glow)}
 
 @keyframes bauGlow{0%,100%{box-shadow:0 0 20px var(--gold-glow)}50%{box-shadow:0 0 40px var(--gold-glow),0 0 60px rgba(218,165,32,.15)}}
 @keyframes bauShake{0%,100%{transform:rotate(0)}10%{transform:rotate(-5deg)}20%{transform:rotate(5deg)}30%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}50%{transform:rotate(0)}}
 
-/* ─── STATS BAR ─── */
-.ct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;margin-bottom:24px}
-.ct-stat-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:12px;text-align:center}
-.ct-stat-value{font-size:20px;font-weight:800;margin-bottom:2px}
-.ct-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+/* ─── STATS BAR PREMIUM ─── */
+.ct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:24px;margin-bottom:28px}
+.ct-stat-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:14px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.ct-stat-value{font-size:22px;font-weight:900;margin-bottom:4px}
+.ct-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
 
-/* ─── LIGA ─── */
-.ct-liga-section{margin-bottom:24px}
-.ct-liga-header{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg) var(--radius-lg) 0 0;cursor:pointer}
-.ct-liga-badge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;border:2px solid}
-.ct-liga-name{font-size:15px;font-weight:700}
-.ct-liga-xp{font-size:12px;color:var(--text3)}
-.ct-liga-toggle{margin-left:auto;color:var(--text3);transition:var(--transition)}
-.ct-liga-ranking{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);overflow:hidden;display:none}
+/* ─── LIGA PREMIUM ─── */
+.ct-liga-section{margin-bottom:28px}
+.ct-liga-header{display:flex;align-items:center;gap:14px;padding:18px 20px;background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(218,165,32,.15);border-radius:var(--radius-xl) var(--radius-xl) 0 0;cursor:pointer;position:relative;overflow:hidden}
+.ct-liga-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(218,165,32,.06),transparent 70%);pointer-events:none}
+.ct-liga-badge{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;border:2px solid;position:relative;box-shadow:0 0 20px rgba(218,165,32,.2)}
+.ct-liga-header-info{flex:1}
+.ct-liga-name{font-size:16px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+.ct-liga-xp{font-size:12px;color:var(--text3);margin-top:2px}
+.ct-liga-rank-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.08));border:1px solid rgba(218,165,32,.25);border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700;color:var(--gold);margin-top:4px}
+.ct-liga-xp-bar{width:100%;height:4px;background:var(--bg4);border-radius:2px;margin-top:6px;overflow:hidden}
+.ct-liga-xp-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px;transition:width .8s ease}
+.ct-liga-toggle{margin-left:auto;color:var(--text3);transition:var(--transition);font-size:12px}
+.ct-liga-ranking{background:var(--bg2);border:1px solid rgba(218,165,32,.08);border-top:none;border-radius:0 0 var(--radius-xl) var(--radius-xl);overflow:hidden;display:none}
 .ct-liga-ranking.open{display:block;animation:slideDown .3s ease}
-.ct-rank-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.03)}
+.ct-rank-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:all .3s ease}
 .ct-rank-item:last-child{border-bottom:none}
-.ct-rank-item.me{background:rgba(218,165,32,.06)}
-.ct-rank-pos{width:24px;font-size:13px;font-weight:700;color:var(--text3);text-align:center}
-.ct-rank-pos.top3{color:var(--gold)}
-.ct-rank-name{flex:1;font-size:13px;font-weight:500}
-.ct-rank-xp{font-size:13px;font-weight:700;color:var(--gold)}
+.ct-rank-item.me{background:linear-gradient(135deg,rgba(218,165,32,.1),rgba(184,134,11,.05));border-left:3px solid var(--gold);box-shadow:inset 0 0 20px rgba(218,165,32,.05)}
+.ct-rank-pos{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;background:var(--bg3);color:var(--text3);flex-shrink:0}
+.ct-rank-pos.gold{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;box-shadow:0 2px 8px rgba(255,215,0,.3)}
+.ct-rank-pos.silver{background:linear-gradient(135deg,#C0C0C0,#A0A0A0);color:#000;box-shadow:0 2px 8px rgba(192,192,192,.3)}
+.ct-rank-pos.bronze{background:linear-gradient(135deg,#CD7F32,#A0522D);color:#fff;box-shadow:0 2px 8px rgba(205,127,50,.3)}
+.ct-rank-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;flex-shrink:0}
+.ct-rank-info{flex:1;min-width:0}
+.ct-rank-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-rank-you{font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ct-rank-right{display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0}
+.ct-rank-xp{font-size:14px;font-weight:700;color:var(--gold)}
+.ct-rank-xp-bar{width:60px;height:4px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.ct-rank-xp-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold));border-radius:2px}
+.ct-rank-indicator{font-size:11px;font-weight:700;margin-left:4px}
+.ct-rank-indicator.up{color:var(--green)}
+.ct-rank-indicator.down{color:var(--red)}
 
 /* ─── ONBOARDING ─── */
 .ct-onboarding{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;padding:24px 16px}
@@ -207,15 +238,15 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   <a href="/app" class="ct-back">&#8592;</a>
   <span class="ct-logo">CapiTreino</span>
   <div class="ct-header-right">
-    <div class="ct-streak-badge" id="ctStreakBadge"><span class="flame">&#128293;</span> <span id="ctStreakCount">0</span></div>
-    <div class="ct-xp-badge"><span>&#11088;</span> <span id="ctXpCount">0</span> XP</div>
+    <div class="ct-streak-badge" id="ctStreakBadge"><span class="ct-icon ct-icon-flame"></span> <span id="ctStreakCount">0</span></div>
+    <div class="ct-xp-badge"><span class="ct-icon ct-icon-star"></span> <span id="ctXpCount">0</span> XP</div>
   </div>
 </header>
 
 <!-- LEVEL UP OVERLAY -->
 <div class="ct-levelup-overlay" id="ctLevelUp">
   <div class="ct-levelup-glow"></div>
-  <div class="ct-levelup-emoji" id="ctLevelUpEmoji"></div>
+  <div id="ctLevelUpIcon" style="z-index:1"></div>
   <div class="ct-levelup-text">LEVEL UP!</div>
   <div class="ct-levelup-name" id="ctLevelUpName"></div>
   <button class="ct-btn ct-btn-gold" style="margin-top:16px;z-index:1" onclick="document.getElementById('ctLevelUp').classList.remove('show')">Continuar</button>
@@ -295,11 +326,11 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <!-- BAU -->
       <div class="ct-bau-section" id="ctBauSection">
         <div class="ct-bau-card" id="ctBauCard">
-          <div class="ct-bau-emoji" id="ctBauEmoji">&#128230;</div>
-          <div class="ct-bau-title" id="ctBauTitle">Baú Diário</div>
-          <div class="ct-bau-sub" id="ctBauSub">Complete as 3 missões para desbloquear</div>
+          <div class="ct-bau-icon-wrap"><div class="ct-icon-chest" id="ctBauIcon"></div></div>
+          <div class="ct-bau-title" id="ctBauTitle">Bau Diario</div>
+          <div class="ct-bau-sub" id="ctBauSub">Complete as 3 missoes para desbloquear</div>
           <div class="ct-bau-progress" id="ctBauProgress"></div>
-          <button class="ct-btn ct-btn-gold" id="ctBauBtn" style="display:none" onclick="abrirBau()">Abrir Baú &#127873;</button>
+          <button class="ct-btn ct-btn-gold" id="ctBauBtn" style="display:none" onclick="abrirBau()">Abrir Bau</button>
         </div>
       </div>
     </div>
@@ -314,13 +345,15 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatXp" style="color:var(--gold)">0</div><div class="ct-stat-label">XP Total</div></div>
     </div>
 
-    <!-- LIGA -->
+    <!-- LIGA PREMIUM -->
     <div class="ct-liga-section" id="ctLigaSection">
       <div class="ct-liga-header" onclick="toggleLiga()">
         <div class="ct-liga-badge" id="ctLigaBadge"></div>
-        <div>
+        <div class="ct-liga-header-info">
           <div class="ct-liga-name" id="ctLigaName"></div>
           <div class="ct-liga-xp" id="ctLigaXp"></div>
+          <div class="ct-liga-rank-badge" id="ctLigaRankBadge"></div>
+          <div class="ct-liga-xp-bar"><div class="ct-liga-xp-fill" id="ctLigaXpFill"></div></div>
         </div>
         <span class="ct-liga-toggle" id="ctLigaToggle">&#9660;</span>
       </div>
@@ -353,6 +386,42 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   let state = { status: null, missoes: [], trilha: null, bau: null, liga: null, historico: [] };
   let uploadMissaoId = null;
 
+  // ─── PREMIUM ICON MAPS ───
+  const TRILHA_ICONS = {
+    'primeiros_passos': { gradient: 'linear-gradient(135deg, #4CAF50, #2E7D32)', symbol: '\u2192' },
+    'advocacia_raiz': { gradient: 'linear-gradient(135deg, #8B4513, #5D3A1A)', symbol: '\u2696' },
+    'cacador_clientes': { gradient: 'linear-gradient(135deg, #FF5722, #BF360C)', symbol: '\u25CE' },
+    'autoridade_digital': { gradient: 'linear-gradient(135deg, #9C27B0, #6A1B9A)', symbol: '\u25B2' },
+    'maquina_anuncios': { gradient: 'linear-gradient(135deg, #2196F3, #0D47A1)', symbol: '\u25C6' },
+    'mestre_fechamento': { gradient: 'linear-gradient(135deg, #FF9800, #E65100)', symbol: '\u2605' }
+  };
+  const LEVEL_BADGES = [
+    { gradient: 'linear-gradient(135deg, #78909C, #546E7A)', symbol: 'I' },
+    { gradient: 'linear-gradient(135deg, #4CAF50, #2E7D32)', symbol: 'II' },
+    { gradient: 'linear-gradient(135deg, #2196F3, #0D47A1)', symbol: 'III' },
+    { gradient: 'linear-gradient(135deg, #9C27B0, #6A1B9A)', symbol: 'IV' },
+    { gradient: 'linear-gradient(135deg, #FF9800, #E65100)', symbol: 'V' },
+    { gradient: 'linear-gradient(135deg, #DAA520, #B8860B)', symbol: 'VI' },
+    { gradient: 'linear-gradient(135deg, #FFD700, #FFA000)', symbol: 'VII' }
+  ];
+  const MISSION_TYPES = {
+    'auto': { gradient: 'linear-gradient(135deg, #2196F3, #0D47A1)', symbol: 'A' },
+    'print': { gradient: 'linear-gradient(135deg, #4CAF50, #2E7D32)', symbol: 'P' },
+    'reflexao': { gradient: 'linear-gradient(135deg, #9C27B0, #6A1B9A)', symbol: 'R' },
+    'default': { gradient: 'linear-gradient(135deg, #FF9800, #E65100)', symbol: 'M' }
+  };
+  function getLevelBadge(nivel, size) {
+    const b = LEVEL_BADGES[Math.min(nivel - 1, LEVEL_BADGES.length - 1)] || LEVEL_BADGES[0];
+    const cls = size === 'lg' ? 'ct-icon-level-lg' : 'ct-icon-level';
+    return `<span class="${cls}" style="background:${b.gradient}">${b.symbol}</span>`;
+  }
+  function getTrilhaIcon(trilhaId, cor) {
+    const t = TRILHA_ICONS[trilhaId];
+    const grad = t ? t.gradient : `linear-gradient(135deg, ${cor || '#555'}, ${cor || '#333'})`;
+    const sym = t ? t.symbol : '\u25C6';
+    return `<div class="ct-icon-trilha" style="background:${grad}">${sym}</div>`;
+  }
+
   // ─── INIT ───
   async function init() {
     try {
@@ -380,15 +449,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       const data = await API.get('/api/capitreino/trilhas');
       if (!data) return;
       const grid = document.getElementById('ctTrilhaGrid');
-      grid.innerHTML = data.trilhas.map(t => `
+      grid.innerHTML = data.trilhas.map(t => {
+        const ti = TRILHA_ICONS[t.id];
+        const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
+        const sym = ti ? ti.symbol : '\u25C6';
+        return `
         <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')">
-          <div class="ct-trilha-card-icon" style="background:${t.cor}20">${t.icone}</div>
+          <div class="ct-trilha-card-icon ct-icon-trilha" style="background:${grad}">${sym}</div>
           <div class="ct-trilha-card-body">
             <div class="ct-trilha-card-name">${t.nome}</div>
             <div class="ct-trilha-card-desc">${t.descricao}</div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     } catch (e) { console.error(e); }
   }
 
@@ -452,36 +525,43 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   function renderProgress() {
     const s = state.status;
     if (!s) return;
-    const emoji = s.nivel_emoji;
     const nome = s.nivel_nome;
     const xpMin = s.xp_nivel_min;
     const xpMax = s.xp_nivel_max || s.xp_total + 1000;
     const pct = Math.min(100, ((s.xp_total - xpMin) / (xpMax - xpMin)) * 100);
-    document.getElementById('ctLevelName').textContent = `${emoji} ${nome}`;
+    document.getElementById('ctLevelName').innerHTML = `${getLevelBadge(s.nivel, 'sm')} <span style="margin-left:6px">${nome}</span>`;
     const prox = s.proximo_nivel;
-    document.getElementById('ctLevelTarget').textContent = prox ? `Próximo: ${prox.emoji} ${prox.nome}` : 'Nível Máximo!';
+    document.getElementById('ctLevelTarget').textContent = prox ? `Pr\u00f3ximo: ${prox.nome}` : 'N\u00edvel M\u00e1ximo!';
     document.getElementById('ctProgressFill').style.width = pct + '%';
-    document.getElementById('ctXpLabel').textContent = `${s.xp_total} / ${xpMax === Infinity ? '∞' : xpMax} XP`;
+    document.getElementById('ctXpLabel').textContent = `${s.xp_total} / ${xpMax === Infinity ? '\u221e' : xpMax} XP`;
   }
 
   function renderTrilha() {
     const t = state.trilha || state.status?.trilha_ativa;
     if (!t) return;
-    document.getElementById('ctTrilhaIcon').textContent = t.icone;
-    document.getElementById('ctTrilhaIcon').style.background = (t.cor || '#333') + '20';
+    const icon = document.getElementById('ctTrilhaIcon');
+    const ti = TRILHA_ICONS[t.id];
+    const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
+    const sym = ti ? ti.symbol : '\u25C6';
+    icon.style.background = grad;
+    icon.style.fontSize = '16px';
+    icon.style.fontWeight = '900';
+    icon.style.color = '#fff';
+    icon.textContent = sym;
     document.getElementById('ctTrilhaName').textContent = t.nome;
-    document.getElementById('ctTrilhaSub').textContent = 'Trilha ativa — toque para trocar';
+    document.getElementById('ctTrilhaSub').textContent = 'Trilha ativa \u2014 toque para trocar';
   }
 
   function renderMissoes() {
     const list = document.getElementById('ctMissoesList');
     if (!state.missoes.length) {
-      list.innerHTML = '<p style="text-align:center;color:var(--text3);padding:20px;font-size:14px">Selecione uma trilha para gerar suas missões diárias.</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text3);padding:24px;font-size:14px">Selecione uma trilha para gerar suas miss\u00f5es di\u00e1rias.</p>';
       return;
     }
     list.innerHTML = state.missoes.map(m => {
       const done = m.status === 'concluida';
       const isPrint = m.comprovacao_tipo === 'print';
+      const mt = MISSION_TYPES[m.comprovacao_tipo] || MISSION_TYPES['default'];
       return `
         <div class="ct-mission-card ${done ? 'completed' : ''}" id="mission-${m.id}">
           <div class="ct-mission-top">
@@ -489,16 +569,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
               <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
             </div>
             <div class="ct-mission-body">
-              <div class="ct-mission-title">${m.titulo}</div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+                <span class="ct-icon-mission-type" style="background:${mt.gradient}">${mt.symbol}</span>
+                <div class="ct-mission-title" style="margin-bottom:0">${m.titulo}</div>
+              </div>
               <div class="ct-mission-desc">${m.descricao}</div>
-              <div class="ct-mission-xp">&#11088; +${m.xp_recompensa} XP</div>
+              <div class="ct-mission-xp"><span class="ct-icon ct-icon-star" style="width:12px;height:12px"></span> +${m.xp_recompensa} XP</div>
               <div class="ct-mission-actions">
-                ${done ? '<span style="color:var(--green);font-size:13px;font-weight:600">&#10003; Concluída</span>' : `
+                ${done ? '<span style="color:var(--green);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">\u2713 Conclu\u00edda</span>' : `
                   <button class="ct-btn ct-btn-outline" onclick="window._toggleDica(${m.id})">Como fazer?</button>
                   <button class="ct-btn ct-btn-outline" onclick="window._aprofundar('${encodeURIComponent(m.titulo)}')">Aprofundar no chat</button>
                   ${isPrint
                     ? `<button class="ct-btn ct-btn-green" onclick="window._openUpload(${m.id})">Enviar Print e Concluir</button>`
-                    : `<button class="ct-btn ct-btn-gold" onclick="window._concluir(${m.id})">Concluir &#10003;</button>`
+                    : `<button class="ct-btn ct-btn-gold" onclick="window._concluir(${m.id})">Concluir</button>`
                   }
                 `}
               </div>
@@ -514,7 +597,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     const b = state.bau;
     if (!b) return;
     const card = document.getElementById('ctBauCard');
-    const emoji = document.getElementById('ctBauEmoji');
+    const icon = document.getElementById('ctBauIcon');
     const title = document.getElementById('ctBauTitle');
     const sub = document.getElementById('ctBauSub');
     const btn = document.getElementById('ctBauBtn');
@@ -523,22 +606,22 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     const done = b.missoes_concluidas || 0;
     progDiv.innerHTML = Array.from({length: total}, (_, i) => `<div class="ct-bau-dot ${i < done ? 'done' : ''}"></div>`).join('');
     card.className = 'ct-bau-card';
+    icon.className = 'ct-icon-chest';
     if (b.bau && b.bau.aberto) {
       card.classList.add('opened');
-      emoji.textContent = '🎁';
-      title.textContent = 'Baú Aberto!';
-      sub.textContent = `+${b.bau.recompensa_xp} XP de bônus coletados`;
+      icon.classList.add('opened');
+      title.textContent = 'Ba\u00fa Aberto!';
+      sub.textContent = `+${b.bau.recompensa_xp} XP de b\u00f4nus coletados`;
       btn.style.display = 'none';
     } else if (b.pode_abrir) {
       card.classList.add('ready');
-      emoji.textContent = '🎁';
-      title.textContent = 'Baú Pronto!';
-      sub.textContent = 'Todas as missões concluídas! Abra seu baú.';
+      icon.classList.add('ready');
+      title.textContent = 'Ba\u00fa Pronto!';
+      sub.textContent = 'Todas as miss\u00f5es conclu\u00eddas! Abra seu ba\u00fa.';
       btn.style.display = 'inline-flex';
     } else {
-      emoji.textContent = '📦';
-      title.textContent = 'Baú Diário';
-      sub.textContent = `Complete ${total - done} missão(ões) restante(s)`;
+      title.textContent = 'Ba\u00fa Di\u00e1rio';
+      sub.textContent = `Complete ${total - done} miss\u00e3o(\u00f5es) restante(s)`;
       btn.style.display = 'none';
     }
   }
@@ -554,24 +637,52 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   function renderLiga() {
     const l = state.liga;
     if (!l || !l.liga_info) return;
+    const uid = parseInt(getUserId());
     const badge = document.getElementById('ctLigaBadge');
-    badge.textContent = l.liga_info.nome[0];
+    const ligaIcons = { bronze: '\u2666', prata: '\u25C6', ouro: '\u2605', diamante: '\u25C8', mestre: '\u2726' };
+    badge.textContent = ligaIcons[l.liga_info.id] || l.liga_info.nome[0];
     badge.style.borderColor = l.liga_info.cor;
     badge.style.color = l.liga_info.cor;
     badge.style.background = l.liga_info.cor + '15';
     document.getElementById('ctLigaName').textContent = `Liga ${l.liga_info.nome}`;
-    document.getElementById('ctLigaXp').textContent = `${l.xp_semana} XP esta semana — #${l.meu_rank}`;
+    document.getElementById('ctLigaXp').textContent = `${l.xp_semana} XP esta semana`;
+    document.getElementById('ctLigaRankBadge').innerHTML = `#${l.meu_rank} no ranking`;
+    const maxXp = l.ranking && l.ranking.length ? l.ranking[0].liga_xp_semana : 100;
+    const xpPct = maxXp > 0 ? Math.min(100, (l.xp_semana / maxXp) * 100) : 0;
+    document.getElementById('ctLigaXpFill').style.width = xpPct + '%';
     const rankDiv = document.getElementById('ctLigaRanking');
     if (l.ranking && l.ranking.length) {
-      rankDiv.innerHTML = l.ranking.map((r, i) => `
-        <div class="ct-rank-item ${r.user_id === parseInt(getUserId()) ? 'me' : ''}">
-          <span class="ct-rank-pos ${i < 3 ? 'top3' : ''}">${i + 1}</span>
-          <span class="ct-rank-name">${r.name || 'Advogado'}</span>
-          <span class="ct-rank-xp">${r.liga_xp_semana} XP</span>
-        </div>
-      `).join('');
+      const topXp = l.ranking[0].liga_xp_semana || 1;
+      const totalRanked = l.ranking.length;
+      const promoLine = Math.max(1, Math.floor(totalRanked * 0.3));
+      const relegateLine = Math.max(promoLine + 1, Math.ceil(totalRanked * 0.7));
+      rankDiv.innerHTML = l.ranking.map((r, i) => {
+        const isMe = r.user_id === uid;
+        const posClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+        const name = r.name || 'Advogado';
+        const initial = name.charAt(0).toUpperCase();
+        const hue = Math.abs(name.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 360;
+        const barPct = Math.min(100, (r.liga_xp_semana / topXp) * 100);
+        let indicator = '';
+        if (i + 1 <= promoLine) indicator = '<span class="ct-rank-indicator up">\u2191</span>';
+        else if (i + 1 >= relegateLine) indicator = '<span class="ct-rank-indicator down">\u2193</span>';
+        return `
+          <div class="ct-rank-item ${isMe ? 'me' : ''}">
+            <span class="ct-rank-pos ${posClass}">${i + 1}</span>
+            <div class="ct-rank-avatar" style="background:hsl(${hue},55%,45%)">${initial}</div>
+            <div class="ct-rank-info">
+              <div class="ct-rank-name">${name}${isMe ? ' <span class="ct-rank-you">Voc\u00ea</span>' : ''}</div>
+            </div>
+            <div class="ct-rank-right">
+              <span class="ct-rank-xp">${r.liga_xp_semana} XP</span>
+              <div class="ct-rank-xp-bar"><div class="ct-rank-xp-fill" style="width:${barPct}%"></div></div>
+              ${indicator}
+            </div>
+          </div>
+        `;
+      }).join('');
     } else {
-      rankDiv.innerHTML = '<p style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Nenhum participante ainda esta semana</p>';
+      rankDiv.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text3);font-size:13px"><div style="font-size:28px;margin-bottom:8px;opacity:.5">\u2726</div>Comece a treinar para aparecer no ranking!</div>';
     }
   }
 
@@ -683,15 +794,19 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
       document.getElementById('ctApp').style.display = 'none';
       document.getElementById('ctOnboarding').style.display = 'block';
       const grid = document.getElementById('ctTrilhaGrid');
-      grid.innerHTML = data.trilhas.map(t => `
+      grid.innerHTML = data.trilhas.map(t => {
+        const ti = TRILHA_ICONS[t.id];
+        const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
+        const sym = ti ? ti.symbol : '\u25C6';
+        return `
         <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')" style="${t.status === 'ativa' ? 'border-color:var(--gold)' : ''}">
-          <div class="ct-trilha-card-icon" style="background:${t.cor}20">${t.icone}</div>
+          <div class="ct-trilha-card-icon ct-icon-trilha" style="background:${grad}">${sym}</div>
           <div class="ct-trilha-card-body">
-            <div class="ct-trilha-card-name">${t.nome} ${t.status === 'ativa' ? '<span style="color:var(--gold);font-size:11px">ATIVA</span>' : ''}</div>
+            <div class="ct-trilha-card-name">${t.nome} ${t.status === 'ativa' ? '<span style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.5px">ATIVA</span>' : ''}</div>
             <div class="ct-trilha-card-desc">${t.descricao}</div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     } catch (e) { console.error(e); }
   };
 
@@ -754,7 +869,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
   }
 
   function showLevelUp(nivel) {
-    document.getElementById('ctLevelUpEmoji').textContent = nivel.emoji;
+    document.getElementById('ctLevelUpIcon').innerHTML = getLevelBadge(nivel.nivel || 1, 'lg');
     document.getElementById('ctLevelUpName').textContent = nivel.nome;
     document.getElementById('ctLevelUp').classList.add('show');
     spawnConfetti();

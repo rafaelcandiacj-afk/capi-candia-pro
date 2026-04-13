@@ -4661,6 +4661,31 @@ app.get('/api/capitreino/historico', authMiddleware, (req, res) => {
   }
 });
 
+// GET /api/capitreino/reminder-check
+app.get('/api/capitreino/reminder-check', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hoje = ctHoje();
+    const trilha = ctGetTrilhaAtiva(userId);
+    if (!trilha) return res.json({ should_remind: false });
+    const missoes = db.prepare(
+      "SELECT COUNT(*) as total, SUM(CASE WHEN status = 'concluida' THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?"
+    ).get(userId, hoje, trilha.trilha_id);
+    const pendentes = (missoes.total || 0) - (missoes.concluidas || 0);
+    const prog = ctGetOrCreateProgress(userId);
+    res.json({
+      should_remind: pendentes > 0,
+      missoes_pendentes: pendentes,
+      missoes_total: missoes.total || 0,
+      streak: prog.streak_atual,
+      xp_total: prog.xp_total
+    });
+  } catch (e) {
+    console.error('CapiTreino reminder-check error:', e);
+    res.status(500).json({ error: 'Erro ao verificar lembretes' });
+  }
+});
+
 // Serve arquivos estáticos do app — HTML sem cache, demais com cache
 app.use(express.static(path.join(__dirname, '../frontend'), {
   setHeaders: (res, filePath) => {
