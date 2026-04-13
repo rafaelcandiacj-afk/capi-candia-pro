@@ -167,7 +167,7 @@
     .btn-sm:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee}
 
     /* ── MESSAGES ── */
-    .chat-messages{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px 20px;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+    .chat-messages{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px 20px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
     .chat-messages::-webkit-scrollbar{width:4px}
     .chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
@@ -210,7 +210,7 @@
     .suggestion-chip:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee;transform:translateY(-2px);box-shadow:0 3px 10px rgba(184,134,11,.12)}
 
     /* Messages */
-    .conv-separator{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(184,134,11,.15) 20%,rgba(184,134,11,.15) 80%,transparent);margin:8px 0}
+    .conv-separator{width:100%;height:0;border:none;border-top:1.5px solid rgba(184,134,11,.2);margin:12px 0}
     .message{display:flex;gap:10px;max-width:82%;animation:fadeUp .3s ease}
     .message-user{align-self:flex-end;flex-direction:row-reverse}
     .message-assistant{align-self:flex-start}
