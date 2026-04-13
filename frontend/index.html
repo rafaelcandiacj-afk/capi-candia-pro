@@ -211,7 +211,8 @@
 
     /* Messages */
     .message{display:flex;gap:10px;max-width:82%;animation:fadeUp .3s ease}
-    .message-user{align-self:flex-end;flex-direction:row-reverse}
+    .message-user{align-self:flex-end;flex-direction:row-reverse;margin-top:8px;padding-top:16px;border-top:1px solid var(--border)}
+    .message-user:first-child{border-top:none;padding-top:0;margin-top:0}
     .message-assistant{align-self:flex-start}
     .message-avatar{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;margin-top:2px;overflow:hidden;border:1.5px solid var(--border2)}
     .message-user .message-avatar{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border-color:var(--gold)}
