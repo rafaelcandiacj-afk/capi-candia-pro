@@ -2046,7 +2046,30 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="profile-area">Área do Direito</label>
-                <input type="text" id="profile-area" name="area" class="form-input" placeholder="Direito do Trabalho" />
+                <select id="profile-area" name="area" class="form-select">
+                  <option value="">Selecione…</option>
+                  <option value="Família">Família</option>
+                  <option value="Previdenciário">Previdenciário</option>
+                  <option value="Trabalhista">Trabalhista</option>
+                  <option value="Criminal">Criminal</option>
+                  <option value="Consumidor">Consumidor</option>
+                  <option value="Civil">Civil</option>
+                  <option value="Empresarial">Empresarial</option>
+                  <option value="Tributário">Tributário</option>
+                  <option value="Imobiliário">Imobiliário</option>
+                  <option value="Digital">Digital</option>
+                  <option value="Administrativo">Administrativo</option>
+                  <option value="Ambiental">Ambiental</option>
+                  <option value="Bancário">Bancário</option>
+                  <option value="Saúde">Saúde</option>
+                  <option value="Eleitoral">Eleitoral</option>
+                  <option value="Militar">Militar</option>
+                  <option value="Agrário">Agrário</option>
+                  <option value="Internacional">Internacional</option>
+                  <option value="Desportivo">Desportivo</option>
+                  <option value="Marítimo">Marítimo</option>
+                  <option value="Generalista">Generalista</option>
+                </select>
               </div>
               <div class="form-field">
                 <label class="form-label" for="profile-oab">OAB</label>
@@ -2077,18 +2100,31 @@
               </div>
               <div class="form-field">
                 <label class="form-label" for="profile-anos">Anos de Experiência</label>
-                <input type="number" id="profile-anos" name="anos_experiencia" class="form-input" placeholder="10" min="0" max="60" />
+                <select id="profile-anos" name="anos_experiencia" class="form-select">
+                  <option value="">Selecione…</option>
+                  <option value="Menos de 1 ano">Menos de 1 ano</option>
+                  <option value="1-3 anos">1-3 anos</option>
+                  <option value="3-5 anos">3-5 anos</option>
+                  <option value="5-10 anos">5-10 anos</option>
+                  <option value="Mais de 10 anos">Mais de 10 anos</option>
+                </select>
               </div>
               <div class="form-field col-span-2">
                 <label class="form-label" for="profile-tom">Tom de Comunicação Preferido</label>
                 <select id="profile-tom" name="tom_preferido" class="form-select">
                   <option value="">Selecione…</option>
+                  <option value="descontraido">Descontraído</option>
+                  <option value="equilibrado">Equilibrado</option>
                   <option value="formal">Formal</option>
-                  <option value="semiformal">Semiformal</option>
-                  <option value="tecnico">Técnico</option>
-                  <option value="didatico">Didático</option>
-                  <option value="direto">Direto e Objetivo</option>
                 </select>
+              </div>
+              <div class="form-field col-span-2">
+                <label class="form-label" for="profile-especialidade2">Especialidade Secundária</label>
+                <input type="text" id="profile-especialidade2" name="especialidade_secundaria" class="form-input" placeholder="Ex: Direito Digital" />
+              </div>
+              <div class="form-field col-span-2">
+                <label class="form-label" for="profile-bio">Sobre Você</label>
+                <textarea id="profile-bio" name="bio" class="form-input" rows="3" placeholder="Breve descrição sobre sua atuação profissional…"></textarea>
               </div>
             </div>
             <div class="profile-save-row">
@@ -3281,6 +3317,8 @@
     setVal('profile-estado',    profile.estado);
     setVal('profile-anos',      profile.anos_experiencia);
     setVal('profile-tom',       profile.tom_preferido);
+    setVal('profile-especialidade2', profile.especialidade_secundaria);
+    setVal('profile-bio',       profile.bio);
   }
 
   document.getElementById('profile-form').addEventListener('submit', async e => {
@@ -3297,6 +3335,8 @@
       estado:           document.getElementById('profile-estado').value,
       anos_experiencia: document.getElementById('profile-anos').value,
       tom_preferido:    document.getElementById('profile-tom').value,
+      especialidade_secundaria: document.getElementById('profile-especialidade2').value,
+      bio:              document.getElementById('profile-bio').value,
     };
 
     try {

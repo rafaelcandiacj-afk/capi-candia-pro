@@ -2571,8 +2571,8 @@ async function extractPdfText(filePath) {
     const { execSync } = require('child_process');
     const os = require('os');
     const tmpDir = fs.mkdtempSync(require('path').join(os.tmpdir(), 'pdf_ocr_'));
-    // Converte até 3 páginas em imagem (resolução 150dpi para equilibrar qualidade/tamanho)
-    execSync(`pdftoppm -r 150 -l 3 -png "${filePath}" "${tmpDir}/page"`, { timeout: 60000 });
+    // Converte até 10 páginas em imagem (resolução 150dpi para equilibrar qualidade/tamanho)
+    execSync(`pdftoppm -r 150 -l 10 -png "${filePath}" "${tmpDir}/page"`, { timeout: 60000 });
     const pages = fs.readdirSync(tmpDir).filter(f => f.endsWith('.png')).sort();
     if (pages.length === 0) throw new Error('Nenhuma página convertida');
 
@@ -2589,7 +2589,7 @@ async function extractPdfText(filePath) {
             { type: 'text', text: 'Transcreva integralmente todo o texto deste documento jurídico. Mantenha a estrutura original, incluindo cabeçalhos, parágrafos, numerações e dados. Não omita nenhuma parte.' },
             { type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } }
           ]}],
-          max_tokens: 6000
+          max_tokens: 8000
         })
       });
       const vd = await visionResp.json();
@@ -2643,7 +2643,11 @@ async function processUploadedFile(file) {
       extractedText = visionData.choices?.[0]?.message?.content || '';
     }
 
-    return extractedText.substring(0, 100000);
+    let finalText = extractedText.substring(0, 100000);
+    if (extractedText.length > 100000) {
+      finalText = '[NOTA: O documento tem ' + Math.round(extractedText.length / 1000) + 'K caracteres. Exibindo os primeiros 100K caracteres.]\n\n' + finalText;
+    }
+    return finalText;
   } catch(e) {
     console.error('Erro ao processar arquivo:', file.originalname, e.message);
     return `[Erro ao extrair texto do arquivo ${file.originalname}. O arquivo foi recebido mas não foi possível ler o conteúdo automaticamente. Formato: ${require('path').extname(file.originalname)}]`;
