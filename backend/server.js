@@ -748,10 +748,13 @@ function ctSemanaAtual() {
 
 function ctGerarMissoesDiarias(userId, trilhaId) {
   const hoje = ctHoje();
-  const existing = db.prepare('SELECT COUNT(*) as c FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get(userId, hoje);
+  // Check if missions already exist for TODAY and THIS TRILHA
+  const existing = db.prepare('SELECT COUNT(*) as c FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?').get(userId, hoje, trilhaId);
   if (existing.c > 0) {
-    return db.prepare('SELECT * FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? ORDER BY ordem').all(userId, hoje);
+    return db.prepare('SELECT * FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ? ORDER BY ordem').all(userId, hoje, trilhaId);
   }
+  // Delete old missions from today if they were from a different trilha (user switched trilha)
+  db.prepare("DELETE FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND status != 'concluida'").run(userId, hoje);
   const done = db.prepare("SELECT missao_id FROM ct_missoes_diarias WHERE user_id = ? AND status = 'concluida'").all(userId).map(r => r.missao_id);
   let pool = CT_MISSOES_BANCO.filter(m => m.trilha === trilhaId && !done.includes(m.id));
   if (pool.length < 3) {
@@ -4556,8 +4559,12 @@ app.get('/api/capitreino/bau', authMiddleware, (req, res) => {
   try {
     const userId = req.user.id;
     const hoje = ctHoje();
+    const trilha = ctGetTrilhaAtiva(userId);
+    const trilhaId = trilha ? trilha.trilha_id : null;
     const bau = db.prepare('SELECT * FROM ct_baus WHERE user_id = ? AND dia = ? AND tipo = ?').get(userId, hoje, 'diario');
-    const missoesDia = db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get('concluida', userId, hoje);
+    const missoesDia = trilhaId
+      ? db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?').get('concluida', userId, hoje, trilhaId)
+      : { total: 0, concluidas: 0 };
     const todasConcluidas = missoesDia.total > 0 && missoesDia.concluidas === missoesDia.total;
     res.json({
       bau: bau || null,
@@ -4579,7 +4586,11 @@ app.post('/api/capitreino/bau/abrir', authMiddleware, (req, res) => {
     const bau = db.prepare('SELECT * FROM ct_baus WHERE user_id = ? AND dia = ? AND tipo = ?').get(userId, hoje, 'diario');
     if (!bau) return res.status(404).json({ error: 'Baú não encontrado' });
     if (bau.aberto) return res.json({ success: true, message: 'Baú já aberto', xp: 0 });
-    const missoesDia = db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get('concluida', userId, hoje);
+    const trilha = ctGetTrilhaAtiva(userId);
+    const trilhaId = trilha ? trilha.trilha_id : null;
+    const missoesDia = trilhaId
+      ? db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?').get('concluida', userId, hoje, trilhaId)
+      : { total: 0, concluidas: 0 };
     if (missoesDia.concluidas < missoesDia.total) {
       return res.status(400).json({ error: 'Complete todas as missões para abrir o baú' });
     }
