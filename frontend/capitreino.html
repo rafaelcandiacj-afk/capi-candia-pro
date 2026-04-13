@@ -593,12 +593,16 @@ body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t
     try {
       const data = await API.post(`/api/capitreino/missoes/${id}/concluir`);
       if (!data) return;
+      spawnConfetti();
       showXpFloat(data.xp_ganho);
       if (data.level_up && data.novo_nivel) showLevelUp(data.novo_nivel);
       const status = await API.get('/api/capitreino/status');
       state.status = status;
       await loadAll();
       showToast(`+${data.xp_ganho} XP! Missão concluída!`);
+      if (data.dica_extra) {
+        setTimeout(() => showToast(data.dica_extra), 3200);
+      }
     } catch (e) {
       showToast(e.message || 'Erro ao concluir missão');
     }

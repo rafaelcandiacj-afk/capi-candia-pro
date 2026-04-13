@@ -4511,6 +4511,20 @@ app.post('/api/capitreino/missoes/:id/concluir', authMiddleware, (req, res) => {
     const missao = db.prepare('SELECT * FROM ct_missoes_diarias WHERE id = ? AND user_id = ?').get(missaoId, userId);
     if (!missao) return res.status(404).json({ error: 'Missão não encontrada' });
     if (missao.status === 'concluida') return res.json({ success: true, message: 'Missão já concluída', xp: 0 });
+
+    // Auto-verificação para missões com comprovacao_tipo 'auto'
+    let autoVerificado = null;
+    let dicaExtra = null;
+    if (missao.comprovacao_tipo === 'auto') {
+      const msgCount = db.prepare("SELECT COUNT(*) as c FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = ?) AND role = 'user' AND created_at >= datetime('now', '-24 hours')").get(userId);
+      if (msgCount && msgCount.c > 0) {
+        autoVerificado = true;
+      } else {
+        autoVerificado = false;
+        dicaExtra = 'Use o chat da Capi para maximizar seu aprendizado!';
+      }
+    }
+
     db.prepare("UPDATE ct_missoes_diarias SET status = 'concluida', concluida_at = datetime(?), comprovacao_url = ? WHERE id = ?").run(new Date().toISOString(), comprovacao_url || null, missaoId);
     const xp = missao.xp_recompensa;
     const prog = ctGetOrCreateProgress(userId);
@@ -4532,7 +4546,10 @@ app.post('/api/capitreino/missoes/:id/concluir', authMiddleware, (req, res) => {
     if (levelUp) {
       db.prepare('UPDATE ct_user_progress SET nivel = ? WHERE user_id = ?').run(newNivel.nivel, userId);
     }
-    res.json({ success: true, xp_ganho: xp, xp_total: newProg.xp_total, streak: novoStreak, level_up: levelUp, novo_nivel: levelUp ? newNivel : null });
+    const result = { success: true, xp_ganho: xp, xp_total: newProg.xp_total, streak: novoStreak, level_up: levelUp, novo_nivel: levelUp ? newNivel : null };
+    if (autoVerificado !== null) result.auto_verificado = autoVerificado;
+    if (dicaExtra) result.dica_extra = dicaExtra;
+    res.json(result);
   } catch (e) {
     console.error('CapiTreino concluir missao error:', e);
     res.status(500).json({ error: 'Erro ao concluir missão' });

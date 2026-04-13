@@ -1773,6 +1773,25 @@
         Erro ao carregar dados. Por favor, recarregue a página ou tente novamente.
       </div>
 
+      <!-- ── CAPITREINO CARD ── -->
+      <section aria-labelledby="capitreino-section-label" id="capitreinoCard">
+        <div style="background:linear-gradient(135deg,#1a1510 0%,#2a1f10 50%,#1a1510 100%);border:1px solid rgba(218,165,32,.25);border-radius:16px;padding:24px;margin-bottom:24px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(218,165,32,.1),transparent 70%);pointer-events:none"></div>
+          <div style="display:flex;align-items:flex-start;gap:16px">
+            <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,rgba(218,165,32,.2),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🏋️</div>
+            <div style="flex:1;min-width:0">
+              <h3 id="capitreino-section-label" style="font-size:17px;font-weight:700;color:#DAA520;margin:0 0 4px 0">CapiTreino — Treinador de Execução</h3>
+              <p style="font-size:13px;color:#AAA;margin:0 0 12px 0;line-height:1.5">Complete missões diárias, suba de nível e domine a advocacia</p>
+              <div id="capitreinoStats" style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+                <span style="font-size:13px;color:#F5F5F5;font-weight:600"><span style="color:#DAA520" id="ctDashXp">--</span> XP</span>
+                <span style="font-size:13px;color:#F5F5F5;font-weight:600">🔥 <span id="ctDashStreak">--</span> streak</span>
+              </div>
+              <a href="/capitreino.html" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#DAA520,#B8860B);color:#1a1200;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:all .3s ease" id="ctDashBtn">Iniciar Treino</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ── 1. Economy Overview ── -->
       <section aria-labelledby="economy-section-label">
         <div class="section-header">
@@ -2269,12 +2288,29 @@
       renderCases(allCases);
       renderSummaries(dashData.summaries || []);
       renderProfile(dashData.profile || {});
+      loadCapiTreinoCard();
 
     } catch (err) {
       console.error(err);
       document.getElementById('error-banner').classList.add('visible');
     } finally {
       document.getElementById('loading-overlay').classList.add('hidden');
+    }
+  }
+
+  /* ── CapiTreino Card ─────────────────────────────────────────────── */
+  async function loadCapiTreinoCard() {
+    try {
+      const data = await API.get('/api/capitreino/status');
+      if (!data) return;
+      const xpEl = document.getElementById('ctDashXp');
+      const streakEl = document.getElementById('ctDashStreak');
+      const btnEl = document.getElementById('ctDashBtn');
+      if (xpEl) xpEl.textContent = data.xp_total || 0;
+      if (streakEl) streakEl.textContent = data.streak_atual || 0;
+      if (btnEl && !data.trilha_ativa) btnEl.textContent = 'Comece agora!';
+    } catch (e) {
+      console.error('CapiTreino card error:', e);
     }
   }
 
