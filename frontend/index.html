@@ -1668,7 +1668,9 @@ async function sendMessage(){
     } else {
       msgErro = '⚠️ Ocorreu um erro. Tente enviar a mensagem novamente.';
     }
-    appendMessage('assistant', msgErro);
+    // Adiciona botão de retry na mensagem de erro
+    const retryBtn = `<br><button onclick="this.parentElement.parentElement.remove();$('chatInput').value='${convHistory.filter(m=>m.role==='user').pop()?.content?.replace(/'/g,"\\'").substring(0,200)||''}';sendMessage()" style="margin-top:8px;padding:6px 16px;background:var(--gold,#DAA520);color:#1a1200;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">Tentar novamente</button>`;
+    appendMessage('assistant', msgErro + retryBtn);
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
     pendingUploadIds=[];pendingUploadNames=[];window._uploadMeta={};document.getElementById('fileBadgeArea').innerHTML='';

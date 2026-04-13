@@ -2633,10 +2633,10 @@ async function processUploadedFile(file) {
         body: JSON.stringify({
           model: 'gpt-4.1',
           messages: [{ role: 'user', content: [
-            { type: 'text', text: 'Extraia e transcreva todo o texto e conteúdo relevante desta imagem. Se for um documento jurídico, contrato, petição, decisão ou qualquer documento legal, transcreva integralmente.' },
-            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}` } }
+            { type: 'text', text: 'Transcreva INTEGRALMENTE todo o texto desta imagem, sem omitir nenhuma parte. Se for um documento jurídico (petição, sentença, contrato, decisão, despacho), transcreva PALAVRA POR PALAVRA mantendo a estrutura original, cabeçalhos, numerações, parágrafos e dados. NÃO resuma. NÃO omita seções. Transcreva TUDO.' },
+            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } }
           ]}],
-          max_tokens: 5000
+          max_tokens: 8000
         })
       });
       const visionData = await visionResp.json();
@@ -5275,5 +5275,9 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
+const server = app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
+// Railway/proxies podem matar conexões idle — mantém vivas por mais tempo
+server.keepAliveTimeout = 120000; // 120s (Railway default é 60s)
+server.headersTimeout = 125000;   // deve ser > keepAliveTimeout
+server.timeout = 0;               // sem timeout no server (timeout é controlado por AbortController no fetch)
 
