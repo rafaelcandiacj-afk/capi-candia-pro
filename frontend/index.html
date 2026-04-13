@@ -464,19 +464,20 @@
     .onboarding-screen{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);padding:20px}
     .onboarding-card{width:100%;max-width:480px;animation:fadeUp .5s ease}
     .onboarding-logo{text-align:center;margin-bottom:24px}
-    .onboarding-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--green);box-shadow:0 0 28px var(--green-glow)}
-    .onboarding-title{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--green);text-align:center;margin-bottom:6px;text-shadow:0 0 14px rgba(0,230,118,.35)}
+    .onboarding-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 28px rgba(184,134,11,.3)}
+    .onboarding-title{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--gold);text-align:center;margin-bottom:6px;text-shadow:0 0 14px rgba(184,134,11,.35)}
     .onboarding-sub{color:var(--text);font-size:.88rem;text-align:center;margin-bottom:28px;line-height:1.6;opacity:.8}
     .onboarding-progress{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
-    .onboarding-dot{width:32px;height:4px;border-radius:2px;background:var(--bg3);transition:all .3s}
-    .onboarding-dot.active{background:var(--green);box-shadow:0 0 8px rgba(0,230,118,.4)}
-    .onboarding-dot.done{background:var(--green2)}
-    .onboarding-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;animation:fadeUp .3s ease}
-    .onboarding-step-title{font-family:'Rajdhani',sans-serif;font-size:1.1rem;font-weight:700;color:var(--text);letter-spacing:.04em;margin-bottom:16px;text-align:center}
-    .onboarding-step-title span{color:var(--green)}
-    .onboarding-btn{width:100%;padding:13px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:var(--radius-sm);color:#050a05;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:var(--trans);margin-top:16px}
-    .onboarding-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(0,230,118,.38);transform:translateY(-1px)}
-    .onboarding-btn:disabled{opacity:.5;cursor:not-allowed}
+    .onboarding-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;animation:fadeUp .45s ease}
+    .onboarding-step-title{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--gold);letter-spacing:.04em;margin-bottom:16px;text-align:center}
+    .onboarding-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),#d4a017);border:none;border-radius:var(--radius-sm);color:#0a0800;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .3s ease;margin-top:16px}
+    .onboarding-btn:hover:not(:disabled){box-shadow:0 0 28px rgba(184,134,11,.45),0 0 8px rgba(184,134,11,.3);transform:translateY(-2px)}
+    .onboarding-btn:disabled{opacity:.4;cursor:not-allowed}
+    .onboarding-btn.ob-final{background:linear-gradient(135deg,#b8860b,#d4a017,#b8860b);background-size:200% 200%;animation:goldShimmer 3s ease infinite}
+    @keyframes goldShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    .onboarding-dot{width:32px;height:4px;border-radius:2px;background:var(--bg3);transition:all .4s ease}
+    .onboarding-dot.active{background:var(--gold);box-shadow:0 0 8px rgba(184,134,11,.4)}
+    .onboarding-dot.done{background:var(--gold);opacity:.5}
     /* Drag & Drop */
     .drag-overlay{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);pointer-events:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;backdrop-filter:blur(6px)}
     .drag-overlay.active{display:flex}
@@ -484,8 +485,10 @@
     .drag-overlay-box .drag-icon{font-size:2.5rem}
     .drag-overlay-box .drag-title{font-size:1.1rem;font-weight:700;color:var(--gold)}
     .drag-overlay-box .drag-sub{font-size:.82rem;color:rgba(255,255,255,.6)}
-    .area-chip{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;user-select:none}
-    .area-chip.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:600}
+    .area-chip{padding:8px 16px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:.82rem;cursor:pointer;transition:all .25s ease;user-select:none;position:relative}
+    .area-chip:hover{transform:scale(1.04);box-shadow:0 2px 12px rgba(184,134,11,.15);border-color:rgba(184,134,11,.3)}
+    .area-chip.selected{border-color:var(--gold);background:rgba(184,134,11,.15);color:var(--gold);font-weight:600;padding-right:28px}
+    .area-chip.selected::after{content:'\2713';position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:.7rem;font-weight:700;color:var(--gold);opacity:.9}
 
     /* ── CONSTRUTOR DE PETIÇÃO MODAL ── */
     .pet-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(184,134,11,.12);border:1px solid rgba(184,134,11,.25);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--gold);font-weight:600;margin-bottom:16px}
@@ -591,9 +594,14 @@
     body.dark-mode .tom-btn.selected{border-color:var(--gold);background:rgba(184,134,11,.2);color:var(--gold)}
 
     /* Terpômetro de tom no header */
-    .tom-termometro-btn{padding:5px 10px;background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.8rem;color:#888;transition:var(--trans);font-family:'DM Sans','Inter',sans-serif;font-weight:500;display:flex;align-items:center;gap:4px;white-space:nowrap}
+    .tom-termometro-btn{padding:5px 10px;background:transparent;border:1px solid transparent;border-radius:8px;cursor:pointer;font-size:.8rem;color:#888;transition:all .3s ease;font-family:'DM Sans','Inter',sans-serif;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap}
     .tom-termometro-btn:hover{background:#f3f0eb;border-color:#e0dbd4;color:var(--text)}
     body.dark-mode .tom-termometro-btn:hover{background:#1e1e1e;border-color:#333}
+    .tom-badge{display:inline-block;width:8px;height:8px;border-radius:50%;transition:all .3s ease;flex-shrink:0}
+    .tom-badge.tom-descontraido{background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 0 6px rgba(34,197,94,.4)}
+    .tom-badge.tom-equilibrado{background:linear-gradient(135deg,#d4a017,#b8860b);box-shadow:0 0 6px rgba(184,134,11,.4)}
+    .tom-badge.tom-formal{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 0 6px rgba(59,130,246,.4)}
+    @keyframes tomPulse{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
 
     /* Campos marcados em petições */
     .campo-marcado{background:rgba(184,134,11,0.25);border:1px dashed var(--gold);border-radius:4px;padding:1px 4px;cursor:pointer;user-select:all;transition:background .15s}
@@ -740,46 +748,46 @@ document.addEventListener('touchmove', function(e){
     </div>
     <!-- Step 1 -->
     <div id="obStep1" class="onboarding-step">
-      <div class="onboarding-step-title">Pergunta <span>1/3</span></div>
+      <div class="onboarding-step-title">Vamos nos conhecer</div>
       <div class="form-group">
         <label>Qual é o seu nome?</label>
         <input type="text" id="ob_nome" class="form-input" placeholder="Ex: Dr. João Silva">
       </div>
-      <button class="onboarding-btn" id="obNext1" onclick="obNext(1)" disabled>Próximo →</button>
+      <button class="onboarding-btn" id="obNext1" onclick="obNext(1)" disabled>Próximo</button>
     </div>
     <!-- Step 2 -->
     <div id="obStep2" class="onboarding-step hidden">
-      <div class="onboarding-step-title">Pergunta <span>2/3</span></div>
+      <div class="onboarding-step-title">Sua especialidade</div>
       <div class="form-group">
         <label style="display:block;margin-bottom:12px">Em qual área do Direito você atua? <span style="font-size:.78rem;opacity:.6">(pode marcar mais de uma)</span></label>
         <div id="ob_area_chips" style="display:flex;flex-wrap:wrap;gap:8px">
-          <div class="area-chip" data-value="Direito de Família" onclick="toggleAreaChip(this)">👨‍👩‍👧 Família</div>
-          <div class="area-chip" data-value="Previdenciário" onclick="toggleAreaChip(this)">🏛️ Previdenciário</div>
-          <div class="area-chip" data-value="Trabalhista" onclick="toggleAreaChip(this)">⚖️ Trabalhista</div>
-          <div class="area-chip" data-value="Criminal" onclick="toggleAreaChip(this)">🔒 Criminal</div>
-          <div class="area-chip" data-value="Tributário" onclick="toggleAreaChip(this)">💰 Tributário</div>
-          <div class="area-chip" data-value="Empresarial" onclick="toggleAreaChip(this)">🏢 Empresarial</div>
-          <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">📋 Cível</div>
-          <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">🛒 Consumidor</div>
-          <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">🏠 Imobiliário</div>
-          <div class="area-chip" data-value="Digital" onclick="toggleAreaChip(this)">💻 Digital</div>
-          <div class="area-chip" data-value="Administrativo" onclick="toggleAreaChip(this)">🏗️ Administrativo</div>
-          <div class="area-chip" data-value="Ambiental" onclick="toggleAreaChip(this)">🌿 Ambiental</div>
-          <div class="area-chip" data-value="Bancário" onclick="toggleAreaChip(this)">🏦 Bancário</div>
-          <div class="area-chip" data-value="Eleitoral" onclick="toggleAreaChip(this)">🗳️ Eleitoral</div>
-          <div class="area-chip" data-value="Saúde" onclick="toggleAreaChip(this)">🩺 Saúde</div>
-          <div class="area-chip" data-value="Militar" onclick="toggleAreaChip(this)">🎖️ Militar</div>
-          <div class="area-chip" data-value="Agrário" onclick="toggleAreaChip(this)">🌾 Agrário</div>
-          <div class="area-chip" data-value="Internacional" onclick="toggleAreaChip(this)">🌐 Internacional</div>
-          <div class="area-chip" data-value="Desportivo" onclick="toggleAreaChip(this)">⚽ Desportivo</div>
-          <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">➕ Outra</div>
+          <div class="area-chip" data-value="Direito de Família" onclick="toggleAreaChip(this)">Família</div>
+          <div class="area-chip" data-value="Previdenciário" onclick="toggleAreaChip(this)">Previdenciário</div>
+          <div class="area-chip" data-value="Trabalhista" onclick="toggleAreaChip(this)">Trabalhista</div>
+          <div class="area-chip" data-value="Criminal" onclick="toggleAreaChip(this)">Criminal</div>
+          <div class="area-chip" data-value="Tributário" onclick="toggleAreaChip(this)">Tributário</div>
+          <div class="area-chip" data-value="Empresarial" onclick="toggleAreaChip(this)">Empresarial</div>
+          <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">Cível</div>
+          <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">Consumidor</div>
+          <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">Imobiliário</div>
+          <div class="area-chip" data-value="Digital" onclick="toggleAreaChip(this)">Digital</div>
+          <div class="area-chip" data-value="Administrativo" onclick="toggleAreaChip(this)">Administrativo</div>
+          <div class="area-chip" data-value="Ambiental" onclick="toggleAreaChip(this)">Ambiental</div>
+          <div class="area-chip" data-value="Bancário" onclick="toggleAreaChip(this)">Bancário</div>
+          <div class="area-chip" data-value="Eleitoral" onclick="toggleAreaChip(this)">Eleitoral</div>
+          <div class="area-chip" data-value="Saúde" onclick="toggleAreaChip(this)">Saúde</div>
+          <div class="area-chip" data-value="Militar" onclick="toggleAreaChip(this)">Militar</div>
+          <div class="area-chip" data-value="Agrário" onclick="toggleAreaChip(this)">Agrário</div>
+          <div class="area-chip" data-value="Internacional" onclick="toggleAreaChip(this)">Internacional</div>
+          <div class="area-chip" data-value="Desportivo" onclick="toggleAreaChip(this)">Desportivo</div>
+          <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">+ Outra</div>
         </div>
       </div>
-      <button class="onboarding-btn" id="obNext2" onclick="obNext(2)" disabled>Próximo →</button>
+      <button class="onboarding-btn" id="obNext2" onclick="obNext(2)" disabled>Próximo</button>
     </div>
     <!-- Step 3 -->
     <div id="obStep3" class="onboarding-step hidden">
-      <div class="onboarding-step-title">Pergunta <span>3/3</span></div>
+      <div class="onboarding-step-title">Sua experiência</div>
       <div class="form-group">
         <label>Há quanto tempo você é advogado?</label>
         <select id="ob_anos" class="form-select" onchange="obValidate(3)">
@@ -791,7 +799,7 @@ document.addEventListener('touchmove', function(e){
           <option value="Mais de 10 anos">Mais de 10 anos</option>
         </select>
       </div>
-      <button class="onboarding-btn" id="obNext3" onclick="finishOnboarding()" disabled>🚀 Começar!</button>
+      <button class="onboarding-btn ob-final" id="obNext3" onclick="finishOnboarding()" disabled>INICIAR EXPERIÊNCIA</button>
     </div>
   </div>
 </div>
@@ -2199,17 +2207,26 @@ async function loadProfile(){
 }
 
 // ── TERMÔMETRO DE TOM ──────────────────────────────────
-const TOM_CICLO=[['descontraido','🤙'],['equilibrado','⚖️'],['formal','👔']];
+const TOM_CICLO=[['descontraido','D'],['equilibrado','E'],['formal','F']];
 
 const TOM_LABELS={'descontraido':'Descontraído','equilibrado':'Equilibrado','formal':'Formal'};
+const TOM_TOOLTIPS={
+  'descontraido':'Tom descontraído: Capi responde de forma leve e amigável',
+  'equilibrado':'Tom equilibrado: Capi responde com profissionalismo e proximidade',
+  'formal':'Tom formal: Capi responde com linguagem jurídica e formal'
+};
 function updateTomBtn(tom){
   const btn=document.getElementById('tomTermometroBtn');
   if(!btn) return;
-  const label=TOM_LABELS[tom]||'⚖️ Equilibrado';
-  btn.textContent=label;
-  btn.title='Tom atual: '+label+' — clique para alternar';
+  const label=TOM_LABELS[tom]||'Equilibrado';
+  // Rebuild button content with gradient badge
+  btn.innerHTML='<span class="tom-badge tom-'+tom+'"></span>'+label;
+  btn.title=TOM_TOOLTIPS[tom]||('Tom atual: '+label+' — clique para alternar');
   btn.style.color=tom==='descontraido'?'#22c55e':tom==='formal'?'#3b82f6':'var(--gold)';
   btn.style.borderColor=tom==='descontraido'?'rgba(34,197,94,.3)':tom==='formal'?'rgba(59,130,246,.3)':'rgba(184,134,11,.3)';
+  // Micro-animation on the badge
+  const badge=btn.querySelector('.tom-badge');
+  if(badge){badge.style.animation='tomPulse .4s ease';setTimeout(()=>{badge.style.animation='';},400);}
 }
 
 async function cycleTom(){
@@ -2229,8 +2246,7 @@ async function cycleTom(){
       body:JSON.stringify({...userProfile,tom_preferido:novo})
     });
   }catch(e){}
-  const labels={'descontraido':'Descontraído','equilibrado':'Equilibrado','formal':'Formal'};
-  showToast('Tom alterado para '+labels[novo]);
+  showToast('Tom alterado para '+TOM_LABELS[novo]);
 }
 
 // ── TEMPLATES ──────────────────────────────────────────
@@ -2405,63 +2421,213 @@ function shareWhatsApp(text){
   window.open('https://wa.me/?text='+msg,'_blank');
 }
 
-// ── FEATURE 3: EXPORTAR PEÇA COMO DOCX ──
+// ── FEATURE 3: EXPORTAR PEÇA COMO DOCX (formato profissional ABNT) ──
 function downloadDocx(content){
   try{
-    // Remove markdown symbols
-    const plainText = content
-      .replace(/\*\*/g,'')
-      .replace(/[*_#`]/g,'')
-      .replace(/<[^>]+>/g,'')
-      .trim();
     const hoje = new Date();
     const dataStr = hoje.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
     // Se a lib docx não carregou, gera TXT simples (sem dependência)
     if(typeof docx === 'undefined'){
+      const plainText = content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').replace(/<[^>]+>/g,'').trim();
       const txt = 'CAPI CÂND-IA PRO — Peça Jurídica\nGerado em: ' + dataStr + '\n' + '='.repeat(50) + '\n\n' + plainText;
       const blob = new Blob([txt], {type:'text/plain;charset=utf-8'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'peca-juridica-' + Date.now() + '.txt';
       a.click();
-      showToast('✅ Arquivo .txt baixado!');
+      showToast('Arquivo .txt baixado com sucesso');
       return;
     }
+
     const {
-      Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle
+      Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
+      Header, Footer, PageNumber, TabStopPosition, TabStopType
     } = docx;
-    const lines = plainText.split('\n');
-    const docChildren = [
+
+    // ── Constantes de layout ABNT ──
+    const CM = 567; // 1cm em twips
+    const FONT_BODY = 'Times New Roman';
+    const SIZE_BODY = 24;       // 12pt (half-points)
+    const SIZE_HEADING = 28;    // 14pt
+    const SIZE_SMALL = 16;      // 8pt
+    const LINE_SPACING = 360;   // 1.5 linhas (240 * 1.5)
+    const INDENT_FIRST = 1.25 * CM; // 1.25cm recuo primeira linha
+
+    // ── Parser inteligente de markdown → paragraphs ──
+    function parseMarkdownToParagraphs(md){
+      const paragraphs = [];
+      const lines = md.split('\n');
+      for(let i = 0; i < lines.length; i++){
+        const line = lines[i];
+
+        // Linha em branco → espaçamento
+        if(!line.trim()){
+          paragraphs.push(new Paragraph({ spacing:{ after: 120 } }));
+          continue;
+        }
+
+        // ## Heading 2
+        const h2 = line.match(/^##\s+(.+)/);
+        if(h2){
+          paragraphs.push(new Paragraph({
+            children: [new TextRun({ text: h2[1].replace(/\*\*/g,''), font: FONT_BODY, size: SIZE_HEADING, bold: true })],
+            heading: HeadingLevel.HEADING_2,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 240, after: 120 },
+          }));
+          continue;
+        }
+
+        // ### Heading 3
+        const h3 = line.match(/^###\s+(.+)/);
+        if(h3){
+          paragraphs.push(new Paragraph({
+            children: [new TextRun({ text: h3[1].replace(/\*\*/g,''), font: FONT_BODY, size: SIZE_HEADING, bold: true })],
+            heading: HeadingLevel.HEADING_3,
+            alignment: AlignmentType.LEFT,
+            spacing: { before: 200, after: 100 },
+          }));
+          continue;
+        }
+
+        // # Heading 1
+        const h1 = line.match(/^#\s+(.+)/);
+        if(h1){
+          paragraphs.push(new Paragraph({
+            children: [new TextRun({ text: h1[1].replace(/\*\*/g,''), font: FONT_BODY, size: 32, bold: true })],
+            heading: HeadingLevel.HEADING_1,
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 300, after: 160 },
+          }));
+          continue;
+        }
+
+        // - bullet ou * bullet
+        const bullet = line.match(/^[\-\*]\s+(.+)/);
+        if(bullet){
+          paragraphs.push(new Paragraph({
+            children: parseInlineFormatting(bullet[1]),
+            bullet: { level: 0 },
+            spacing: { after: 60, line: LINE_SPACING },
+          }));
+          continue;
+        }
+
+        // Texto normal com formatação inline
+        paragraphs.push(new Paragraph({
+          children: parseInlineFormatting(line),
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 80, line: LINE_SPACING },
+          indent: { firstLine: INDENT_FIRST },
+        }));
+      }
+      return paragraphs;
+    }
+
+    // ── Parser de formatação inline (**bold**, *italic*) ──
+    function parseInlineFormatting(text){
+      const runs = [];
+      // Regex: captura **bold**, *italic*, e texto normal
+      const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|([^*]+))/g;
+      let match;
+      while((match = regex.exec(text)) !== null){
+        if(match[2]){
+          // **bold**
+          runs.push(new TextRun({ text: match[2], font: FONT_BODY, size: SIZE_BODY, bold: true }));
+        } else if(match[3]){
+          // *italic*
+          runs.push(new TextRun({ text: match[3], font: FONT_BODY, size: SIZE_BODY, italics: true }));
+        } else if(match[4]){
+          // texto normal — limpar marcadores residuais
+          const clean = match[4].replace(/<[^>]+>/g,'').replace(/[`]/g,'');
+          if(clean) runs.push(new TextRun({ text: clean, font: FONT_BODY, size: SIZE_BODY }));
+        }
+      }
+      if(runs.length === 0){
+        const clean = text.replace(/\*\*/g,'').replace(/[*_#`]/g,'').replace(/<[^>]+>/g,'');
+        runs.push(new TextRun({ text: clean || ' ', font: FONT_BODY, size: SIZE_BODY }));
+      }
+      return runs;
+    }
+
+    // ── Capa / seção de abertura ──
+    const coverSection = [
+      new Paragraph({ spacing: { after: 600 } }),
       new Paragraph({
-        text: 'Peça Jurídica — Capi Când-IA Pro',
-        heading: HeadingLevel.HEADING_1,
+        children: [new TextRun({ text: 'CAPI CÂND-IA PRO', font: FONT_BODY, size: 48, bold: true, color: '1a1a1a' })],
         alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
       }),
       new Paragraph({
-        children:[
-          new TextRun({
-            text: 'Gerado em: ' + dataStr,
-            italics: true,
-            color: '888888',
-            size: 20
-          })
-        ],
+        children: [new TextRun({ text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━', font: FONT_BODY, size: 20, color: '888888' })],
         alignment: AlignmentType.CENTER,
-        spacing: { after: 400 }
+        spacing: { after: 300 },
       }),
-      ...lines.map(line => new Paragraph({
-        children: [new TextRun({
-          text: line || ' ',
-          size: 24
-        })],
-        spacing: { after: line.trim() ? 80 : 160 }
-      }))
+      new Paragraph({
+        children: [new TextRun({ text: 'PEÇA JURÍDICA', font: FONT_BODY, size: 36, bold: true, color: '333333' })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 160 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: 'Documento gerado em ' + dataStr, font: FONT_BODY, size: 22, italics: true, color: '666666' })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+      }),
+      new Paragraph({
+        children: [new TextRun({ text: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━', font: FONT_BODY, size: 20, color: '888888' })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 600 },
+      }),
     ];
+
+    // ── Conteúdo principal ──
+    const bodyParagraphs = parseMarkdownToParagraphs(content);
+
+    // ── Montar documento ──
     const doc = new Document({
-      sections:[{ children: docChildren }],
       creator: 'Capi Când-IA Pro',
-      title: 'Peça Jurídica'
+      title: 'Peça Jurídica',
+      description: 'Documento gerado automaticamente por Capi Când-IA Pro',
+      sections: [{
+        properties: {
+          page: {
+            margin: {
+              top: 3 * CM,
+              bottom: 2 * CM,
+              left: 3 * CM,
+              right: 2 * CM,
+            },
+          },
+        },
+        headers: {
+          default: new Header({
+            children: [new Paragraph({
+              children: [new TextRun({ text: 'CAPI CÂND-IA PRO', font: FONT_BODY, size: SIZE_SMALL, color: '999999', italics: true })],
+              alignment: AlignmentType.RIGHT,
+            })],
+          }),
+        },
+        footers: {
+          default: new Footer({
+            children: [
+              new Paragraph({
+                children: [
+                  new TextRun({ text: 'Documento gerado automaticamente por Capi Când-IA Pro  —  Página ', font: FONT_BODY, size: SIZE_SMALL, color: '999999' }),
+                  new TextRun({ children: [PageNumber.CURRENT], font: FONT_BODY, size: SIZE_SMALL, color: '999999' }),
+                ],
+                alignment: AlignmentType.CENTER,
+              }),
+            ],
+          }),
+        },
+        children: [
+          ...coverSection,
+          ...bodyParagraphs,
+        ],
+      }],
     });
+
     Packer.toBlob(doc).then(blob=>{
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -2470,14 +2636,14 @@ function downloadDocx(content){
       document.body.appendChild(a);
       a.click();
       setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
-      showToast('✅ Peça baixada como DOCX!');
+      showToast('Peça baixada como DOCX profissional');
     }).catch(err=>{
       console.error(err);
-      showToast('❌ Erro ao gerar DOCX: ' + err.message);
+      showToast('Erro ao gerar DOCX: ' + err.message);
     });
   } catch(err){
     console.error(err);
-    showToast('❌ Erro ao gerar DOCX: ' + err.message);
+    showToast('Erro ao gerar DOCX: ' + err.message);
   }
 }
 
@@ -3257,7 +3423,7 @@ async function finishOnboarding() {
   const area = getSelectedAreas().join(', ');
   const anos = $('ob_anos').value;
   $('obNext3').disabled = true;
-  $('obNext3').textContent = 'Preparando...';
+  $('obNext3').textContent = 'PREPARANDO...';
   // Tenta salvar no servidor até 3x para garantir que ficou salvo
   const token = localStorage.getItem('capi_token');
   let saved = false;
