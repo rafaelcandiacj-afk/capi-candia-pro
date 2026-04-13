@@ -573,6 +573,205 @@ db.exec(`
   );
 `);
 
+// ─── CAPITREINO: TABELAS ────────────────────────────────────────
+db.exec(`
+  CREATE TABLE IF NOT EXISTS ct_user_trilha (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    trilha_id TEXT NOT NULL,
+    started_at TEXT DEFAULT (datetime('now')),
+    completed_at TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS ct_user_progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    xp_total INTEGER DEFAULT 0,
+    nivel INTEGER DEFAULT 1,
+    streak_atual INTEGER DEFAULT 0,
+    streak_max INTEGER DEFAULT 0,
+    liga TEXT DEFAULT 'bronze',
+    liga_xp_semana INTEGER DEFAULT 0,
+    liga_semana TEXT,
+    missoes_total INTEGER DEFAULT 0,
+    missoes_concluidas INTEGER DEFAULT 0,
+    ultimo_dia_ativo TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS ct_missoes_diarias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    dia TEXT NOT NULL,
+    trilha_id TEXT NOT NULL,
+    missao_id TEXT NOT NULL,
+    titulo TEXT NOT NULL,
+    descricao TEXT NOT NULL,
+    tipo TEXT NOT NULL,
+    formato_conteudo TEXT,
+    xp_recompensa INTEGER DEFAULT 50,
+    status TEXT DEFAULT 'pendente',
+    comprovacao_tipo TEXT DEFAULT 'auto',
+    comprovacao_url TEXT,
+    concluida_at TEXT,
+    ordem INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS ct_baus (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    dia TEXT NOT NULL,
+    tipo TEXT DEFAULT 'diario',
+    recompensa_xp INTEGER DEFAULT 0,
+    recompensa_tipo TEXT,
+    aberto INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+// ─── CAPITREINO: CONSTANTES ─────────────────────────────────────
+const CT_NIVEIS = [
+  { nivel: 1, nome: 'CapiBaby', xp_min: 0, xp_max: 299, emoji: '🍼' },
+  { nivel: 2, nome: 'CapiAprendiz', xp_min: 300, xp_max: 999, emoji: '📚' },
+  { nivel: 3, nome: 'CapiAdvogado', xp_min: 1000, xp_max: 2499, emoji: '⚖️' },
+  { nivel: 4, nome: 'CapiEstrategista', xp_min: 2500, xp_max: 4999, emoji: '🧠' },
+  { nivel: 5, nome: 'Capitão', xp_min: 5000, xp_max: 9999, emoji: '🎖️' },
+  { nivel: 6, nome: 'CapiMestre', xp_min: 10000, xp_max: 19999, emoji: '👑' },
+  { nivel: 7, nome: 'CapiLenda', xp_min: 20000, xp_max: Infinity, emoji: '🏆' }
+];
+
+const CT_LIGAS = [
+  { id: 'bronze', nome: 'Bronze', cor: '#CD7F32', promo: 10, rebaixa: 0 },
+  { id: 'prata', nome: 'Prata', cor: '#C0C0C0', promo: 10, rebaixa: 5 },
+  { id: 'ouro', nome: 'Ouro', cor: '#FFD700', promo: 10, rebaixa: 5 },
+  { id: 'safira', nome: 'Safira', cor: '#0F52BA', promo: 10, rebaixa: 5 },
+  { id: 'rubi', nome: 'Rubi', cor: '#E0115F', promo: 10, rebaixa: 5 },
+  { id: 'esmeralda', nome: 'Esmeralda', cor: '#50C878', promo: 10, rebaixa: 5 },
+  { id: 'diamante', nome: 'Diamante', cor: '#B9F2FF', promo: 0, rebaixa: 5 }
+];
+
+const CT_TRILHAS = [
+  { id: 'primeiros_passos', nome: 'Primeiros Passos', descricao: 'Aprenda o básico do Método Cândia e configure sua presença profissional', icone: '🚀', cor: '#4CAF50', pilar: 'geral', ordem: 1 },
+  { id: 'advocacia_raiz', nome: 'Advocacia Raiz', descricao: 'Domine postura profissional, networking, reputação e indicações — o pilar 1 do Método Cândia', icone: '🌳', cor: '#8B4513', pilar: 'advocacia_raiz', ordem: 2 },
+  { id: 'cacador_clientes', nome: 'Caçador de Clientes', descricao: 'Prospecção ativa em Jusfy, Jusbrasil e plataformas de clientes — pilar 2 do Método', icone: '🎯', cor: '#FF5722', pilar: 'prospeccao', ordem: 3 },
+  { id: 'autoridade_digital', nome: 'Autoridade Digital', descricao: 'Produza conteúdo que atrai clientes no Instagram e redes — pilar 3 do Método', icone: '📱', cor: '#9C27B0', pilar: 'conteudo', ordem: 4 },
+  { id: 'maquina_anuncios', nome: 'Máquina de Anúncios', descricao: 'Domine Meta Ads e Google Ads para advocacia — pilar 4 do Método', icone: '📢', cor: '#2196F3', pilar: 'trafego', ordem: 5 },
+  { id: 'mestre_fechamento', nome: 'Mestre do Fechamento', descricao: 'Atendimento ao cliente, precificação e técnicas de fechamento — seu faturamento depende disso', icone: '🤝', cor: '#FF9800', pilar: 'atendimento', ordem: 6 }
+];
+
+const CT_MISSOES_BANCO = [
+  // === PRIMEIROS PASSOS ===
+  { id: 'pp_01', trilha: 'primeiros_passos', titulo: 'Defina seu nicho de atuação', descricao: 'Escolha 1 a 3 áreas do Direito para se especializar. Use o chat da Capi para pedir ajuda na escolha.', tipo: 'estrategia', formato_conteudo: null, xp: 40, comprovacao: 'auto', dica: 'Vá no chat da Capi e pergunte: "Me ajude a escolher meu nicho de atuação como advogado". A IA vai te guiar.' },
+  { id: 'pp_02', trilha: 'primeiros_passos', titulo: 'Crie sua bio profissional', descricao: 'Escreva uma bio profissional para suas redes sociais usando a Capi.', tipo: 'conteudo', formato_conteudo: null, xp: 40, comprovacao: 'auto', dica: 'Peça para a Capi: "Crie uma bio profissional para meu Instagram de advogado na área [sua área]"' },
+  { id: 'pp_03', trilha: 'primeiros_passos', titulo: 'Organize sua agenda semanal', descricao: 'Crie um planejamento semanal de atividades de captação e produção de conteúdo.', tipo: 'estrategia', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Use a Capi para criar seu planejamento: "Monte uma agenda semanal para advogado que quer captar clientes"' },
+  { id: 'pp_04', trilha: 'primeiros_passos', titulo: 'Explore a Capi', descricao: 'Faça pelo menos 3 perguntas diferentes para a Capi sobre sua área de atuação.', tipo: 'exploracao', formato_conteudo: null, xp: 30, comprovacao: 'auto', dica: 'Pergunte sobre teses, estratégias, modelos de petição... a Capi tem 94 documentos de referência.' },
+  { id: 'pp_05', trilha: 'primeiros_passos', titulo: 'Defina suas metas do mês', descricao: 'Estabeleça metas claras: quantos clientes quer, quanto quer faturar, quantos conteúdos vai produzir.', tipo: 'estrategia', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Peça à Capi: "Me ajude a definir metas realistas para um advogado que está começando a captar clientes"' },
+  // === ADVOCACIA RAIZ ===
+  { id: 'ar_01', trilha: 'advocacia_raiz', titulo: 'Mapeie sua rede de indicações', descricao: 'Liste 10 profissionais que podem te indicar clientes (outros advogados, contadores, corretores, etc).', tipo: 'estrategia', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Pense em quem convive com seu público-alvo. Contadores indicam para tributário, corretores para imobiliário.' },
+  { id: 'ar_02', trilha: 'advocacia_raiz', titulo: 'Envie mensagem para 3 indicadores', descricao: 'Escolha 3 pessoas da sua lista e envie uma mensagem profissional se apresentando e oferecendo parceria.', tipo: 'networking', formato_conteudo: null, xp: 60, comprovacao: 'print', dica: 'Use a Capi para redigir a mensagem: "Escreva uma mensagem de parceria profissional para um contador"' },
+  { id: 'ar_03', trilha: 'advocacia_raiz', titulo: 'Atualize seu perfil da OAB', descricao: 'Verifique se seu cadastro na OAB está atualizado com endereço, telefone e áreas de atuação.', tipo: 'organizacao', formato_conteudo: null, xp: 40, comprovacao: 'print', dica: 'Acesse o site da OAB da sua seccional e atualize seu cadastro.' },
+  { id: 'ar_04', trilha: 'advocacia_raiz', titulo: 'Crie seu cartão digital', descricao: 'Crie um cartão de visitas digital profissional para enviar por WhatsApp.', tipo: 'conteudo', formato_conteudo: null, xp: 50, comprovacao: 'print', dica: 'Use Canva ou peça à Capi um texto para seu cartão digital de advogado.' },
+  { id: 'ar_05', trilha: 'advocacia_raiz', titulo: 'Participe de um grupo de networking', descricao: 'Entre em pelo menos 1 grupo de WhatsApp ou Telegram de advogados ou empreendedores da sua cidade.', tipo: 'networking', formato_conteudo: null, xp: 40, comprovacao: 'print', dica: 'Busque no Google: "grupo WhatsApp advogados [sua cidade]" ou pergunte em redes sociais.' },
+  { id: 'ar_06', trilha: 'advocacia_raiz', titulo: 'Estude uma tese escalável', descricao: 'Use a Capi para pesquisar uma tese jurídica escalável na sua área e entenda como aplicá-la.', tipo: 'estudo', formato_conteudo: null, xp: 60, comprovacao: 'auto', dica: 'Pergunte: "Quais as melhores teses escaláveis em [direito do consumidor/trabalhista/etc]?"' },
+  // === CAÇADOR DE CLIENTES ===
+  { id: 'cc_01', trilha: 'cacador_clientes', titulo: 'Cadastre-se na Jusfy', descricao: 'Crie seu perfil completo na Jusfy com foto profissional, áreas de atuação e descrição atrativa.', tipo: 'prospeccao', formato_conteudo: null, xp: 50, comprovacao: 'print', dica: 'Acesse jusfy.com.br e crie seu perfil. Use a Capi para escrever sua descrição profissional.' },
+  { id: 'cc_02', trilha: 'cacador_clientes', titulo: 'Responda 3 perguntas no Jusbrasil', descricao: 'Encontre 3 perguntas na sua área de atuação e responda de forma completa e estratégica.', tipo: 'prospeccao', formato_conteudo: null, xp: 60, comprovacao: 'print', dica: 'Vá no Jusbrasil, seção de Perguntas. Responda com autoridade. Isso gera visibilidade e clientes.' },
+  { id: 'cc_03', trilha: 'cacador_clientes', titulo: 'Prospecte 5 clientes ativamente', descricao: 'Identifique 5 potenciais clientes e envie uma mensagem de abordagem profissional.', tipo: 'prospeccao', formato_conteudo: null, xp: 80, comprovacao: 'print', dica: 'Use a Capi: "Escreva uma mensagem de prospecção para cliente que precisa de advogado de [área]"' },
+  { id: 'cc_04', trilha: 'cacador_clientes', titulo: 'Crie um script de atendimento', descricao: 'Desenvolva um roteiro para sua primeira conversa com um lead que chega pelo WhatsApp.', tipo: 'atendimento', formato_conteudo: null, xp: 60, comprovacao: 'auto', dica: 'Peça à Capi: "Crie um script de primeiro atendimento para advogado que recebe leads pelo WhatsApp"' },
+  { id: 'cc_05', trilha: 'cacador_clientes', titulo: 'Analise seus concorrentes', descricao: 'Pesquise 3 advogados da sua área na sua cidade e analise como eles captam clientes.', tipo: 'estrategia', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Busque no Google e Instagram. Observe: que tipo de conteúdo fazem? Estão na Jusfy? Têm Google Ads?' },
+  // === AUTORIDADE DIGITAL ===
+  { id: 'ad_01', trilha: 'autoridade_digital', titulo: 'Grave um Reels React', descricao: 'Grave um Reels no formato React: reaja a uma notícia jurídica ou situação do dia a dia.', tipo: 'conteudo', formato_conteudo: 'react', xp: 70, comprovacao: 'print', dica: 'Peça à Capi: "Crie um roteiro de Reels React sobre [tema jurídico]. Formato: reação natural + explicação"' },
+  { id: 'ad_02', trilha: 'autoridade_digital', titulo: 'Crie um carrossel educativo', descricao: 'Crie um carrossel de 5-8 slides explicando um direito que as pessoas não conhecem.', tipo: 'conteudo', formato_conteudo: 'carrossel', xp: 70, comprovacao: 'print', dica: 'Use a Capi: "Crie um carrossel educativo sobre [tema]. 7 slides com linguagem simples e gancho forte"' },
+  { id: 'ad_03', trilha: 'autoridade_digital', titulo: 'Poste 3 Stories estratégicos', descricao: 'Poste 3 Stories hoje: 1 bastidor, 1 dica rápida, 1 enquete sobre um tema jurídico.', tipo: 'conteudo', formato_conteudo: 'bastidores', xp: 50, comprovacao: 'print', dica: 'Stories de bastidor humanizam. Mostre seu escritório, seu estudo, sua rotina. A Capi pode criar os textos.' },
+  { id: 'ad_04', trilha: 'autoridade_digital', titulo: 'Grave um vídeo Professoral', descricao: 'Grave um vídeo curto explicando um conceito jurídico como se estivesse dando aula.', tipo: 'conteudo', formato_conteudo: 'professoral', xp: 70, comprovacao: 'print', dica: 'Peça roteiro: "Crie um roteiro de vídeo professoral explicando [conceito] de forma simples para leigos"' },
+  { id: 'ad_05', trilha: 'autoridade_digital', titulo: 'Crie um post de Storytelling', descricao: 'Escreva um post contando uma história real (anonimizada) de um caso que resolveu.', tipo: 'conteudo', formato_conteudo: 'storytelling', xp: 60, comprovacao: 'print', dica: 'Storytelling vende. Peça à Capi: "Crie um post de storytelling sobre um caso de [área] com final positivo"' },
+  { id: 'ad_06', trilha: 'autoridade_digital', titulo: 'Faça um post FAQ', descricao: 'Responda as 3 perguntas mais frequentes que seus clientes fazem, em formato de post.', tipo: 'conteudo', formato_conteudo: 'faq', xp: 50, comprovacao: 'print', dica: 'Peça: "Crie um post FAQ com as 3 dúvidas mais comuns sobre [sua área de atuação]"' },
+  { id: 'ad_07', trilha: 'autoridade_digital', titulo: 'Crie um Reels POV', descricao: 'Grave um Reels no formato POV: "POV: você descobriu que [situação jurídica]"', tipo: 'conteudo', formato_conteudo: 'pov', xp: 70, comprovacao: 'print', dica: 'POVs viralizam. Peça roteiro: "Crie um roteiro de Reels POV sobre [situação jurídica comum]"' },
+  { id: 'ad_08', trilha: 'autoridade_digital', titulo: 'Post de Autoridade', descricao: 'Crie um post mostrando um resultado ou conquista profissional (audiência ganha, tese aprovada, etc).', tipo: 'conteudo', formato_conteudo: 'autoridade', xp: 60, comprovacao: 'print', dica: 'Mostre resultados reais. "Conseguimos reverter X para o cliente Y". Isso gera confiança.' },
+  { id: 'ad_09', trilha: 'autoridade_digital', titulo: 'Imagem + Música + Frase', descricao: 'Crie um Reels com imagem impactante, música de fundo e uma frase jurídica poderosa.', tipo: 'conteudo', formato_conteudo: 'imagem_musica_frase', xp: 50, comprovacao: 'print', dica: 'Formato fácil e viral. Escolha uma frase forte sobre direito e coloque sobre uma imagem profissional.' },
+  { id: 'ad_10', trilha: 'autoridade_digital', titulo: 'Crie um post de Comparação', descricao: 'Faça um post comparando dois conceitos jurídicos que as pessoas confundem.', tipo: 'conteudo', formato_conteudo: 'comparacao', xp: 50, comprovacao: 'print', dica: 'Ex: "Dano moral vs Dano material: qual a diferença?" — Peça à Capi para criar o comparativo.' },
+  { id: 'ad_11', trilha: 'autoridade_digital', titulo: 'Tutorial em série (Parte 1)', descricao: 'Inicie uma série de 3 vídeos tutoriais sobre um tema da sua área. Grave a parte 1 hoje.', tipo: 'conteudo', formato_conteudo: 'tutorial_serie', xp: 80, comprovacao: 'print', dica: 'Séries geram expectativa e seguidores. Peça à Capi o roteiro completo da série de 3 partes.' },
+  { id: 'ad_12', trilha: 'autoridade_digital', titulo: 'Post Provoca DM', descricao: 'Crie um post que termine com: "Comenta EU QUERO que eu te mando o material completo".', tipo: 'conteudo', formato_conteudo: 'provoca_dm', xp: 60, comprovacao: 'print', dica: 'Isso gera leads direto no DM. Use: "Preparei um guia sobre [tema]. Quer? Comenta EU QUERO."' },
+  // === MÁQUINA DE ANÚNCIOS ===
+  { id: 'ma_01', trilha: 'maquina_anuncios', titulo: 'Configure o Pixel do Facebook', descricao: 'Instale o Pixel do Meta no seu site ou landing page para rastrear conversões.', tipo: 'trafego', formato_conteudo: null, xp: 60, comprovacao: 'print', dica: 'Acesse business.facebook.com > Gerenciador de Eventos. A Capi pode te guiar passo a passo.' },
+  { id: 'ma_02', trilha: 'maquina_anuncios', titulo: 'Crie sua primeira campanha no Meta', descricao: 'Crie uma campanha de mensagens no Meta Ads direcionando para seu WhatsApp.', tipo: 'trafego', formato_conteudo: null, xp: 80, comprovacao: 'print', dica: 'Campanha de Mensagens > WhatsApp. Segmentação por cidade + interesse em "advogado" ou sua área.' },
+  { id: 'ma_03', trilha: 'maquina_anuncios', titulo: 'Escreva 3 copies para anúncios', descricao: 'Crie 3 variações de texto para anúncios de advocacia usando a Capi.', tipo: 'conteudo', formato_conteudo: null, xp: 60, comprovacao: 'auto', dica: 'Peça: "Crie 3 copies para anúncio de advogado [sua área] no Meta Ads. Foque em dor do cliente."' },
+  { id: 'ma_04', trilha: 'maquina_anuncios', titulo: 'Analise métricas da campanha', descricao: 'Verifique CTR, CPC e custo por lead da sua campanha ativa e identifique o que melhorar.', tipo: 'analise', formato_conteudo: null, xp: 50, comprovacao: 'print', dica: 'Se não tem campanha ainda, estude os termos: CTR = taxa de clique, CPC = custo por clique, CPL = custo por lead.' },
+  { id: 'ma_05', trilha: 'maquina_anuncios', titulo: 'Crie uma landing page simples', descricao: 'Crie uma página de captura simples para receber leads dos seus anúncios.', tipo: 'trafego', formato_conteudo: null, xp: 70, comprovacao: 'print', dica: 'Pode usar Canva, Google Sites ou qualquer ferramenta. A Capi pode escrever o texto.' },
+  // === MESTRE DO FECHAMENTO ===
+  { id: 'mf_01', trilha: 'mestre_fechamento', titulo: 'Crie sua tabela de honorários', descricao: 'Defina seus valores para os serviços mais comuns da sua área de atuação.', tipo: 'precificacao', formato_conteudo: null, xp: 60, comprovacao: 'auto', dica: 'Use a Capi: "Me ajude a criar uma tabela de honorários para advogado de [área] em [cidade]". Consulte a tabela da OAB.' },
+  { id: 'mf_02', trilha: 'mestre_fechamento', titulo: 'Pratique uma objeção', descricao: 'Use a Capi para simular um cliente que diz "tá caro" e pratique a resposta.', tipo: 'atendimento', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Peça: "Simule um cliente que acha meus honorários caros. Eu quero praticar a resposta."' },
+  { id: 'mf_03', trilha: 'mestre_fechamento', titulo: 'Crie uma proposta de honorários', descricao: 'Monte uma proposta profissional de honorários para enviar ao próximo cliente.', tipo: 'precificacao', formato_conteudo: null, xp: 60, comprovacao: 'auto', dica: 'Peça à Capi: "Crie uma proposta de honorários profissional para um caso de [tipo]"' },
+  { id: 'mf_04', trilha: 'mestre_fechamento', titulo: 'Script de follow-up', descricao: 'Crie um script de follow-up para clientes que pediram proposta mas não retornaram.', tipo: 'atendimento', formato_conteudo: null, xp: 50, comprovacao: 'auto', dica: 'Follow-up é onde está o dinheiro. Peça: "Crie 3 mensagens de follow-up para cliente que sumiu após receber proposta"' },
+  { id: 'mf_05', trilha: 'mestre_fechamento', titulo: 'Simule um atendimento completo', descricao: 'Use a Capi para simular um atendimento completo: da primeira mensagem ao fechamento.', tipo: 'atendimento', formato_conteudo: null, xp: 80, comprovacao: 'auto', dica: 'Peça: "Simule que você é um cliente que precisa de advogado. Vou praticar todo o atendimento até o fechamento."' }
+];
+
+const CT_MISSOES_SEXTA = [
+  { id: 'sex_01', titulo: 'Missão Secreta de Fechamento', descricao: 'Hoje é sexta! Envie uma mensagem de follow-up para um lead que não converteu esta semana.', tipo: 'fechamento', xp: 100, comprovacao: 'print', dica: 'Sexta é dia de fechar. Revise seus leads da semana e mande uma última mensagem estratégica.' },
+  { id: 'sex_02', titulo: 'Prepare o fechamento da semana', descricao: 'Revise todos os leads que entraram essa semana e crie uma estratégia de fechamento para cada um.', tipo: 'fechamento', xp: 100, comprovacao: 'auto', dica: 'Use a Capi: "Me ajude a criar estratégias de fechamento para os leads desta semana"' }
+];
+
+// ─── CAPITREINO: HELPERS ────────────────────────────────────────
+function ctGetNivel(xp) {
+  return CT_NIVEIS.find(n => xp >= n.xp_min && xp <= n.xp_max) || CT_NIVEIS[0];
+}
+
+function ctGetOrCreateProgress(userId) {
+  let prog = db.prepare('SELECT * FROM ct_user_progress WHERE user_id = ?').get(userId);
+  if (!prog) {
+    db.prepare('INSERT INTO ct_user_progress (user_id) VALUES (?)').run(userId);
+    prog = db.prepare('SELECT * FROM ct_user_progress WHERE user_id = ?').get(userId);
+  }
+  return prog;
+}
+
+function ctGetTrilhaAtiva(userId) {
+  return db.prepare('SELECT * FROM ct_user_trilha WHERE user_id = ? AND completed_at IS NULL ORDER BY started_at DESC LIMIT 1').get(userId);
+}
+
+function ctHoje() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function ctSemanaAtual() {
+  const d = new Date();
+  const onejan = new Date(d.getFullYear(), 0, 1);
+  const weekNum = Math.ceil(((d - onejan) / 86400000 + onejan.getDay() + 1) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function ctGerarMissoesDiarias(userId, trilhaId) {
+  const hoje = ctHoje();
+  const existing = db.prepare('SELECT COUNT(*) as c FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get(userId, hoje);
+  if (existing.c > 0) {
+    return db.prepare('SELECT * FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? ORDER BY ordem').all(userId, hoje);
+  }
+  const done = db.prepare("SELECT missao_id FROM ct_missoes_diarias WHERE user_id = ? AND status = 'concluida'").all(userId).map(r => r.missao_id);
+  let pool = CT_MISSOES_BANCO.filter(m => m.trilha === trilhaId && !done.includes(m.id));
+  if (pool.length < 3) {
+    pool = CT_MISSOES_BANCO.filter(m => m.trilha === trilhaId);
+  }
+  const shuffled = pool.sort(() => Math.random() - 0.5);
+  let selected = shuffled.slice(0, 3);
+  const dayOfWeek = new Date().getDay();
+  if (dayOfWeek === 5 && trilhaId !== 'mestre_fechamento') {
+    const sextaMissao = CT_MISSOES_SEXTA[Math.floor(Math.random() * CT_MISSOES_SEXTA.length)];
+    selected[2] = { id: sextaMissao.id, trilha: trilhaId, titulo: sextaMissao.titulo, descricao: sextaMissao.descricao, tipo: sextaMissao.tipo, formato_conteudo: null, xp: sextaMissao.xp, comprovacao: sextaMissao.comprovacao, dica: sextaMissao.dica };
+  }
+  const insert = db.prepare('INSERT INTO ct_missoes_diarias (user_id, dia, trilha_id, missao_id, titulo, descricao, tipo, formato_conteudo, xp_recompensa, comprovacao_tipo, ordem) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  selected.forEach((m, i) => {
+    insert.run(userId, hoje, trilhaId, m.id, m.titulo, m.descricao, m.tipo, m.formato_conteudo || null, m.xp, m.comprovacao, i + 1);
+  });
+  db.prepare('INSERT OR IGNORE INTO ct_baus (user_id, dia, tipo, recompensa_xp) VALUES (?, ?, ?, ?)').run(userId, hoje, 'diario', 50);
+  return db.prepare('SELECT * FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? ORDER BY ordem').all(userId, hoje);
+}
+
 // ─── AI USAGE LOGGING ───────────────────────────────────────
 function logAiUsage(userId, feature, model, inputTokens, outputTokens, thinkingTokens, costUsd) {
   try {
@@ -4196,6 +4395,242 @@ app.get('/editor-peca.html', (req, res) => {
 // Treinamento em Audiências
 app.get('/treinamento-audiencia.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/treinamento-audiencia.html'));
+});
+
+// ─── CAPITREINO: ROTAS DE PÁGINA ────────────────────────────────
+app.get('/capitreino.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/capitreino.html'));
+});
+app.get('/capitreino', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/capitreino.html'));
+});
+
+// ─── CAPITREINO: API ENDPOINTS ──────────────────────────────────
+
+// GET /api/capitreino/status
+app.get('/api/capitreino/status', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const prog = ctGetOrCreateProgress(userId);
+    const nivel = ctGetNivel(prog.xp_total);
+    const trilha = ctGetTrilhaAtiva(userId);
+    const hoje = ctHoje();
+    const missoesDia = db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get('concluida', userId, hoje);
+    const nivelAtual = nivel;
+    const proximoNivel = CT_NIVEIS.find(n => n.nivel === nivelAtual.nivel + 1);
+    res.json({
+      xp_total: prog.xp_total,
+      nivel: nivelAtual.nivel,
+      nivel_nome: nivelAtual.nome,
+      nivel_emoji: nivelAtual.emoji,
+      xp_nivel_min: nivelAtual.xp_min,
+      xp_nivel_max: nivelAtual.xp_max === Infinity ? null : nivelAtual.xp_max,
+      proximo_nivel: proximoNivel ? { nome: proximoNivel.nome, emoji: proximoNivel.emoji, xp_min: proximoNivel.xp_min } : null,
+      streak_atual: prog.streak_atual,
+      streak_max: prog.streak_max,
+      liga: prog.liga,
+      liga_info: CT_LIGAS.find(l => l.id === prog.liga),
+      liga_xp_semana: prog.liga_xp_semana,
+      trilha_ativa: trilha ? CT_TRILHAS.find(t => t.id === trilha.trilha_id) : null,
+      missoes_hoje: { total: missoesDia.total || 0, concluidas: missoesDia.concluidas || 0 },
+      missoes_total: prog.missoes_total,
+      missoes_concluidas: prog.missoes_concluidas
+    });
+  } catch (e) {
+    console.error('CapiTreino status error:', e);
+    res.status(500).json({ error: 'Erro ao carregar status' });
+  }
+});
+
+// GET /api/capitreino/trilhas
+app.get('/api/capitreino/trilhas', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const trilhas = CT_TRILHAS.map(t => {
+      const userTrilha = db.prepare('SELECT * FROM ct_user_trilha WHERE user_id = ? AND trilha_id = ?').get(userId, t.id);
+      return { ...t, status: userTrilha ? (userTrilha.completed_at ? 'concluida' : 'ativa') : 'disponivel', started_at: userTrilha?.started_at || null };
+    });
+    res.json({ trilhas });
+  } catch (e) {
+    console.error('CapiTreino trilhas error:', e);
+    res.status(500).json({ error: 'Erro ao carregar trilhas' });
+  }
+});
+
+// POST /api/capitreino/trilha/selecionar
+app.post('/api/capitreino/trilha/selecionar', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { trilha_id } = req.body;
+    if (!trilha_id || !CT_TRILHAS.find(t => t.id === trilha_id)) {
+      return res.status(400).json({ error: 'Trilha inválida' });
+    }
+    const ativa = ctGetTrilhaAtiva(userId);
+    if (ativa) {
+      db.prepare('UPDATE ct_user_trilha SET completed_at = datetime(?) WHERE id = ?').run(new Date().toISOString(), ativa.id);
+    }
+    db.prepare('INSERT INTO ct_user_trilha (user_id, trilha_id) VALUES (?, ?)').run(userId, trilha_id);
+    ctGetOrCreateProgress(userId);
+    const missoes = ctGerarMissoesDiarias(userId, trilha_id);
+    res.json({ success: true, trilha: CT_TRILHAS.find(t => t.id === trilha_id), missoes });
+  } catch (e) {
+    console.error('CapiTreino selecionar trilha error:', e);
+    res.status(500).json({ error: 'Erro ao selecionar trilha' });
+  }
+});
+
+// GET /api/capitreino/missoes
+app.get('/api/capitreino/missoes', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const trilha = ctGetTrilhaAtiva(userId);
+    if (!trilha) {
+      return res.json({ missoes: [], needsTrilha: true });
+    }
+    const missoes = ctGerarMissoesDiarias(userId, trilha.trilha_id);
+    const missoesComDica = missoes.map(m => {
+      const banco = CT_MISSOES_BANCO.find(b => b.id === m.missao_id) || CT_MISSOES_SEXTA.find(b => b.id === m.missao_id);
+      return { ...m, dica: banco?.dica || null };
+    });
+    res.json({ missoes: missoesComDica, trilha: CT_TRILHAS.find(t => t.id === trilha.trilha_id) });
+  } catch (e) {
+    console.error('CapiTreino missoes error:', e);
+    res.status(500).json({ error: 'Erro ao carregar missões' });
+  }
+});
+
+// POST /api/capitreino/missoes/:id/concluir
+app.post('/api/capitreino/missoes/:id/concluir', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const missaoId = parseInt(req.params.id);
+    const { comprovacao_url } = req.body || {};
+    const missao = db.prepare('SELECT * FROM ct_missoes_diarias WHERE id = ? AND user_id = ?').get(missaoId, userId);
+    if (!missao) return res.status(404).json({ error: 'Missão não encontrada' });
+    if (missao.status === 'concluida') return res.json({ success: true, message: 'Missão já concluída', xp: 0 });
+    db.prepare("UPDATE ct_missoes_diarias SET status = 'concluida', concluida_at = datetime(?), comprovacao_url = ? WHERE id = ?").run(new Date().toISOString(), comprovacao_url || null, missaoId);
+    const xp = missao.xp_recompensa;
+    const prog = ctGetOrCreateProgress(userId);
+    const hoje = ctHoje();
+    const semana = ctSemanaAtual();
+    let novoStreak = prog.streak_atual;
+    if (prog.ultimo_dia_ativo !== hoje) {
+      const ontem = new Date();
+      ontem.setDate(ontem.getDate() - 1);
+      const ontemStr = ontem.toISOString().split('T')[0];
+      novoStreak = (prog.ultimo_dia_ativo === ontemStr) ? prog.streak_atual + 1 : 1;
+    }
+    const ligaSemana = prog.liga_semana === semana ? prog.liga_xp_semana + xp : xp;
+    db.prepare('UPDATE ct_user_progress SET xp_total = xp_total + ?, missoes_concluidas = missoes_concluidas + 1, streak_atual = ?, streak_max = MAX(streak_max, ?), ultimo_dia_ativo = ?, liga_xp_semana = ?, liga_semana = ?, updated_at = datetime(?) WHERE user_id = ?').run(xp, novoStreak, novoStreak, hoje, ligaSemana, semana, new Date().toISOString(), userId);
+    const newProg = ctGetOrCreateProgress(userId);
+    const newNivel = ctGetNivel(newProg.xp_total);
+    const oldNivel = ctGetNivel(newProg.xp_total - xp);
+    const levelUp = newNivel.nivel > oldNivel.nivel;
+    if (levelUp) {
+      db.prepare('UPDATE ct_user_progress SET nivel = ? WHERE user_id = ?').run(newNivel.nivel, userId);
+    }
+    res.json({ success: true, xp_ganho: xp, xp_total: newProg.xp_total, streak: novoStreak, level_up: levelUp, novo_nivel: levelUp ? newNivel : null });
+  } catch (e) {
+    console.error('CapiTreino concluir missao error:', e);
+    res.status(500).json({ error: 'Erro ao concluir missão' });
+  }
+});
+
+// POST /api/capitreino/missoes/:id/dica
+app.post('/api/capitreino/missoes/:id/dica', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const missaoId = parseInt(req.params.id);
+    const missao = db.prepare('SELECT * FROM ct_missoes_diarias WHERE id = ? AND user_id = ?').get(missaoId, userId);
+    if (!missao) return res.status(404).json({ error: 'Missão não encontrada' });
+    const banco = CT_MISSOES_BANCO.find(b => b.id === missao.missao_id) || CT_MISSOES_SEXTA.find(b => b.id === missao.missao_id);
+    res.json({ dica: banco?.dica || 'Use a Capi para te ajudar nessa missão!' });
+  } catch (e) {
+    console.error('CapiTreino dica error:', e);
+    res.status(500).json({ error: 'Erro ao carregar dica' });
+  }
+});
+
+// GET /api/capitreino/bau
+app.get('/api/capitreino/bau', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hoje = ctHoje();
+    const bau = db.prepare('SELECT * FROM ct_baus WHERE user_id = ? AND dia = ? AND tipo = ?').get(userId, hoje, 'diario');
+    const missoesDia = db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get('concluida', userId, hoje);
+    const todasConcluidas = missoesDia.total > 0 && missoesDia.concluidas === missoesDia.total;
+    res.json({
+      bau: bau || null,
+      pode_abrir: todasConcluidas && bau && !bau.aberto,
+      missoes_concluidas: missoesDia.concluidas || 0,
+      missoes_total: missoesDia.total || 0
+    });
+  } catch (e) {
+    console.error('CapiTreino bau error:', e);
+    res.status(500).json({ error: 'Erro ao carregar baú' });
+  }
+});
+
+// POST /api/capitreino/bau/abrir
+app.post('/api/capitreino/bau/abrir', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const hoje = ctHoje();
+    const bau = db.prepare('SELECT * FROM ct_baus WHERE user_id = ? AND dia = ? AND tipo = ?').get(userId, hoje, 'diario');
+    if (!bau) return res.status(404).json({ error: 'Baú não encontrado' });
+    if (bau.aberto) return res.json({ success: true, message: 'Baú já aberto', xp: 0 });
+    const missoesDia = db.prepare('SELECT COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ?').get('concluida', userId, hoje);
+    if (missoesDia.concluidas < missoesDia.total) {
+      return res.status(400).json({ error: 'Complete todas as missões para abrir o baú' });
+    }
+    const bonusXp = bau.recompensa_xp || 50;
+    db.prepare('UPDATE ct_baus SET aberto = 1, recompensa_xp = ? WHERE id = ?').run(bonusXp, bau.id);
+    const semana = ctSemanaAtual();
+    const prog = ctGetOrCreateProgress(userId);
+    const ligaSemana = prog.liga_semana === semana ? prog.liga_xp_semana + bonusXp : bonusXp;
+    db.prepare('UPDATE ct_user_progress SET xp_total = xp_total + ?, liga_xp_semana = ?, liga_semana = ?, updated_at = datetime(?) WHERE user_id = ?').run(bonusXp, ligaSemana, semana, new Date().toISOString(), userId);
+    const newProg = ctGetOrCreateProgress(userId);
+    res.json({ success: true, xp_ganho: bonusXp, xp_total: newProg.xp_total, recompensa_tipo: 'xp_bonus' });
+  } catch (e) {
+    console.error('CapiTreino abrir bau error:', e);
+    res.status(500).json({ error: 'Erro ao abrir baú' });
+  }
+});
+
+// GET /api/capitreino/liga
+app.get('/api/capitreino/liga', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const prog = ctGetOrCreateProgress(userId);
+    const semana = ctSemanaAtual();
+    const ligaInfo = CT_LIGAS.find(l => l.id === prog.liga);
+    const ranking = db.prepare('SELECT p.user_id, p.liga_xp_semana, p.liga, u.name FROM ct_user_progress p JOIN users u ON p.user_id = u.id WHERE p.liga = ? AND p.liga_semana = ? ORDER BY p.liga_xp_semana DESC LIMIT 20').all(prog.liga, semana);
+    const meuRank = ranking.findIndex(r => r.user_id === userId) + 1;
+    res.json({
+      liga: prog.liga,
+      liga_info: ligaInfo,
+      xp_semana: prog.liga_xp_semana,
+      semana,
+      ranking,
+      meu_rank: meuRank || ranking.length + 1
+    });
+  } catch (e) {
+    console.error('CapiTreino liga error:', e);
+    res.status(500).json({ error: 'Erro ao carregar liga' });
+  }
+});
+
+// GET /api/capitreino/historico
+app.get('/api/capitreino/historico', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const limit = parseInt(req.query.limit) || 30;
+    const historico = db.prepare("SELECT * FROM ct_missoes_diarias WHERE user_id = ? AND status = 'concluida' ORDER BY concluida_at DESC LIMIT ?").all(userId, limit);
+    res.json({ historico });
+  } catch (e) {
+    console.error('CapiTreino historico error:', e);
+    res.status(500).json({ error: 'Erro ao carregar histórico' });
+  }
 });
 
 // Serve arquivos estáticos do app (CSS, JS) — após todas as rotas

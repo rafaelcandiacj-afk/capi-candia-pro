@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CapiTreino — Treinador de Execução</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D0D;--bg2:#141414;--bg3:#1A1A1A;--bg4:#222;
+  --gold:#DAA520;--gold-dark:#B8860B;--gold-light:#F0D060;--gold-glow:rgba(218,165,32,.25);
+  --text:#F5F5F5;--text2:#AAA;--text3:#777;
+  --green:#4CAF50;--green-glow:rgba(76,175,80,.3);
+  --red:#E53935;--blue:#2196F3;--purple:#9C27B0;
+  --radius:12px;--radius-lg:16px;--radius-xl:20px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+  --transition:all .3s cubic-bezier(.4,0,.2,1);
+}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* ─── HEADER ─── */
+.ct-header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg) 0%,rgba(13,13,13,.95) 100%);backdrop-filter:blur(20px);padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(218,165,32,.15)}
+.ct-back{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid rgba(218,165,32,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);text-decoration:none;font-size:18px;transition:var(--transition);flex-shrink:0}
+.ct-back:hover{background:var(--gold);color:var(--bg)}
+.ct-logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.5px}
+.ct-header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.ct-streak-badge{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(255,87,34,.15),rgba(255,152,0,.1));border:1px solid rgba(255,87,34,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#FF9800}
+.ct-streak-badge.active .flame{animation:flamePulse 1s ease infinite}
+.ct-xp-badge{display:flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--gold)}
+
+@keyframes flamePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+
+/* ─── PROGRESS BAR ─── */
+.ct-progress-section{padding:16px;background:var(--bg2);border-bottom:1px solid rgba(255,255,255,.05)}
+.ct-level-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ct-level-name{font-size:13px;font-weight:600;color:var(--gold)}
+.ct-level-target{font-size:12px;color:var(--text3)}
+.ct-progress-bar{width:100%;height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;position:relative}
+.ct-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-dark),var(--gold),var(--gold-light));border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1);position:relative}
+.ct-progress-fill::after{content:'';position:absolute;top:0;right:0;width:20px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3));border-radius:4px}
+.ct-xp-label{text-align:center;font-size:12px;color:var(--text2);margin-top:6px}
+
+/* ─── TRILHA ATIVA ─── */
+.ct-trilha-bar{padding:12px 16px;display:flex;align-items:center;gap:10px;background:var(--bg2);border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:var(--transition)}
+.ct-trilha-bar:hover{background:var(--bg3)}
+.ct-trilha-icon{font-size:24px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--bg4)}
+.ct-trilha-name{font-size:14px;font-weight:600;color:var(--text)}
+.ct-trilha-sub{font-size:12px;color:var(--text3)}
+.ct-trilha-arrow{margin-left:auto;color:var(--text3);font-size:14px}
+
+/* ─── MAIN CONTENT ─── */
+.ct-main{padding:16px;max-width:600px;margin:0 auto}
+
+/* ─── MISSOES SECTION ─── */
+.ct-section-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ct-section-title .emoji{font-size:20px}
+
+.ct-mission-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px;transition:var(--transition);position:relative;overflow:hidden}
+.ct-mission-card.completed{border-color:rgba(76,175,80,.3);background:linear-gradient(135deg,rgba(76,175,80,.05),var(--bg2))}
+.ct-mission-card.completed::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--green)}
+
+.ct-mission-top{display:flex;align-items:flex-start;gap:12px}
+.ct-mission-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg4);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:var(--transition);margin-top:2px}
+.ct-mission-card.completed .ct-mission-check{background:var(--green);border-color:var(--green)}
+.ct-mission-check svg{width:16px;height:16px;opacity:0;transition:var(--transition)}
+.ct-mission-card.completed .ct-mission-check svg{opacity:1}
+.ct-mission-body{flex:1;min-width:0}
+.ct-mission-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3}
+.ct-mission-card.completed .ct-mission-title{text-decoration:line-through;color:var(--text2)}
+.ct-mission-desc{font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:8px}
+.ct-mission-xp{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.08));border:1px solid rgba(218,165,32,.25);border-radius:16px;padding:3px 10px;font-size:12px;font-weight:700;color:var(--gold)}
+
+.ct-mission-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.ct-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:var(--transition);font-family:inherit}
+.ct-btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1200;box-shadow:0 2px 12px var(--gold-glow)}
+.ct-btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px var(--gold-glow)}
+.ct-btn-gold:active{transform:scale(.97)}
+.ct-btn-outline{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text2)}
+.ct-btn-outline:hover{background:var(--bg3);border-color:rgba(255,255,255,.2)}
+.ct-btn-green{background:linear-gradient(135deg,var(--green),#388E3C);color:#fff;box-shadow:0 2px 12px var(--green-glow)}
+.ct-btn-green:hover{transform:translateY(-1px)}
+.ct-btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+.ct-dica-panel{background:var(--bg4);border-radius:10px;padding:12px;margin-top:10px;font-size:13px;color:var(--text2);line-height:1.6;display:none;animation:slideDown .3s ease}
+.ct-dica-panel.open{display:block}
+
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ─── BAU (CHEST) ─── */
+.ct-bau-section{margin-top:20px;margin-bottom:20px}
+.ct-bau-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px solid rgba(218,165,32,.15);border-radius:var(--radius-xl);padding:24px;text-align:center;position:relative;overflow:hidden}
+.ct-bau-card.ready{border-color:var(--gold);animation:bauGlow 2s ease infinite}
+.ct-bau-card.opened{border-color:rgba(76,175,80,.3)}
+.ct-bau-emoji{font-size:48px;margin-bottom:8px;display:inline-block}
+.ct-bau-card.ready .ct-bau-emoji{animation:bauShake 1s ease infinite}
+.ct-bau-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.ct-bau-sub{font-size:13px;color:var(--text3);margin-bottom:16px}
+.ct-bau-progress{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:12px}
+.ct-bau-dot{width:12px;height:12px;border-radius:50%;background:var(--bg4);border:1px solid rgba(255,255,255,.1);transition:var(--transition)}
+.ct-bau-dot.done{background:var(--green);border-color:var(--green);box-shadow:0 0 8px var(--green-glow)}
+
+@keyframes bauGlow{0%,100%{box-shadow:0 0 20px var(--gold-glow)}50%{box-shadow:0 0 40px var(--gold-glow),0 0 60px rgba(218,165,32,.15)}}
+@keyframes bauShake{0%,100%{transform:rotate(0)}10%{transform:rotate(-5deg)}20%{transform:rotate(5deg)}30%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}50%{transform:rotate(0)}}
+
+/* ─── STATS BAR ─── */
+.ct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;margin-bottom:24px}
+.ct-stat-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:12px;text-align:center}
+.ct-stat-value{font-size:20px;font-weight:800;margin-bottom:2px}
+.ct-stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+
+/* ─── LIGA ─── */
+.ct-liga-section{margin-bottom:24px}
+.ct-liga-header{display:flex;align-items:center;gap:12px;padding:16px;background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg) var(--radius-lg) 0 0;cursor:pointer}
+.ct-liga-badge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;border:2px solid}
+.ct-liga-name{font-size:15px;font-weight:700}
+.ct-liga-xp{font-size:12px;color:var(--text3)}
+.ct-liga-toggle{margin-left:auto;color:var(--text3);transition:var(--transition)}
+.ct-liga-ranking{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);overflow:hidden;display:none}
+.ct-liga-ranking.open{display:block;animation:slideDown .3s ease}
+.ct-rank-item{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.03)}
+.ct-rank-item:last-child{border-bottom:none}
+.ct-rank-item.me{background:rgba(218,165,32,.06)}
+.ct-rank-pos{width:24px;font-size:13px;font-weight:700;color:var(--text3);text-align:center}
+.ct-rank-pos.top3{color:var(--gold)}
+.ct-rank-name{flex:1;font-size:13px;font-weight:500}
+.ct-rank-xp{font-size:13px;font-weight:700;color:var(--gold)}
+
+/* ─── ONBOARDING ─── */
+.ct-onboarding{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+.ct-onboard-mascot{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 30px var(--gold-glow);margin-bottom:16px}
+.ct-onboard-title{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ct-onboard-sub{font-size:14px;color:var(--text2);text-align:center;margin-bottom:24px;max-width:320px;line-height:1.5}
+
+.ct-trilha-grid{display:grid;grid-template-columns:1fr;gap:10px;width:100%;max-width:500px}
+.ct-trilha-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:var(--transition);display:flex;align-items:center;gap:12px}
+.ct-trilha-card:hover{border-color:rgba(218,165,32,.3);background:var(--bg3);transform:translateY(-2px);box-shadow:var(--shadow)}
+.ct-trilha-card:active{transform:scale(.98)}
+.ct-trilha-card-icon{font-size:28px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:12px;flex-shrink:0}
+.ct-trilha-card-body{flex:1}
+.ct-trilha-card-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ct-trilha-card-desc{font-size:12px;color:var(--text3);line-height:1.4}
+
+/* ─── LOADING / EMPTY ─── */
+.ct-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px}
+.ct-spinner{width:40px;height:40px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── XP FLOAT ─── */
+.ct-xp-float{position:fixed;z-index:1000;font-size:20px;font-weight:800;color:var(--gold);pointer-events:none;animation:xpFloat 1.5s ease forwards}
+@keyframes xpFloat{0%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:1;transform:translateY(-40px) scale(1.2)}100%{opacity:0;transform:translateY(-80px) scale(.8)}}
+
+/* ─── LEVEL UP OVERLAY ─── */
+.ct-levelup-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .5s ease}
+.ct-levelup-overlay.show{opacity:1;pointer-events:auto}
+.ct-levelup-glow{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,var(--gold-glow),transparent 70%);position:absolute;animation:levelGlow 2s ease infinite}
+.ct-levelup-text{font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;animation:levelBounce .6s cubic-bezier(.68,-.55,.27,1.55)}
+.ct-levelup-name{font-size:18px;font-weight:600;color:var(--text);z-index:1}
+.ct-levelup-emoji{font-size:48px;z-index:1}
+@keyframes levelGlow{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.3);opacity:.8}}
+@keyframes levelBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+
+/* ─── CONFETTI ─── */
+.ct-confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1500}
+.ct-confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall 2s ease forwards}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
+
+/* ─── UPLOAD MODAL ─── */
+.ct-upload-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .3s ease}
+.ct-upload-modal.show{opacity:1;pointer-events:auto}
+.ct-upload-box{background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xl);padding:24px;max-width:400px;width:100%}
+.ct-upload-preview{width:100%;aspect-ratio:4/3;background:var(--bg4);border-radius:var(--radius);margin:12px 0;display:flex;align-items:center;justify-content:center;overflow:hidden;border:2px dashed rgba(255,255,255,.1)}
+.ct-upload-preview img{max-width:100%;max-height:100%;object-fit:contain}
+.ct-upload-preview.has-img{border-style:solid;border-color:var(--green)}
+
+/* ─── TOAST ─── */
+.ct-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);z-index:3000;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:12px 20px;font-size:14px;font-weight:500;color:var(--text);box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.4,0,.2,1);white-space:nowrap}
+.ct-toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ─── HISTORICO TAB ─── */
+.ct-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--bg2);border-radius:var(--radius);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+.ct-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;transition:var(--transition);border:none;background:none;font-family:inherit}
+.ct-tab.active{color:var(--gold);background:rgba(218,165,32,.1)}
+
+.ct-historico-list{display:none}
+.ct-historico-list.show{display:block}
+.ct-hist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.ct-hist-date{font-size:11px;color:var(--text3);min-width:60px}
+.ct-hist-title{flex:1;font-size:13px;font-weight:500}
+.ct-hist-xp{font-size:12px;font-weight:700;color:var(--gold)}
+
+/* ─── RESPONSIVE ─── */
+@media(min-width:400px){
+  .ct-trilha-grid{grid-template-columns:1fr 1fr}
+}
+@media(min-width:600px){
+  .ct-stats{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="ct-header" id="ctHeader">
+  <a href="/app" class="ct-back">&#8592;</a>
+  <span class="ct-logo">CapiTreino</span>
+  <div class="ct-header-right">
+    <div class="ct-streak-badge" id="ctStreakBadge"><span class="flame">&#128293;</span> <span id="ctStreakCount">0</span></div>
+    <div class="ct-xp-badge"><span>&#11088;</span> <span id="ctXpCount">0</span> XP</div>
+  </div>
+</header>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="ct-levelup-overlay" id="ctLevelUp">
+  <div class="ct-levelup-glow"></div>
+  <div class="ct-levelup-emoji" id="ctLevelUpEmoji"></div>
+  <div class="ct-levelup-text">LEVEL UP!</div>
+  <div class="ct-levelup-name" id="ctLevelUpName"></div>
+  <button class="ct-btn ct-btn-gold" style="margin-top:16px;z-index:1" onclick="document.getElementById('ctLevelUp').classList.remove('show')">Continuar</button>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="ct-upload-modal" id="ctUploadModal">
+  <div class="ct-upload-box">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:4px">Enviar Comprovante</h3>
+    <p style="font-size:13px;color:var(--text3)">Envie um print/foto como comprovante da missão</p>
+    <div class="ct-upload-preview" id="ctUploadPreview">
+      <span style="color:var(--text3);font-size:13px">Clique para selecionar</span>
+    </div>
+    <input type="file" id="ctUploadInput" accept="image/*" style="display:none">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="ct-btn ct-btn-outline" onclick="closeUploadModal()">Cancelar</button>
+      <button class="ct-btn ct-btn-green" id="ctUploadSubmit" disabled>Enviar e Concluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFETTI CANVAS -->
+<div class="ct-confetti" id="ctConfetti"></div>
+
+<!-- TOAST -->
+<div class="ct-toast" id="ctToast"></div>
+
+<!-- LOADING -->
+<div class="ct-loading" id="ctLoading">
+  <div class="ct-spinner"></div>
+  <span style="font-size:14px;color:var(--text2)">Carregando CapiTreino...</span>
+</div>
+
+<!-- ONBOARDING (hidden by default) -->
+<div id="ctOnboarding" style="display:none">
+  <div class="ct-onboarding">
+    <img src="/capi-mascot.jpeg" alt="Capi Mascot" class="ct-onboard-mascot">
+    <div class="ct-onboard-title">Bem-vindo ao CapiTreino!</div>
+    <div class="ct-onboard-sub">Seu treinador de execução diário. Escolha uma trilha para começar a evoluir como advogado.</div>
+    <div class="ct-trilha-grid" id="ctTrilhaGrid"></div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden by default) -->
+<div id="ctApp" style="display:none">
+  <!-- Progress Bar -->
+  <div class="ct-progress-section" id="ctProgressSection">
+    <div class="ct-level-row">
+      <span class="ct-level-name" id="ctLevelName"></span>
+      <span class="ct-level-target" id="ctLevelTarget"></span>
+    </div>
+    <div class="ct-progress-bar"><div class="ct-progress-fill" id="ctProgressFill"></div></div>
+    <div class="ct-xp-label" id="ctXpLabel"></div>
+  </div>
+
+  <!-- Trilha Ativa -->
+  <div class="ct-trilha-bar" id="ctTrilhaBar" onclick="showTrilhaChange()">
+    <div class="ct-trilha-icon" id="ctTrilhaIcon"></div>
+    <div>
+      <div class="ct-trilha-name" id="ctTrilhaName"></div>
+      <div class="ct-trilha-sub" id="ctTrilhaSub"></div>
+    </div>
+    <span class="ct-trilha-arrow">&#9654;</span>
+  </div>
+
+  <div class="ct-main">
+    <!-- Tabs -->
+    <div class="ct-tabs">
+      <button class="ct-tab active" data-tab="missoes" onclick="switchTab('missoes')">Missões do Dia</button>
+      <button class="ct-tab" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
+    </div>
+
+    <!-- MISSOES TAB -->
+    <div id="ctMissoesTab">
+      <div id="ctMissoesList"></div>
+
+      <!-- BAU -->
+      <div class="ct-bau-section" id="ctBauSection">
+        <div class="ct-bau-card" id="ctBauCard">
+          <div class="ct-bau-emoji" id="ctBauEmoji">&#128230;</div>
+          <div class="ct-bau-title" id="ctBauTitle">Baú Diário</div>
+          <div class="ct-bau-sub" id="ctBauSub">Complete as 3 missões para desbloquear</div>
+          <div class="ct-bau-progress" id="ctBauProgress"></div>
+          <button class="ct-btn ct-btn-gold" id="ctBauBtn" style="display:none" onclick="abrirBau()">Abrir Baú &#127873;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORICO TAB -->
+    <div class="ct-historico-list" id="ctHistoricoTab"></div>
+
+    <!-- STATS -->
+    <div class="ct-stats" id="ctStats">
+      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatStreak" style="color:#FF9800">0</div><div class="ct-stat-label">Streak</div></div>
+      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatMissoes" style="color:var(--green)">0</div><div class="ct-stat-label">Missões</div></div>
+      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatXp" style="color:var(--gold)">0</div><div class="ct-stat-label">XP Total</div></div>
+    </div>
+
+    <!-- LIGA -->
+    <div class="ct-liga-section" id="ctLigaSection">
+      <div class="ct-liga-header" onclick="toggleLiga()">
+        <div class="ct-liga-badge" id="ctLigaBadge"></div>
+        <div>
+          <div class="ct-liga-name" id="ctLigaName"></div>
+          <div class="ct-liga-xp" id="ctLigaXp"></div>
+        </div>
+        <span class="ct-liga-toggle" id="ctLigaToggle">&#9660;</span>
+      </div>
+      <div class="ct-liga-ranking" id="ctLigaRanking"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const token = localStorage.getItem('capi_token');
+  if (!token) { window.location.href = '/'; return; }
+
+  const API = {
+    headers: () => ({ 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }),
+    async get(url) {
+      const r = await fetch(url, { headers: this.headers() });
+      if (r.status === 401) { window.location.href = '/'; return null; }
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    },
+    async post(url, body) {
+      const r = await fetch(url, { method: 'POST', headers: this.headers(), body: JSON.stringify(body || {}) });
+      if (r.status === 401) { window.location.href = '/'; return null; }
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || `HTTP ${r.status}`); }
+      return r.json();
+    }
+  };
+
+  let state = { status: null, missoes: [], trilha: null, bau: null, liga: null, historico: [] };
+  let uploadMissaoId = null;
+
+  // ─── INIT ───
+  async function init() {
+    try {
+      const status = await API.get('/api/capitreino/status');
+      if (!status) return;
+      state.status = status;
+      if (!status.trilha_ativa) {
+        showOnboarding();
+      } else {
+        showApp();
+        await loadAll();
+      }
+    } catch (e) {
+      console.error('Init error:', e);
+      showToast('Erro ao carregar CapiTreino');
+    }
+  }
+
+  // ─── ONBOARDING ───
+  async function showOnboarding() {
+    document.getElementById('ctLoading').style.display = 'none';
+    document.getElementById('ctOnboarding').style.display = 'block';
+    document.getElementById('ctApp').style.display = 'none';
+    try {
+      const data = await API.get('/api/capitreino/trilhas');
+      if (!data) return;
+      const grid = document.getElementById('ctTrilhaGrid');
+      grid.innerHTML = data.trilhas.map(t => `
+        <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')">
+          <div class="ct-trilha-card-icon" style="background:${t.cor}20">${t.icone}</div>
+          <div class="ct-trilha-card-body">
+            <div class="ct-trilha-card-name">${t.nome}</div>
+            <div class="ct-trilha-card-desc">${t.descricao}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) { console.error(e); }
+  }
+
+  window._selectTrilha = async function(trilhaId) {
+    try {
+      const data = await API.post('/api/capitreino/trilha/selecionar', { trilha_id: trilhaId });
+      if (!data) return;
+      showToast('Trilha selecionada! Suas missões já estão prontas.');
+      const status = await API.get('/api/capitreino/status');
+      state.status = status;
+      showApp();
+      await loadAll();
+    } catch (e) {
+      showToast(e.message || 'Erro ao selecionar trilha');
+    }
+  };
+
+  // ─── SHOW APP ───
+  function showApp() {
+    document.getElementById('ctLoading').style.display = 'none';
+    document.getElementById('ctOnboarding').style.display = 'none';
+    document.getElementById('ctApp').style.display = 'block';
+  }
+
+  // ─── LOAD ALL DATA ───
+  async function loadAll() {
+    try {
+      const [missData, bauData, ligaData] = await Promise.all([
+        API.get('/api/capitreino/missoes'),
+        API.get('/api/capitreino/bau'),
+        API.get('/api/capitreino/liga')
+      ]);
+      state.missoes = missData?.missoes || [];
+      state.trilha = missData?.trilha || null;
+      state.bau = bauData;
+      state.liga = ligaData;
+      renderAll();
+    } catch (e) { console.error('Load error:', e); }
+  }
+
+  // ─── RENDER ALL ───
+  function renderAll() {
+    renderHeader();
+    renderProgress();
+    renderTrilha();
+    renderMissoes();
+    renderBau();
+    renderStats();
+    renderLiga();
+  }
+
+  function renderHeader() {
+    const s = state.status;
+    if (!s) return;
+    document.getElementById('ctStreakCount').textContent = s.streak_atual;
+    document.getElementById('ctXpCount').textContent = s.xp_total;
+    const badge = document.getElementById('ctStreakBadge');
+    if (s.streak_atual > 0) badge.classList.add('active'); else badge.classList.remove('active');
+  }
+
+  function renderProgress() {
+    const s = state.status;
+    if (!s) return;
+    const emoji = s.nivel_emoji;
+    const nome = s.nivel_nome;
+    const xpMin = s.xp_nivel_min;
+    const xpMax = s.xp_nivel_max || s.xp_total + 1000;
+    const pct = Math.min(100, ((s.xp_total - xpMin) / (xpMax - xpMin)) * 100);
+    document.getElementById('ctLevelName').textContent = `${emoji} ${nome}`;
+    const prox = s.proximo_nivel;
+    document.getElementById('ctLevelTarget').textContent = prox ? `Próximo: ${prox.emoji} ${prox.nome}` : 'Nível Máximo!';
+    document.getElementById('ctProgressFill').style.width = pct + '%';
+    document.getElementById('ctXpLabel').textContent = `${s.xp_total} / ${xpMax === Infinity ? '∞' : xpMax} XP`;
+  }
+
+  function renderTrilha() {
+    const t = state.trilha || state.status?.trilha_ativa;
+    if (!t) return;
+    document.getElementById('ctTrilhaIcon').textContent = t.icone;
+    document.getElementById('ctTrilhaIcon').style.background = (t.cor || '#333') + '20';
+    document.getElementById('ctTrilhaName').textContent = t.nome;
+    document.getElementById('ctTrilhaSub').textContent = 'Trilha ativa — toque para trocar';
+  }
+
+  function renderMissoes() {
+    const list = document.getElementById('ctMissoesList');
+    if (!state.missoes.length) {
+      list.innerHTML = '<p style="text-align:center;color:var(--text3);padding:20px;font-size:14px">Selecione uma trilha para gerar suas missões diárias.</p>';
+      return;
+    }
+    list.innerHTML = state.missoes.map(m => {
+      const done = m.status === 'concluida';
+      const isPrint = m.comprovacao_tipo === 'print';
+      return `
+        <div class="ct-mission-card ${done ? 'completed' : ''}" id="mission-${m.id}">
+          <div class="ct-mission-top">
+            <div class="ct-mission-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="ct-mission-body">
+              <div class="ct-mission-title">${m.titulo}</div>
+              <div class="ct-mission-desc">${m.descricao}</div>
+              <div class="ct-mission-xp">&#11088; +${m.xp_recompensa} XP</div>
+              <div class="ct-mission-actions">
+                ${done ? '<span style="color:var(--green);font-size:13px;font-weight:600">&#10003; Concluída</span>' : `
+                  <button class="ct-btn ct-btn-outline" onclick="window._toggleDica(${m.id})">Como fazer?</button>
+                  <button class="ct-btn ct-btn-outline" onclick="window._aprofundar('${encodeURIComponent(m.titulo)}')">Aprofundar no chat</button>
+                  ${isPrint
+                    ? `<button class="ct-btn ct-btn-green" onclick="window._openUpload(${m.id})">Enviar Print e Concluir</button>`
+                    : `<button class="ct-btn ct-btn-gold" onclick="window._concluir(${m.id})">Concluir &#10003;</button>`
+                  }
+                `}
+              </div>
+              <div class="ct-dica-panel" id="dica-${m.id}">${m.dica || ''}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderBau() {
+    const b = state.bau;
+    if (!b) return;
+    const card = document.getElementById('ctBauCard');
+    const emoji = document.getElementById('ctBauEmoji');
+    const title = document.getElementById('ctBauTitle');
+    const sub = document.getElementById('ctBauSub');
+    const btn = document.getElementById('ctBauBtn');
+    const progDiv = document.getElementById('ctBauProgress');
+    const total = b.missoes_total || 3;
+    const done = b.missoes_concluidas || 0;
+    progDiv.innerHTML = Array.from({length: total}, (_, i) => `<div class="ct-bau-dot ${i < done ? 'done' : ''}"></div>`).join('');
+    card.className = 'ct-bau-card';
+    if (b.bau && b.bau.aberto) {
+      card.classList.add('opened');
+      emoji.textContent = '🎁';
+      title.textContent = 'Baú Aberto!';
+      sub.textContent = `+${b.bau.recompensa_xp} XP de bônus coletados`;
+      btn.style.display = 'none';
+    } else if (b.pode_abrir) {
+      card.classList.add('ready');
+      emoji.textContent = '🎁';
+      title.textContent = 'Baú Pronto!';
+      sub.textContent = 'Todas as missões concluídas! Abra seu baú.';
+      btn.style.display = 'inline-flex';
+    } else {
+      emoji.textContent = '📦';
+      title.textContent = 'Baú Diário';
+      sub.textContent = `Complete ${total - done} missão(ões) restante(s)`;
+      btn.style.display = 'none';
+    }
+  }
+
+  function renderStats() {
+    const s = state.status;
+    if (!s) return;
+    document.getElementById('ctStatStreak').textContent = s.streak_atual;
+    document.getElementById('ctStatMissoes').textContent = s.missoes_concluidas;
+    document.getElementById('ctStatXp').textContent = s.xp_total;
+  }
+
+  function renderLiga() {
+    const l = state.liga;
+    if (!l || !l.liga_info) return;
+    const badge = document.getElementById('ctLigaBadge');
+    badge.textContent = l.liga_info.nome[0];
+    badge.style.borderColor = l.liga_info.cor;
+    badge.style.color = l.liga_info.cor;
+    badge.style.background = l.liga_info.cor + '15';
+    document.getElementById('ctLigaName').textContent = `Liga ${l.liga_info.nome}`;
+    document.getElementById('ctLigaXp').textContent = `${l.xp_semana} XP esta semana — #${l.meu_rank}`;
+    const rankDiv = document.getElementById('ctLigaRanking');
+    if (l.ranking && l.ranking.length) {
+      rankDiv.innerHTML = l.ranking.map((r, i) => `
+        <div class="ct-rank-item ${r.user_id === parseInt(getUserId()) ? 'me' : ''}">
+          <span class="ct-rank-pos ${i < 3 ? 'top3' : ''}">${i + 1}</span>
+          <span class="ct-rank-name">${r.name || 'Advogado'}</span>
+          <span class="ct-rank-xp">${r.liga_xp_semana} XP</span>
+        </div>
+      `).join('');
+    } else {
+      rankDiv.innerHTML = '<p style="padding:16px;text-align:center;color:var(--text3);font-size:13px">Nenhum participante ainda esta semana</p>';
+    }
+  }
+
+  function getUserId() {
+    try { return JSON.parse(atob(token.split('.')[1])).id; } catch { return 0; }
+  }
+
+  // ─── ACTIONS ───
+  window._toggleDica = function(id) {
+    const panel = document.getElementById('dica-' + id);
+    if (panel) panel.classList.toggle('open');
+  };
+
+  window._aprofundar = function(titulo) {
+    window.location.href = '/app?prompt=' + titulo;
+  };
+
+  window._concluir = async function(id) {
+    try {
+      const data = await API.post(`/api/capitreino/missoes/${id}/concluir`);
+      if (!data) return;
+      showXpFloat(data.xp_ganho);
+      if (data.level_up && data.novo_nivel) showLevelUp(data.novo_nivel);
+      const status = await API.get('/api/capitreino/status');
+      state.status = status;
+      await loadAll();
+      showToast(`+${data.xp_ganho} XP! Missão concluída!`);
+    } catch (e) {
+      showToast(e.message || 'Erro ao concluir missão');
+    }
+  };
+
+  window._openUpload = function(id) {
+    uploadMissaoId = id;
+    document.getElementById('ctUploadModal').classList.add('show');
+    document.getElementById('ctUploadPreview').innerHTML = '<span style="color:var(--text3);font-size:13px">Clique para selecionar</span>';
+    document.getElementById('ctUploadPreview').classList.remove('has-img');
+    document.getElementById('ctUploadSubmit').disabled = true;
+    document.getElementById('ctUploadInput').value = '';
+  };
+
+  window.closeUploadModal = function() {
+    document.getElementById('ctUploadModal').classList.remove('show');
+    uploadMissaoId = null;
+  };
+
+  document.getElementById('ctUploadPreview').addEventListener('click', () => {
+    document.getElementById('ctUploadInput').click();
+  });
+
+  document.getElementById('ctUploadInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const preview = document.getElementById('ctUploadPreview');
+      preview.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+      preview.classList.add('has-img');
+      document.getElementById('ctUploadSubmit').disabled = false;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('ctUploadSubmit').addEventListener('click', async () => {
+    if (!uploadMissaoId) return;
+    try {
+      const file = document.getElementById('ctUploadInput').files[0];
+      const compUrl = file ? file.name : 'print_enviado';
+      const data = await API.post(`/api/capitreino/missoes/${uploadMissaoId}/concluir`, { comprovacao_url: compUrl });
+      if (!data) return;
+      closeUploadModal();
+      showXpFloat(data.xp_ganho);
+      if (data.level_up && data.novo_nivel) showLevelUp(data.novo_nivel);
+      const status = await API.get('/api/capitreino/status');
+      state.status = status;
+      await loadAll();
+      showToast(`+${data.xp_ganho} XP! Missão concluída com comprovante!`);
+    } catch (e) {
+      showToast(e.message || 'Erro ao enviar comprovante');
+    }
+  });
+
+  // ─── CHEST ───
+  window.abrirBau = async function() {
+    try {
+      const data = await API.post('/api/capitreino/bau/abrir');
+      if (!data) return;
+      spawnConfetti();
+      showXpFloat(data.xp_ganho);
+      const status = await API.get('/api/capitreino/status');
+      state.status = status;
+      await loadAll();
+      showToast(`Baú aberto! +${data.xp_ganho} XP de bônus!`);
+    } catch (e) {
+      showToast(e.message || 'Erro ao abrir baú');
+    }
+  };
+
+  // ─── TRILHA CHANGE ───
+  window.showTrilhaChange = async function() {
+    try {
+      const data = await API.get('/api/capitreino/trilhas');
+      if (!data) return;
+      state.status = await API.get('/api/capitreino/status');
+      document.getElementById('ctApp').style.display = 'none';
+      document.getElementById('ctOnboarding').style.display = 'block';
+      const grid = document.getElementById('ctTrilhaGrid');
+      grid.innerHTML = data.trilhas.map(t => `
+        <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')" style="${t.status === 'ativa' ? 'border-color:var(--gold)' : ''}">
+          <div class="ct-trilha-card-icon" style="background:${t.cor}20">${t.icone}</div>
+          <div class="ct-trilha-card-body">
+            <div class="ct-trilha-card-name">${t.nome} ${t.status === 'ativa' ? '<span style="color:var(--gold);font-size:11px">ATIVA</span>' : ''}</div>
+            <div class="ct-trilha-card-desc">${t.descricao}</div>
+          </div>
+        </div>
+      `).join('');
+    } catch (e) { console.error(e); }
+  };
+
+  // ─── TABS ───
+  window.switchTab = function(tab) {
+    document.querySelectorAll('.ct-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.getElementById('ctMissoesTab').style.display = tab === 'missoes' ? 'block' : 'none';
+    const histTab = document.getElementById('ctHistoricoTab');
+    if (tab === 'historico') {
+      histTab.classList.add('show');
+      loadHistorico();
+    } else {
+      histTab.classList.remove('show');
+    }
+  };
+
+  async function loadHistorico() {
+    try {
+      const data = await API.get('/api/capitreino/historico');
+      if (!data) return;
+      const div = document.getElementById('ctHistoricoTab');
+      if (!data.historico.length) {
+        div.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhuma missão concluída ainda. Comece agora!</p>';
+        return;
+      }
+      div.innerHTML = data.historico.map(h => `
+        <div class="ct-hist-item">
+          <span class="ct-hist-date">${formatDate(h.concluida_at)}</span>
+          <span class="ct-hist-title">${h.titulo}</span>
+          <span class="ct-hist-xp">+${h.xp_recompensa} XP</span>
+        </div>
+      `).join('');
+    } catch (e) { console.error(e); }
+  }
+
+  function formatDate(dt) {
+    if (!dt) return '';
+    const d = new Date(dt);
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  }
+
+  // ─── LIGA TOGGLE ───
+  window.toggleLiga = function() {
+    const ranking = document.getElementById('ctLigaRanking');
+    const toggle = document.getElementById('ctLigaToggle');
+    ranking.classList.toggle('open');
+    toggle.innerHTML = ranking.classList.contains('open') ? '&#9650;' : '&#9660;';
+  };
+
+  // ─── VISUAL EFFECTS ───
+  function showXpFloat(xp) {
+    const el = document.createElement('div');
+    el.className = 'ct-xp-float';
+    el.textContent = `+${xp} XP`;
+    el.style.left = '50%';
+    el.style.top = '40%';
+    el.style.transform = 'translateX(-50%)';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1600);
+  }
+
+  function showLevelUp(nivel) {
+    document.getElementById('ctLevelUpEmoji').textContent = nivel.emoji;
+    document.getElementById('ctLevelUpName').textContent = nivel.nome;
+    document.getElementById('ctLevelUp').classList.add('show');
+    spawnConfetti();
+  }
+
+  function spawnConfetti() {
+    const container = document.getElementById('ctConfetti');
+    const colors = ['#DAA520', '#FFD700', '#FF9800', '#4CAF50', '#2196F3', '#E0115F', '#9C27B0'];
+    for (let i = 0; i < 50; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'ct-confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.top = '-10px';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDelay = Math.random() * .5 + 's';
+      piece.style.animationDuration = (1.5 + Math.random()) + 's';
+      piece.style.width = (6 + Math.random() * 6) + 'px';
+      piece.style.height = (6 + Math.random() * 6) + 'px';
+      container.appendChild(piece);
+    }
+    setTimeout(() => { container.innerHTML = ''; }, 3000);
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('ctToast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ─── START ───
+  init();
+})();
+</script>
+</body>
+</html>
