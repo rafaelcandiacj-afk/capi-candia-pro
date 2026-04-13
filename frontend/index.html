@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 <meta name="version" content="20260407015328">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Capi Când-IA Pro</title>
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
@@ -90,8 +90,8 @@
     body.dark-mode .message-actions button { color:#a09890!important }
     body.dark-mode #bannerFundadores { opacity:.85 }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{height:100%;overflow:hidden;position:fixed;width:100%}
-    body{background:var(--bg);color:var(--text);font-family:'DM Sans','Inter',sans-serif;font-size:var(--base-font,14px);height:100%;height:var(--app-height,100%);overflow:hidden;position:fixed;width:100%;overscroll-behavior:none}
+    html{height:100%;overflow:hidden;width:100%;position:fixed;left:0;top:0;-webkit-text-size-adjust:100%}
+    body{background:var(--bg);color:var(--text);font-family:'DM Sans','Inter',sans-serif;font-size:var(--base-font,14px);height:100%;height:var(--app-height,100%);overflow:hidden;position:fixed;left:0;top:0;width:100%;overscroll-behavior:none;-webkit-overflow-scrolling:touch}
     #particles-bg{display:none}
     .particle{display:none}
     .hidden{display:none!important}
@@ -123,7 +123,7 @@
     .alert-error.visible{display:block}
 
     /* ── CHAT LAYOUT ── */
-    .chat-wrapper{position:relative;z-index:10;display:flex;height:100%;height:var(--app-height,100vh);overflow:hidden}
+    .chat-wrapper{position:relative;z-index:10;display:flex;height:100%;height:var(--app-height,100vh);overflow:hidden;max-width:100vw}
 
     /* ── SIDEBAR ── */
     .sidebar{width:var(--sidebar-w);background:var(--bg2);border-right:1px solid #e8e4de;display:flex;flex-direction:column;flex-shrink:0;transition:var(--trans)}
@@ -603,17 +603,39 @@
 
   </style>
 <script>
-/* Fix mobile viewport: usa visualViewport para altura real (lida com teclado virtual) */
+/* Fix mobile viewport: usa visualViewport para altura real (lida com teclado virtual iOS) */
 function setAppHeight(){
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const vv = window.visualViewport;
+  const h = vv ? vv.height : window.innerHeight;
   document.documentElement.style.setProperty('--app-height', h + 'px');
+  /* Corrige offset quando iOS faz pan/scroll ao abrir teclado */
+  if(vv){
+    const offsetTop = vv.offsetTop;
+    document.documentElement.style.setProperty('--vv-offset', offsetTop + 'px');
+    /* Reseta scroll do body/html pra evitar flutuação horizontal */
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
 }
 setAppHeight();
 window.addEventListener('resize', setAppHeight);
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize', setAppHeight);
-  window.visualViewport.addEventListener('scroll', function(e){ e.preventDefault(); });
+  window.visualViewport.addEventListener('scroll', setAppHeight);
 }
+/* Impede scroll horizontal acidental (causa flutter/deslize no iOS) */
+document.addEventListener('touchmove', function(e){
+  /* Permite scroll vertical dentro de containers com overflow-y */
+  const t = e.target;
+  const scrollable = t.closest && t.closest('.chat-messages, .conv-list, .modal-box, .sidebar, .game-messages, .auth-wrapper');
+  if(!scrollable){
+    /* Fora de áreas scrolláveis, previne scroll do body */
+    if(document.body.scrollLeft !== 0 || document.documentElement.scrollLeft !== 0){
+      window.scrollTo(0,0);
+    }
+  }
+}, {passive:true});
 </script>
 </head>
 <body>
@@ -1039,6 +1061,23 @@ document.addEventListener('DOMContentLoaded', () => {
     inp.addEventListener('focus', () => {
       // Revalida ao focar
       btn.disabled = inp.value.trim() === '' || window.isLoading;
+      // iOS: garante que o layout não flutue quando teclado abre
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        setAppHeight();
+        // Scroll das mensagens pro final
+        const msgs = document.getElementById('chatMessages');
+        if(msgs) msgs.scrollTop = msgs.scrollHeight;
+      }, 300);
+    });
+    inp.addEventListener('blur', () => {
+      // iOS: restaura layout quando teclado fecha
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+        setAppHeight();
+      }, 100);
     });
   }
 });
