@@ -211,10 +211,7 @@
 
     /* Messages */
     .message{display:flex;gap:10px;max-width:82%;animation:fadeUp .3s ease}
-    .message-user{align-self:flex-end;flex-direction:row-reverse;margin-top:12px;padding-top:18px;position:relative}
-    .message-user::before{content:'';position:absolute;top:0;right:0;width:100vw;height:1.5px;background:linear-gradient(90deg,transparent 0%,rgba(184,134,11,.18) 20%,rgba(184,134,11,.18) 80%,transparent 100%)}
-    .message-user:first-child::before{display:none}
-    .message-user:first-child{padding-top:0;margin-top:0}
+    .message-user{align-self:flex-end;flex-direction:row-reverse}
     .message-assistant{align-self:flex-start}
     .message-avatar{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;margin-top:2px;overflow:hidden;border:1.5px solid var(--border2)}
     .message-user .message-avatar{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border-color:var(--gold)}
@@ -364,9 +361,7 @@
     body.dark-mode .file-badge{background:#1a1a1a;border-color:#333}
 
     /* ── COPIAR/COMPARTILHAR ── */
-    .msg-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s ease,max-height .25s ease;pointer-events:none}
-    .msg-actions.visible{opacity:1;max-height:60px;pointer-events:auto}
-    .message-assistant:hover .msg-actions{opacity:1;max-height:60px;pointer-events:auto}
+    .msg-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center}
     .msg-action-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:.7rem;font-weight:600;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:4px;letter-spacing:.02em}
     .msg-action-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .msg-action-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-dim)}
@@ -1620,12 +1615,11 @@ async function sendMessage(){
   }
 }
 
-// Limpa sugestões e botões de ação de TODAS as mensagens anteriores
+// Remove sugestões e botões de ação de TODAS as mensagens anteriores (DOM cleanup)
 function cleanupOlderAssistantUI(){
-  // Remove TODAS as sugestões — a nova msg vai criar as suas
   document.querySelectorAll('#chatMessages .ctx-suggestions').forEach(el=>el.remove());
-  // Esconde botões de ação de msgs anteriores
-  document.querySelectorAll('#chatMessages .msg-actions.visible').forEach(el=>el.classList.remove('visible'));
+  document.querySelectorAll('#chatMessages .msg-actions').forEach(el=>el.remove());
+  document.querySelectorAll('#chatMessages .msg-audio-container').forEach(el=>el.remove());
 }
 
 function appendMessage(role,content,suggestions,uploadFiles){
@@ -1690,7 +1684,7 @@ function appendMessage(role,content,suggestions,uploadFiles){
   // Botões de ação apenas para mensagens do assistente
   if(role==='assistant'){
     const actions=document.createElement('div');
-    actions.className='msg-actions visible';
+    actions.className='msg-actions';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
     const audioId='audio-'+Date.now();
     // Botões primários: Copiar + Ouvir (compactos)
@@ -1739,6 +1733,7 @@ function appendMessage(role,content,suggestions,uploadFiles){
     actions.appendChild(ttsBtn);
     actions.appendChild(moreWrap);
     const audioContainer=document.createElement('div');
+    audioContainer.className='msg-audio-container';
     audioContainer.id='audio-container-'+audioId;
     audioContainer.style.cssText='display:none;margin-top:8px;';
     audioContainer.innerHTML=`<audio id="${audioId}" controls style="width:100%;max-width:380px;height:36px;border-radius:20px;outline:none;" src=""></audio>`;
@@ -1788,14 +1783,6 @@ function appendMessage(role,content,suggestions,uploadFiles){
     }
   }
   wrapper.appendChild(msgContent);
-  // Tap na mensagem do assistente mostra/esconde botões (mobile)
-  if(role==='assistant'){
-    wrapper.addEventListener('click',(e)=>{
-      if(e.target.closest('.msg-action-btn,.msg-more-btn,.msg-more-menu,.ctx-chip')) return;
-      const act=wrapper.querySelector('.msg-actions');
-      if(act) act.classList.toggle('visible');
-    });
-  }
   $('chatMessages').appendChild(wrapper);
   scrollBottom();
 }
