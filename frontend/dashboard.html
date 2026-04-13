@@ -190,6 +190,17 @@
       font-size: 4rem;
       animation: pulse 1.8s ease-in-out infinite;
     }
+    .capi-mascot-img {
+      width: 1em; height: 1em;
+      object-fit: cover;
+      border-radius: 50%;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    .loading-logo .capi-mascot-img { width: 4rem; height: 4rem; }
+    .header-logo-icon .capi-mascot-img { width: 2rem; height: 2rem; }
+    .hero-mascot .capi-mascot-img { width: 3.5rem; height: 3.5rem; }
+    .mascot .capi-mascot-img { width: 2.5rem; height: 2.5rem; }
     .loading-text {
       color: var(--color-brand);
       font-size: var(--text-md);
@@ -1617,7 +1628,7 @@
 
 <!-- ─── Loading Overlay ────────────────────────────────────────────────── -->
 <div id="loading-overlay">
-  <div class="loading-logo">🦫</div>
+  <div class="loading-logo"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
   <p class="loading-text">CAPI Când-IA Pro</p>
   <p class="loading-sub">Carregando seu painel…</p>
   <div class="spinner"></div>
@@ -1686,13 +1697,13 @@
 <!-- ─── Site Header ───────────────────────────────────────────────────── -->
 <header class="site-header">
   <div class="header-inner">
-    <a href="/" class="header-back" aria-label="Voltar ao chat">
+    <a href="/app" class="header-back" aria-label="Voltar ao chat">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M19 12H5M12 5l-7 7 7 7"/>
       </svg>
     </a>
     <div class="header-logo">
-      <span class="header-logo-icon">🦫</span>
+      <span class="header-logo-icon"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></span>
       <div class="header-logo-text">
         <span class="header-logo-title">Dashboard do Advogado</span>
         <span class="header-logo-sub">CAPI Când-IA Pro</span>
@@ -1728,7 +1739,7 @@
               </span>
             </div>
           </div>
-          <div class="hero-mascot" aria-hidden="true">🦫</div>
+          <div class="hero-mascot" aria-hidden="true"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
         </div>
 
         <!-- Badges row -->
@@ -2335,7 +2346,7 @@
   function renderEconomy(stats) {
     const grid = document.getElementById('economy-grid');
     if (!stats) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="mascot">🦫</div><p class="title">Dados indisponíveis</p><p>Continue usando a Capi para ver seu impacto aqui.</p></div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div><p class="title">Dados indisponíveis</p><p>Continue usando a Capi para ver seu impacto aqui.</p></div>`;
       return;
     }
 
@@ -2437,7 +2448,7 @@
     if (!evolucao || evolucao.length === 0) {
       card.innerHTML = `
         <div class="empty-state">
-          <div class="mascot">🦫</div>
+          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
           <p class="title">Dados em construção</p>
           <p>Continue usando a Capi e sua evolução aparecerá aqui após algumas semanas.</p>
         </div>
@@ -2603,7 +2614,7 @@
     if (!tools || tools.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <div class="mascot">🦫</div>
+          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
           <p class="title">Nenhum dado de ferramentas ainda</p>
           <p>Continue usando a Capi e veja quais ferramentas você mais utiliza.</p>
         </div>
@@ -2657,7 +2668,7 @@
       container.innerHTML = `
         <div class="calendar-card">
           <div class="empty-state">
-            <div class="mascot">🦫</div>
+            <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
             <p class="title">Calendário em construção</p>
             <p>Continue usando a Capi para ver sua consistência.</p>
           </div>
@@ -2727,7 +2738,7 @@
     if (!badges || badges.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <div class="mascot">🦫</div>
+          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
           <p class="title">Suas conquistas aparecerão aqui</p>
           <p>Continue usando a Capi e desbloqueie badges exclusivos!</p>
         </div>
@@ -2828,7 +2839,7 @@
     if (!memories || memories.length === 0) {
       grid.innerHTML = `
         <div class="memory-empty" style="grid-column:1/-1">
-          <div class="mascot">🦫</div>
+          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
           <p>A Capi ainda está te conhecendo! Continue conversando e ela vai aprender sobre você automaticamente.</p>
         </div>
       `;
