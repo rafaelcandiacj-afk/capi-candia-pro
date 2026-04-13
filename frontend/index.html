@@ -1730,8 +1730,9 @@ function appendMessage(role,content,suggestions,uploadFiles){
     audioContainer.innerHTML=`<audio id="${audioId}" controls style="width:100%;max-width:380px;height:36px;border-radius:20px;outline:none;" src=""></audio>`;
     msgContent.appendChild(actions);
     msgContent.appendChild(audioContainer);
-    // Contextual suggestions
+    // Contextual suggestions — só mostra na última msg, remove das anteriores
     if(suggestions&&suggestions.length){
+      document.querySelectorAll('.ctx-suggestions').forEach(el=>el.remove());
       const chipsDiv=document.createElement('div');
       chipsDiv.className='ctx-suggestions';
       const chipsRow=document.createElement('div');
