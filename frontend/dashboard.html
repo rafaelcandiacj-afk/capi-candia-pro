@@ -2334,7 +2334,7 @@
         pills.push(`<span class="hero-pill streak">🔥 ${stats.streak} dia${stats.streak !== 1 ? 's' : ''} seguidos</span>`);
       }
       if (stats.dias_como_membro) {
-        pills.push(`<span class="hero-pill member">⭐ Membro há ${fmtNum(stats.dias_como_membro)} dias</span>`);
+        pills.push(`<span class="hero-pill member">⭐ Membro há ${fmtNum(stats.dias_como_membro)} ${stats.dias_como_membro === 1 ? 'dia' : 'dias'}</span>`);
       } else if (stats.primeiro_uso) {
         pills.push(`<span class="hero-pill member">⭐ Desde ${formatDate(stats.primeiro_uso)}</span>`);
       }
@@ -2792,7 +2792,7 @@
       { icon: '📝', label: 'Peças Salvas',            value: fmtNum(stats.pecas_salvas ?? 0) },
       { icon: '🧠', label: 'Memórias Acumuladas',    value: fmtNum(stats.total_memorias ?? 0) },
       { icon: '📂', label: 'Casos Ativos',            value: fmtNum(stats.total_casos_ativos ?? 0) },
-      { icon: '📅', label: 'Dias como Membro',       value: fmtNum(stats.dias_como_membro ?? 0),         suffix: 'dias' },
+      { icon: '📅', label: 'Dias como Membro',       value: fmtNum(stats.dias_como_membro ?? 0),         suffix: (stats.dias_como_membro ?? 0) === 1 ? 'dia' : 'dias' },
       { icon: '⚡', label: 'Média Diária',            value: fmtNum(stats.minutos_por_dia_media ?? 0),    suffix: 'min/dia' },
     ];
 
