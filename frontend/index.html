@@ -361,8 +361,9 @@
     body.dark-mode .file-badge{background:#1a1a1a;border-color:#333}
 
     /* ── COPIAR/COMPARTILHAR ── */
-    .msg-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center;opacity:.75;transition:opacity .2s ease}
-    .message-assistant:hover .msg-actions{opacity:1}
+    .msg-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;align-items:center;opacity:0;max-height:0;overflow:hidden;transition:opacity .2s ease,max-height .25s ease;pointer-events:none}
+    .msg-actions.visible{opacity:1;max-height:60px;pointer-events:auto}
+    .message-assistant:hover .msg-actions{opacity:1;max-height:60px;pointer-events:auto}
     .msg-action-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border2);border-radius:12px;color:var(--text2);font-size:.7rem;font-weight:600;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:4px;letter-spacing:.02em}
     .msg-action-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-dim)}
     .msg-action-btn.copied{border-color:var(--green);color:var(--green);background:var(--green-dim)}
@@ -1675,8 +1676,10 @@ function appendMessage(role,content,suggestions,uploadFiles){
   msgContent.appendChild(ts);
   // Botões de ação apenas para mensagens do assistente
   if(role==='assistant'){
+    // Esconde botões de ações das mensagens anteriores
+    document.querySelectorAll('.msg-actions.visible').forEach(el=>el.classList.remove('visible'));
     const actions=document.createElement('div');
-    actions.className='msg-actions';
+    actions.className='msg-actions visible';
     const plainText=content.replace(/\*\*/g,'').replace(/[*_#`]/g,'').trim();
     const audioId='audio-'+Date.now();
     // Botões primários: Copiar + Ouvir (compactos)
@@ -1775,6 +1778,14 @@ function appendMessage(role,content,suggestions,uploadFiles){
     }
   }
   wrapper.appendChild(msgContent);
+  // Tap na mensagem do assistente mostra/esconde botões (mobile)
+  if(role==='assistant'){
+    wrapper.addEventListener('click',(e)=>{
+      if(e.target.closest('.msg-action-btn,.msg-more-btn,.msg-more-menu,.ctx-chip')) return;
+      const act=wrapper.querySelector('.msg-actions');
+      if(act) act.classList.toggle('visible');
+    });
+  }
   $('chatMessages').appendChild(wrapper);
   scrollBottom();
 }
