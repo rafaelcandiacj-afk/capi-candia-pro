@@ -210,6 +210,7 @@
     .suggestion-chip:hover{border-color:var(--gold);color:var(--gold);background:#fdf8ee;transform:translateY(-2px);box-shadow:0 3px 10px rgba(184,134,11,.12)}
 
     /* Messages */
+    .conv-separator{width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(184,134,11,.15) 20%,rgba(184,134,11,.15) 80%,transparent);margin:8px 0}
     .message{display:flex;gap:10px;max-width:82%;animation:fadeUp .3s ease}
     .message-user{align-self:flex-end;flex-direction:row-reverse}
     .message-assistant{align-self:flex-start}
@@ -1625,6 +1626,16 @@ function cleanupOlderAssistantUI(){
 function appendMessage(role,content,suggestions,uploadFiles){
   // Qualquer nova mensagem (user ou assistant) limpa UI das anteriores
   cleanupOlderAssistantUI();
+  // Adiciona divisor visual antes de mensagens do user (separa blocos de conversa)
+  if(role==='user'){
+    const chatEl=$('chatMessages');
+    const hasMessages=chatEl&&chatEl.querySelector('.message');
+    if(hasMessages){
+      const sep=document.createElement('div');
+      sep.className='conv-separator';
+      chatEl.appendChild(sep);
+    }
+  }
   const imgSrc=(CAPI_LOGO_SRC||document.querySelector('.auth-logo-img').src);
   const user=JSON.parse(localStorage.getItem('capi_user')||'{}');
   const wrapper=document.createElement('div');
