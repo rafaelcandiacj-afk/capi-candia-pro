@@ -21,35 +21,54 @@
 html{font-size:16px;-webkit-tap-highlight-color:transparent}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 
-/* ─── PREMIUM ICON SYSTEM ─── */
+/* --- PREMIUM ICON SYSTEM --- */
 .ct-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
 .ct-icon-flame{width:18px;height:18px;background:linear-gradient(0deg,#FF5722,#FF9800,#FFC107);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 23c-4.97 0-9-3.58-9-8 0-2.52.74-4.6 2.2-6.17C6.5 7.5 8 5.5 8 3c0 0 2 1 3 3 .56 1.12.8 2.2.8 3.2 0 .75-.13 1.47-.37 2.13C12.34 9.12 14 7 14 4l1 1c2.44 2.44 4 5.64 4 9 0 4.97-3.13 9-7 9z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 23c-4.97 0-9-3.58-9-8 0-2.52.74-4.6 2.2-6.17C6.5 7.5 8 5.5 8 3c0 0 2 1 3 3 .56 1.12.8 2.2.8 3.2 0 .75-.13 1.47-.37 2.13C12.34 9.12 14 7 14 4l1 1c2.44 2.44 4 5.64 4 9 0 4.97-3.13 9-7 9z'/%3E%3C/svg%3E") center/contain no-repeat}
 .ct-icon-star{width:16px;height:16px;background:linear-gradient(135deg,#FFD700,#FFA000);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z'/%3E%3C/svg%3E") center/contain no-repeat}
-.ct-icon-chest{width:40px;height:40px;border-radius:8px;position:relative;background:linear-gradient(180deg,#B8860B 0%,#8B6914 40%,#DAA520 42%,#B8860B 44%,#6B4C11 100%);box-shadow:0 2px 12px rgba(218,165,32,.3);border:1px solid rgba(218,165,32,.3)}
+.ct-icon-chest{width:40px;height:40px;border-radius:8px;position:relative;background:linear-gradient(180deg,#B8860B 0%,#8B6914 40%,#DAA520 42%,#B8860B 44%,#6B4C11 100%);box-shadow:0 2px 12px rgba(218,165,32,.3);border:1px solid rgba(218,165,32,.3);transition:var(--transition)}
 .ct-icon-chest::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#FFD700,#FFA000);box-shadow:0 0 6px rgba(255,215,0,.5)}
 .ct-icon-chest.opened{background:linear-gradient(180deg,#4CAF50 0%,#388E3C 40%,#66BB6A 42%,#4CAF50 44%,#2E7D32 100%);box-shadow:0 2px 12px var(--green-glow);border-color:rgba(76,175,80,.3)}
 .ct-icon-chest.opened::after{background:linear-gradient(135deg,#A5D6A7,#66BB6A)}
 .ct-icon-chest.ready{animation:bauShake 1s ease infinite}
+/* Chest glow pulse before opening */
+.ct-icon-chest.ready::before{content:'';position:absolute;inset:-6px;border-radius:12px;background:radial-gradient(circle,rgba(218,165,32,.4),transparent 70%);animation:chestGlowPulse 1.5s ease infinite;pointer-events:none}
+.ct-icon-chest.opening{animation:chestOpen .6s ease forwards}
+@keyframes chestGlowPulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:1;transform:scale(1.2)}}
+@keyframes chestOpen{0%{transform:scale(1)}30%{transform:scale(1.2)}60%{transform:scale(1.2) rotate(3deg)}100%{transform:scale(1) rotate(0deg)}}
+
 .ct-icon-trilha{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;letter-spacing:0;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .ct-icon-level{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .ct-icon-level-lg{width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:24px;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .ct-icon-mission-type{width:20px;height:20px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;flex-shrink:0}
+
+/* Trail image style */
+.ct-trilha-img{width:48px;height:48px;border-radius:12px;object-fit:cover;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.ct-trilha-img-sm{width:40px;height:40px;border-radius:10px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
 /* Background subtle pattern */
 body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 20% 80%,rgba(218,165,32,.02),transparent 50%),radial-gradient(circle at 80% 20%,rgba(218,165,32,.02),transparent 50%);pointer-events:none;z-index:0}
 
-/* ─── HEADER ─── */
+/* --- HEADER --- */
 .ct-header{position:sticky;top:0;z-index:100;background:linear-gradient(180deg,var(--bg) 0%,rgba(13,13,13,.95) 100%);backdrop-filter:blur(20px);padding:14px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(218,165,32,.15)}
 .ct-back{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid rgba(218,165,32,.2);display:flex;align-items:center;justify-content:center;color:var(--gold);text-decoration:none;font-size:18px;transition:var(--transition);flex-shrink:0}
 .ct-back:hover{background:var(--gold);color:var(--bg)}
 .ct-logo{font-size:20px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:1px;text-transform:uppercase}
 .ct-header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
-.ct-streak-badge{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(255,87,34,.15),rgba(255,152,0,.1));border:1px solid rgba(255,87,34,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#FF9800}
-.ct-streak-badge.active .ct-icon-flame{animation:flamePulse 1s ease infinite}
+.ct-streak-badge{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(255,87,34,.15),rgba(255,152,0,.1));border:1px solid rgba(255,87,34,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:#FF9800;position:relative;overflow:hidden}
+.ct-streak-badge.active .ct-icon-flame{animation:flamePulseEnhanced 1s ease infinite}
+.ct-streak-badge.active::after{content:'';position:absolute;inset:0;border-radius:20px;box-shadow:0 0 8px rgba(255,152,0,.3);animation:streakRipple 2s ease infinite;pointer-events:none}
+.ct-streak-badge.active{animation:streakShimmer 3s linear infinite;background-size:200% 100%}
+@keyframes streakShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes streakRipple{0%{box-shadow:0 0 0 0 rgba(255,152,0,.4)}50%{box-shadow:0 0 0 6px rgba(255,152,0,0)}100%{box-shadow:0 0 0 0 rgba(255,152,0,0)}}
 .ct-xp-badge{display:flex;align-items:center;gap:5px;background:linear-gradient(135deg,rgba(218,165,32,.15),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);border-radius:20px;padding:4px 10px;font-size:13px;font-weight:700;color:var(--gold)}
+/* Sound toggle */
+.ct-sound-toggle{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--transition);color:var(--text3);font-size:14px}
+.ct-sound-toggle:hover{background:var(--bg4);border-color:rgba(218,165,32,.3)}
+.ct-sound-toggle.muted{opacity:.5}
 
-@keyframes flamePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes flamePulseEnhanced{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.3);filter:brightness(1.3)}}
 
-/* ─── PROGRESS BAR ─── */
+/* --- PROGRESS BAR --- */
 .ct-progress-section{padding:16px;background:var(--bg2);border-bottom:1px solid rgba(255,255,255,.05)}
 .ct-level-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .ct-level-name{font-size:13px;font-weight:600;color:var(--gold)}
@@ -59,7 +78,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-progress-fill::after{content:'';position:absolute;top:0;right:0;width:20px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3));border-radius:4px}
 .ct-xp-label{text-align:center;font-size:12px;color:var(--text2);margin-top:6px}
 
-/* ─── TRILHA ATIVA ─── */
+/* --- TRILHA ATIVA --- */
 .ct-trilha-bar{padding:12px 16px;display:flex;align-items:center;gap:10px;background:var(--bg2);border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:var(--transition)}
 .ct-trilha-bar:hover{background:var(--bg3)}
 .ct-trilha-icon{font-size:24px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--bg4)}
@@ -67,10 +86,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-trilha-sub{font-size:12px;color:var(--text3)}
 .ct-trilha-arrow{margin-left:auto;color:var(--text3);font-size:14px}
 
-/* ─── MAIN CONTENT ─── */
+/* --- MAIN CONTENT --- */
 .ct-main{padding:20px 16px;max-width:600px;margin:0 auto}
 
-/* ─── MISSOES SECTION ─── */
+/* --- MISSOES SECTION --- */
 .ct-section-title{font-size:14px;font-weight:800;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:1px}
 
 .ct-mission-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius-lg);padding:18px;margin-bottom:14px;transition:var(--transition);position:relative;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -104,29 +123,33 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 
 @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 
-/* ─── BAU (CHEST) PREMIUM ─── */
+/* --- BAU (CHEST) PREMIUM --- */
 .ct-bau-section{margin-top:24px;margin-bottom:24px}
 .ct-bau-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px solid rgba(218,165,32,.15);border-radius:var(--radius-xl);padding:28px 24px;text-align:center;position:relative;overflow:hidden}
 .ct-bau-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(218,165,32,.04),transparent 70%);pointer-events:none}
 .ct-bau-card.ready{border-color:var(--gold);animation:bauGlow 2s ease infinite}
 .ct-bau-card.opened{border-color:rgba(76,175,80,.3)}
-.ct-bau-icon-wrap{margin-bottom:12px;display:inline-block}
+.ct-bau-icon-wrap{margin-bottom:12px;display:inline-block;position:relative}
 .ct-bau-title{font-size:16px;font-weight:800;color:var(--text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .ct-bau-sub{font-size:13px;color:var(--text3);margin-bottom:16px}
 .ct-bau-progress{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
 .ct-bau-dot{width:14px;height:14px;border-radius:50%;background:var(--bg4);border:1px solid rgba(255,255,255,.1);transition:var(--transition)}
 .ct-bau-dot.done{background:var(--green);border-color:var(--green);box-shadow:0 0 8px var(--green-glow)}
 
+/* Chest sparkle particles */
+.ct-chest-sparkle{position:absolute;width:4px;height:4px;background:#FFD700;border-radius:50%;pointer-events:none;animation:sparkleFloat 1s ease forwards}
+@keyframes sparkleFloat{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}}
+
 @keyframes bauGlow{0%,100%{box-shadow:0 0 20px var(--gold-glow)}50%{box-shadow:0 0 40px var(--gold-glow),0 0 60px rgba(218,165,32,.15)}}
 @keyframes bauShake{0%,100%{transform:rotate(0)}10%{transform:rotate(-5deg)}20%{transform:rotate(5deg)}30%{transform:rotate(-3deg)}40%{transform:rotate(3deg)}50%{transform:rotate(0)}}
 
-/* ─── STATS BAR PREMIUM ─── */
+/* --- STATS BAR PREMIUM --- */
 .ct-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:24px;margin-bottom:28px}
 .ct-stat-card{background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:14px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .ct-stat-value{font-size:22px;font-weight:900;margin-bottom:4px}
 .ct-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600}
 
-/* ─── LIGA PREMIUM ─── */
+/* --- LIGA PREMIUM --- */
 .ct-liga-section{margin-bottom:28px}
 .ct-liga-header{display:flex;align-items:center;gap:14px;padding:18px 20px;background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(218,165,32,.15);border-radius:var(--radius-xl) var(--radius-xl) 0 0;cursor:pointer;position:relative;overflow:hidden}
 .ct-liga-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(218,165,32,.06),transparent 70%);pointer-events:none}
@@ -159,7 +182,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-rank-indicator.up{color:var(--green)}
 .ct-rank-indicator.down{color:var(--red)}
 
-/* ─── ONBOARDING ─── */
+/* --- ONBOARDING --- */
 .ct-onboarding{min-height:calc(100vh - 60px);display:flex;flex-direction:column;align-items:center;padding:24px 16px}
 .ct-onboard-mascot{width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 30px var(--gold-glow);margin-bottom:16px}
 .ct-onboard-title{font-size:22px;font-weight:800;text-align:center;margin-bottom:4px;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -174,31 +197,42 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-trilha-card-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
 .ct-trilha-card-desc{font-size:12px;color:var(--text3);line-height:1.4}
 
-/* ─── LOADING / EMPTY ─── */
+/* --- LOADING / EMPTY --- */
 .ct-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px}
 .ct-spinner{width:40px;height:40px;border:3px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── XP FLOAT ─── */
+/* --- XP FLOAT --- */
 .ct-xp-float{position:fixed;z-index:1000;font-size:20px;font-weight:800;color:var(--gold);pointer-events:none;animation:xpFloat 1.5s ease forwards}
 @keyframes xpFloat{0%{opacity:1;transform:translateY(0) scale(1)}50%{opacity:1;transform:translateY(-40px) scale(1.2)}100%{opacity:0;transform:translateY(-80px) scale(.8)}}
 
-/* ─── LEVEL UP OVERLAY ─── */
+/* --- LEVEL UP OVERLAY (enhanced) --- */
 .ct-levelup-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .5s ease}
 .ct-levelup-overlay.show{opacity:1;pointer-events:auto}
 .ct-levelup-glow{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,var(--gold-glow),transparent 70%);position:absolute;animation:levelGlow 2s ease infinite}
 .ct-levelup-text{font-size:32px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;z-index:1;animation:levelBounce .6s cubic-bezier(.68,-.55,.27,1.55)}
 .ct-levelup-name{font-size:18px;font-weight:600;color:var(--text);z-index:1}
-.ct-levelup-emoji{font-size:48px;z-index:1}
+.ct-levelup-badge{z-index:1;animation:levelBadgePop .6s cubic-bezier(.68,-.55,.27,1.55) .2s both}
 @keyframes levelGlow{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.3);opacity:.8}}
-@keyframes levelBounce{0%{transform:scale(0)}100%{transform:scale(1)}}
+@keyframes levelBounce{0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+@keyframes levelBadgePop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2);opacity:1}100%{transform:scale(1);opacity:1}}
 
-/* ─── CONFETTI ─── */
+/* Level up golden particles */
+.ct-levelup-particle{position:absolute;width:6px;height:6px;background:#FFD700;border-radius:50%;pointer-events:none;animation:levelParticle 1.5s ease forwards}
+@keyframes levelParticle{0%{opacity:1;transform:translate(0,0) scale(1)}100%{opacity:0;transform:translate(var(--px),var(--py)) scale(0)}}
+
+/* --- CONFETTI (enhanced) --- */
 .ct-confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1500}
-.ct-confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall 2s ease forwards}
-@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg)}100%{opacity:0;transform:translateY(100vh) rotate(720deg)}}
+.ct-confetti-piece{position:absolute;animation:confettiFallEnhanced 2.5s ease forwards}
+@keyframes confettiFallEnhanced{
+  0%{opacity:1;transform:translateY(0) rotate(0deg) translateX(0)}
+  25%{transform:translateY(25vh) rotate(180deg) translateX(var(--cx,15px))}
+  50%{transform:translateY(50vh) rotate(360deg) translateX(calc(var(--cx,15px) * -1))}
+  75%{transform:translateY(75vh) rotate(540deg) translateX(var(--cx,15px))}
+  100%{opacity:0;transform:translateY(100vh) rotate(720deg) translateX(0)}
+}
 
-/* ─── UPLOAD MODAL ─── */
+/* --- UPLOAD MODAL --- */
 .ct-upload-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .3s ease}
 .ct-upload-modal.show{opacity:1;pointer-events:auto}
 .ct-upload-box{background:var(--bg2);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xl);padding:24px;max-width:400px;width:100%}
@@ -206,11 +240,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-upload-preview img{max-width:100%;max-height:100%;object-fit:contain}
 .ct-upload-preview.has-img{border-style:solid;border-color:var(--green)}
 
-/* ─── TOAST ─── */
+/* --- TOAST --- */
 .ct-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);z-index:3000;background:var(--bg3);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:12px 20px;font-size:14px;font-weight:500;color:var(--text);box-shadow:var(--shadow);transition:transform .4s cubic-bezier(.4,0,.2,1);white-space:nowrap}
 .ct-toast.show{transform:translateX(-50%) translateY(0)}
 
-/* ─── HISTORICO TAB ─── */
+/* --- TABS (3 tabs) --- */
 .ct-tabs{display:flex;gap:0;margin-bottom:16px;background:var(--bg2);border-radius:var(--radius);overflow:hidden;border:1px solid rgba(255,255,255,.06)}
 .ct-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;transition:var(--transition);border:none;background:none;font-family:inherit}
 .ct-tab.active{color:var(--gold);background:rgba(218,165,32,.1)}
@@ -222,7 +256,70 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 .ct-hist-title{flex:1;font-size:13px;font-weight:500}
 .ct-hist-xp{font-size:12px;font-weight:700;color:var(--gold)}
 
-/* ─── RESPONSIVE ─── */
+/* --- HEATMAP CALENDAR --- */
+.ct-heatmap-section{margin-bottom:24px}
+.ct-heatmap-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px}
+.ct-heatmap-months{display:flex;gap:0;margin-bottom:4px;padding-left:28px}
+.ct-heatmap-month{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.ct-heatmap-grid-wrap{display:flex;gap:2px}
+.ct-heatmap-days{display:flex;flex-direction:column;gap:2px;padding-right:4px}
+.ct-heatmap-day-label{font-size:9px;color:var(--text3);height:12px;line-height:12px;text-align:right;width:24px}
+.ct-heatmap-grid{display:flex;gap:2px;flex:1;overflow-x:auto}
+.ct-heatmap-col{display:flex;flex-direction:column;gap:2px}
+.ct-heatmap-cell{width:12px;height:12px;border-radius:2px;background:var(--bg3);cursor:pointer;transition:var(--transition);position:relative}
+.ct-heatmap-cell:hover{outline:1px solid var(--gold);outline-offset:1px}
+.ct-heatmap-cell.l1{background:#1B3A1B}
+.ct-heatmap-cell.l2{background:#2E7D32}
+.ct-heatmap-cell.l3{background:#4CAF50}
+.ct-heatmap-cell.l4{background:#66BB6A}
+.ct-heatmap-tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--text);white-space:nowrap;z-index:10;pointer-events:none;opacity:0;transition:opacity .2s}
+.ct-heatmap-cell:hover .ct-heatmap-tooltip{opacity:1}
+.ct-heatmap-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+.ct-heatmap-stat{background:var(--bg2);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:10px;text-align:center}
+.ct-heatmap-stat-val{font-size:18px;font-weight:800;color:var(--gold)}
+.ct-heatmap-stat-label{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* --- BADGES / CONQUISTAS --- */
+.ct-conquistas-section{margin-top:24px}
+.ct-conquistas-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px}
+.ct-badges-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(min-width:600px){.ct-badges-grid{grid-template-columns:repeat(3,1fr)}}
+.ct-badge-card{background:var(--bg2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:16px;text-align:center;transition:var(--transition)}
+.ct-badge-card.unlocked{border-color:rgba(218,165,32,.3);box-shadow:0 0 12px var(--gold-glow)}
+.ct-badge-card.locked{opacity:.5}
+.ct-badge-card.locked .ct-badge-img{filter:grayscale(1)}
+.ct-badge-img{width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 8px;display:block}
+.ct-badge-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.ct-badge-desc{font-size:11px;color:var(--text3);line-height:1.3}
+.ct-badge-lock{position:relative}
+.ct-badge-lock::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:rgba(0,0,0,.6);border-radius:50%;border:2px solid rgba(255,255,255,.3)}
+
+/* --- NEW BADGE MODAL --- */
+.ct-badge-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;opacity:0;pointer-events:none;transition:opacity .5s ease}
+.ct-badge-modal.show{opacity:1;pointer-events:auto}
+.ct-badge-modal-img{width:128px;height:128px;border-radius:50%;object-fit:cover;border:3px solid var(--gold);box-shadow:0 0 30px var(--gold-glow);animation:levelBounce .6s cubic-bezier(.68,-.55,.27,1.55)}
+.ct-badge-modal-title{font-size:20px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px}
+.ct-badge-modal-desc{font-size:14px;color:var(--text2);text-align:center;max-width:280px}
+
+/* --- DAY SUMMARY OVERLAY --- */
+.ct-day-summary{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .5s ease}
+.ct-day-summary.show{opacity:1;pointer-events:auto}
+.ct-day-summary-inner{animation:daySummaryIn .5s ease both;max-width:400px;width:100%;text-align:center}
+@keyframes daySummaryIn{0%{opacity:0;transform:translateY(30px)}100%{opacity:1;transform:translateY(0)}}
+.ct-day-summary-header{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;animation:shimmerText 2s linear infinite;background-size:200% auto}
+@keyframes shimmerText{0%{background-position:0% center}100%{background-position:200% center}}
+.ct-day-summary-sub{font-size:14px;color:var(--text2);margin-bottom:20px}
+.ct-day-summary-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.ct-day-summary-stat{background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:14px 10px;text-align:center}
+.ct-day-summary-stat-icon{font-size:20px;margin-bottom:4px;display:flex;align-items:center;justify-content:center}
+.ct-day-summary-stat-val{font-size:20px;font-weight:800;color:var(--text)}
+.ct-day-summary-stat-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.ct-day-summary-badges{margin-bottom:20px}
+.ct-day-summary-badges-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.ct-day-summary-badges-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.ct-day-summary-badge{width:48px;height:48px;border-radius:50%;border:2px solid var(--gold);object-fit:cover}
+
+/* --- RESPONSIVE --- */
 @media(min-width:400px){
   .ct-trilha-grid{grid-template-columns:1fr 1fr}
 }
@@ -238,6 +335,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   <a href="/app" class="ct-back">&#8592;</a>
   <span class="ct-logo">CapiTreino</span>
   <div class="ct-header-right">
+    <div class="ct-sound-toggle" id="ctSoundToggle" onclick="window._toggleSound()" title="Sons">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" id="ctSoundWaves"/></svg>
+    </div>
     <div class="ct-streak-badge" id="ctStreakBadge"><span class="ct-icon ct-icon-flame"></span> <span id="ctStreakCount">0</span></div>
     <div class="ct-xp-badge"><span class="ct-icon ct-icon-star"></span> <span id="ctXpCount">0</span> XP</div>
   </div>
@@ -246,10 +346,32 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 <!-- LEVEL UP OVERLAY -->
 <div class="ct-levelup-overlay" id="ctLevelUp">
   <div class="ct-levelup-glow"></div>
-  <div id="ctLevelUpIcon" style="z-index:1"></div>
-  <div class="ct-levelup-text">LEVEL UP!</div>
+  <div class="ct-levelup-badge" id="ctLevelUpIcon" style="z-index:1"></div>
+  <div class="ct-levelup-text" id="ctLevelUpText">LEVEL UP!</div>
   <div class="ct-levelup-name" id="ctLevelUpName"></div>
   <button class="ct-btn ct-btn-gold" style="margin-top:16px;z-index:1" onclick="document.getElementById('ctLevelUp').classList.remove('show')">Continuar</button>
+</div>
+
+<!-- NEW BADGE MODAL -->
+<div class="ct-badge-modal" id="ctBadgeModal">
+  <div class="ct-badge-modal-img" id="ctBadgeModalImg"></div>
+  <div class="ct-badge-modal-title" id="ctBadgeModalTitle"></div>
+  <div class="ct-badge-modal-desc" id="ctBadgeModalDesc"></div>
+  <button class="ct-btn ct-btn-gold" style="margin-top:16px;z-index:1" onclick="document.getElementById('ctBadgeModal').classList.remove('show')">Continuar</button>
+</div>
+
+<!-- DAY SUMMARY OVERLAY -->
+<div class="ct-day-summary" id="ctDaySummary">
+  <div class="ct-day-summary-inner">
+    <div class="ct-day-summary-header">Dia Completo!</div>
+    <div class="ct-day-summary-sub">Parabens! Voce completou todas as missoes de hoje.</div>
+    <div class="ct-day-summary-stats" id="ctDaySummaryStats"></div>
+    <div class="ct-day-summary-badges" id="ctDaySummaryBadges" style="display:none">
+      <div class="ct-day-summary-badges-title">Conquistas desbloqueadas hoje</div>
+      <div class="ct-day-summary-badges-row" id="ctDaySummaryBadgesRow"></div>
+    </div>
+    <button class="ct-btn ct-btn-gold" onclick="document.getElementById('ctDaySummary').classList.remove('show')">Voltar</button>
+  </div>
 </div>
 
 <!-- UPLOAD MODAL -->
@@ -313,10 +435,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   </div>
 
   <div class="ct-main">
-    <!-- Tabs -->
+    <!-- Tabs (3 tabs now) -->
     <div class="ct-tabs">
-      <button class="ct-tab active" data-tab="missoes" onclick="switchTab('missoes')">Missões do Dia</button>
-      <button class="ct-tab" data-tab="historico" onclick="switchTab('historico')">Histórico</button>
+      <button class="ct-tab active" data-tab="missoes" onclick="switchTab('missoes')">Missoes</button>
+      <button class="ct-tab" data-tab="ranking" onclick="switchTab('ranking')">Ranking</button>
+      <button class="ct-tab" data-tab="historico" onclick="switchTab('historico')">Historico</button>
     </div>
 
     <!-- MISSOES TAB -->
@@ -326,7 +449,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       <!-- BAU -->
       <div class="ct-bau-section" id="ctBauSection">
         <div class="ct-bau-card" id="ctBauCard">
-          <div class="ct-bau-icon-wrap"><div class="ct-icon-chest" id="ctBauIcon"></div></div>
+          <div class="ct-bau-icon-wrap" id="ctBauIconWrap"><div class="ct-icon-chest" id="ctBauIcon"></div></div>
           <div class="ct-bau-title" id="ctBauTitle">Bau Diario</div>
           <div class="ct-bau-sub" id="ctBauSub">Complete as 3 missoes para desbloquear</div>
           <div class="ct-bau-progress" id="ctBauProgress"></div>
@@ -335,29 +458,39 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       </div>
     </div>
 
-    <!-- HISTORICO TAB -->
-    <div class="ct-historico-list" id="ctHistoricoTab"></div>
+    <!-- RANKING TAB -->
+    <div id="ctRankingTab" style="display:none">
+      <!-- STATS -->
+      <div class="ct-stats" id="ctStats">
+        <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatStreak" style="color:#FF9800">0</div><div class="ct-stat-label">Streak</div></div>
+        <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatMissoes" style="color:var(--green)">0</div><div class="ct-stat-label">Missoes</div></div>
+        <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatXp" style="color:var(--gold)">0</div><div class="ct-stat-label">XP Total</div></div>
+      </div>
 
-    <!-- STATS -->
-    <div class="ct-stats" id="ctStats">
-      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatStreak" style="color:#FF9800">0</div><div class="ct-stat-label">Streak</div></div>
-      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatMissoes" style="color:var(--green)">0</div><div class="ct-stat-label">Missões</div></div>
-      <div class="ct-stat-card"><div class="ct-stat-value" id="ctStatXp" style="color:var(--gold)">0</div><div class="ct-stat-label">XP Total</div></div>
+      <!-- LIGA PREMIUM -->
+      <div class="ct-liga-section" id="ctLigaSection">
+        <div class="ct-liga-header" onclick="toggleLiga()">
+          <div class="ct-liga-badge" id="ctLigaBadge"></div>
+          <div class="ct-liga-header-info">
+            <div class="ct-liga-name" id="ctLigaName"></div>
+            <div class="ct-liga-xp" id="ctLigaXp"></div>
+            <div class="ct-liga-rank-badge" id="ctLigaRankBadge"></div>
+            <div class="ct-liga-xp-bar"><div class="ct-liga-xp-fill" id="ctLigaXpFill"></div></div>
+          </div>
+          <span class="ct-liga-toggle" id="ctLigaToggle">&#9660;</span>
+        </div>
+        <div class="ct-liga-ranking" id="ctLigaRanking"></div>
+      </div>
     </div>
 
-    <!-- LIGA PREMIUM -->
-    <div class="ct-liga-section" id="ctLigaSection">
-      <div class="ct-liga-header" onclick="toggleLiga()">
-        <div class="ct-liga-badge" id="ctLigaBadge"></div>
-        <div class="ct-liga-header-info">
-          <div class="ct-liga-name" id="ctLigaName"></div>
-          <div class="ct-liga-xp" id="ctLigaXp"></div>
-          <div class="ct-liga-rank-badge" id="ctLigaRankBadge"></div>
-          <div class="ct-liga-xp-bar"><div class="ct-liga-xp-fill" id="ctLigaXpFill"></div></div>
-        </div>
-        <span class="ct-liga-toggle" id="ctLigaToggle">&#9660;</span>
-      </div>
-      <div class="ct-liga-ranking" id="ctLigaRanking"></div>
+    <!-- HISTORICO TAB -->
+    <div id="ctHistoricoTab" style="display:none">
+      <!-- Heatmap Calendar -->
+      <div class="ct-heatmap-section" id="ctHeatmapSection"></div>
+      <!-- History list -->
+      <div class="ct-historico-list show" id="ctHistoricoList"></div>
+      <!-- Conquistas -->
+      <div class="ct-conquistas-section" id="ctConquistasSection"></div>
     </div>
   </div>
 </div>
@@ -386,7 +519,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   let state = { status: null, missoes: [], trilha: null, bau: null, liga: null, historico: [] };
   let uploadMissaoId = null;
 
-  // ─── PREMIUM ICON MAPS ───
+  // --- TRAIL IMAGES MAP ---
+  const TRILHA_IMAGES = {
+    'primeiros_passos': 'images/trails/trail_primeiros_passos.svg',
+    'advocacia_raiz': 'images/trails/trail_advocacia_raiz.svg',
+    'cacador_clientes': 'images/trails/trail_cacador_clientes.svg',
+    'autoridade_digital': 'images/trails/trail_autoridade_digital.svg',
+    'maquina_anuncios': 'images/trails/trail_maquina_anuncios.svg',
+    'mestre_fechamento': 'images/trails/trail_mestre_fechamento.svg'
+  };
+
+  // --- PREMIUM ICON MAPS ---
   const TRILHA_ICONS = {
     'primeiros_passos': { gradient: 'linear-gradient(135deg, #4CAF50, #2E7D32)', symbol: '\u2192' },
     'advocacia_raiz': { gradient: 'linear-gradient(135deg, #8B4513, #5D3A1A)', symbol: '\u2696' },
@@ -415,14 +558,100 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     const cls = size === 'lg' ? 'ct-icon-level-lg' : 'ct-icon-level';
     return `<span class="${cls}" style="background:${b.gradient}">${b.symbol}</span>`;
   }
-  function getTrilhaIcon(trilhaId, cor) {
+  function getTrilhaIcon(trilhaId) {
+    const imgPath = TRILHA_IMAGES[trilhaId];
+    if (imgPath) {
+      return `<img src="/${imgPath}" alt="" class="ct-trilha-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="ct-icon-trilha" style="background:${TRILHA_ICONS[trilhaId]?.gradient || 'var(--bg4)'};display:none">${TRILHA_ICONS[trilhaId]?.symbol || ''}</div>`;
+    }
     const t = TRILHA_ICONS[trilhaId];
-    const grad = t ? t.gradient : `linear-gradient(135deg, ${cor || '#555'}, ${cor || '#333'})`;
-    const sym = t ? t.symbol : '\u25C6';
-    return `<div class="ct-icon-trilha" style="background:${grad}">${sym}</div>`;
+    return `<div class="ct-icon-trilha" style="background:${t ? t.gradient : 'var(--bg4)'}">${t ? t.symbol : ''}</div>`;
+  }
+  function getTrilhaIconSmall(trilhaId) {
+    const imgPath = TRILHA_IMAGES[trilhaId];
+    if (imgPath) {
+      return `<img src="/${imgPath}" alt="" class="ct-trilha-img-sm" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="ct-icon-trilha" style="background:${TRILHA_ICONS[trilhaId]?.gradient || 'var(--bg4)'};display:none;width:40px;height:40px">${TRILHA_ICONS[trilhaId]?.symbol || ''}</div>`;
+    }
+    const t = TRILHA_ICONS[trilhaId];
+    return `<div class="ct-icon-trilha" style="background:${t ? t.gradient : 'var(--bg4)'}">${t ? t.symbol : ''}</div>`;
   }
 
-  // ─── INIT ───
+  // --- SOUND SYSTEM ---
+  class CapiSound {
+    constructor() {
+      this.ctx = null;
+      this.muted = localStorage.getItem('ct_sound_muted') === 'true';
+      this._updateUI();
+    }
+    _getCtx() {
+      if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      return this.ctx;
+    }
+    _updateUI() {
+      const btn = document.getElementById('ctSoundToggle');
+      const waves = document.getElementById('ctSoundWaves');
+      if (btn) btn.classList.toggle('muted', this.muted);
+      if (waves) waves.style.opacity = this.muted ? '0' : '1';
+    }
+    toggle() {
+      this.muted = !this.muted;
+      localStorage.setItem('ct_sound_muted', this.muted);
+      this._updateUI();
+    }
+    _playTone(freq, duration, type, vol) {
+      if (this.muted) return;
+      try {
+        const ctx = this._getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol || 0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) { /* ignore audio errors */ }
+    }
+    xpGain() {
+      if (this.muted) return;
+      const ctx = this._getCtx();
+      [523, 659, 784].forEach((f, i) => {
+        setTimeout(() => this._playTone(f, 0.15, 'sine', 0.1), i * 60);
+      });
+    }
+    missionComplete() {
+      if (this.muted) return;
+      this._playTone(880, 0.3, 'sine', 0.12);
+      setTimeout(() => this._playTone(1100, 0.2, 'sine', 0.08), 150);
+    }
+    levelUp() {
+      if (this.muted) return;
+      const notes = [523, 659, 784, 1047];
+      notes.forEach((f, i) => {
+        setTimeout(() => this._playTone(f, 0.2, 'triangle', 0.12), i * 150);
+      });
+    }
+    chestOpen() {
+      if (this.muted) return;
+      const ctx = this._getCtx();
+      [392, 523, 659, 784, 1047].forEach((f, i) => {
+        setTimeout(() => this._playTone(f, 0.12, 'sine', 0.08), i * 80);
+      });
+    }
+    allComplete() {
+      if (this.muted) return;
+      const melody = [523, 659, 784, 659, 784, 1047];
+      melody.forEach((f, i) => {
+        setTimeout(() => this._playTone(f, 0.18, 'triangle', 0.1), i * 140);
+      });
+    }
+  }
+  const capiSound = new CapiSound();
+  window._toggleSound = function() { capiSound.toggle(); };
+
+  // --- INIT ---
   async function init() {
     try {
       const status = await API.get('/api/capitreino/status');
@@ -440,7 +669,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     }
   }
 
-  // ─── ONBOARDING ───
+  // --- ONBOARDING ---
   async function showOnboarding() {
     document.getElementById('ctLoading').style.display = 'none';
     document.getElementById('ctOnboarding').style.display = 'block';
@@ -449,19 +678,15 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       const data = await API.get('/api/capitreino/trilhas');
       if (!data) return;
       const grid = document.getElementById('ctTrilhaGrid');
-      grid.innerHTML = data.trilhas.map(t => {
-        const ti = TRILHA_ICONS[t.id];
-        const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
-        const sym = ti ? ti.symbol : '\u25C6';
-        return `
+      grid.innerHTML = data.trilhas.map(t => `
         <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')">
-          <div class="ct-trilha-card-icon ct-icon-trilha" style="background:${grad}">${sym}</div>
+          <div class="ct-trilha-card-icon">${getTrilhaIcon(t.id)}</div>
           <div class="ct-trilha-card-body">
             <div class="ct-trilha-card-name">${t.nome}</div>
             <div class="ct-trilha-card-desc">${t.descricao}</div>
           </div>
         </div>
-      `}).join('');
+      `).join('');
     } catch (e) { console.error(e); }
   }
 
@@ -479,14 +704,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     }
   };
 
-  // ─── SHOW APP ───
+  // --- SHOW APP ---
   function showApp() {
     document.getElementById('ctLoading').style.display = 'none';
     document.getElementById('ctOnboarding').style.display = 'none';
     document.getElementById('ctApp').style.display = 'block';
   }
 
-  // ─── LOAD ALL DATA ───
+  // --- LOAD ALL DATA ---
   async function loadAll() {
     try {
       const [missData, bauData, ligaData] = await Promise.all([
@@ -502,7 +727,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     } catch (e) { console.error('Load error:', e); }
   }
 
-  // ─── RENDER ALL ───
+  // --- RENDER ALL ---
   function renderAll() {
     renderHeader();
     renderProgress();
@@ -531,7 +756,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     const pct = Math.min(100, ((s.xp_total - xpMin) / (xpMax - xpMin)) * 100);
     document.getElementById('ctLevelName').innerHTML = `${getLevelBadge(s.nivel, 'sm')} <span style="margin-left:6px">${nome}</span>`;
     const prox = s.proximo_nivel;
-    document.getElementById('ctLevelTarget').textContent = prox ? `Pr\u00f3ximo: ${prox.nome}` : 'N\u00edvel M\u00e1ximo!';
+    document.getElementById('ctLevelTarget').textContent = prox ? `Proximo: ${prox.nome}` : 'Nivel Maximo!';
     document.getElementById('ctProgressFill').style.width = pct + '%';
     document.getElementById('ctXpLabel').textContent = `${s.xp_total} / ${xpMax === Infinity ? '\u221e' : xpMax} XP`;
   }
@@ -539,23 +764,16 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   function renderTrilha() {
     const t = state.trilha || state.status?.trilha_ativa;
     if (!t) return;
-    const icon = document.getElementById('ctTrilhaIcon');
-    const ti = TRILHA_ICONS[t.id];
-    const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
-    const sym = ti ? ti.symbol : '\u25C6';
-    icon.style.background = grad;
-    icon.style.fontSize = '16px';
-    icon.style.fontWeight = '900';
-    icon.style.color = '#fff';
-    icon.textContent = sym;
+    const iconEl = document.getElementById('ctTrilhaIcon');
+    iconEl.innerHTML = getTrilhaIconSmall(t.id);
     document.getElementById('ctTrilhaName').textContent = t.nome;
-    document.getElementById('ctTrilhaSub').textContent = 'Trilha ativa \u2014 toque para trocar';
+    document.getElementById('ctTrilhaSub').textContent = 'Trilha ativa -- toque para trocar';
   }
 
   function renderMissoes() {
     const list = document.getElementById('ctMissoesList');
     if (!state.missoes.length) {
-      list.innerHTML = '<p style="text-align:center;color:var(--text3);padding:24px;font-size:14px">Selecione uma trilha para gerar suas miss\u00f5es di\u00e1rias.</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text3);padding:24px;font-size:14px">Selecione uma trilha para gerar suas missoes diarias.</p>';
       return;
     }
     list.innerHTML = state.missoes.map(m => {
@@ -576,7 +794,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
               <div class="ct-mission-desc">${m.descricao}</div>
               <div class="ct-mission-xp"><span class="ct-icon ct-icon-star" style="width:12px;height:12px"></span> +${m.xp_recompensa} XP</div>
               <div class="ct-mission-actions">
-                ${done ? '<span style="color:var(--green);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">\u2713 Conclu\u00edda</span>' : `
+                ${done ? '<span style="color:var(--green);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Concluida</span>' : `
                   <button class="ct-btn ct-btn-outline" onclick="window._toggleDica(${m.id})">Como fazer?</button>
                   <button class="ct-btn ct-btn-outline" onclick="window._aprofundar('${encodeURIComponent(m.titulo)}')">Aprofundar no chat</button>
                   ${isPrint
@@ -610,18 +828,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     if (b.bau && b.bau.aberto) {
       card.classList.add('opened');
       icon.classList.add('opened');
-      title.textContent = 'Ba\u00fa Aberto!';
-      sub.textContent = `+${b.bau.recompensa_xp} XP de b\u00f4nus coletados`;
+      title.textContent = 'Bau Aberto!';
+      sub.textContent = `+${b.bau.recompensa_xp} XP de bonus coletados`;
       btn.style.display = 'none';
     } else if (b.pode_abrir) {
       card.classList.add('ready');
       icon.classList.add('ready');
-      title.textContent = 'Ba\u00fa Pronto!';
-      sub.textContent = 'Todas as miss\u00f5es conclu\u00eddas! Abra seu ba\u00fa.';
+      title.textContent = 'Bau Pronto!';
+      sub.textContent = 'Todas as missoes concluidas! Abra seu bau.';
       btn.style.display = 'inline-flex';
     } else {
-      title.textContent = 'Ba\u00fa Di\u00e1rio';
-      sub.textContent = `Complete ${total - done} miss\u00e3o(\u00f5es) restante(s)`;
+      title.textContent = 'Bau Diario';
+      sub.textContent = `Complete ${total - done} missao(oes) restante(s)`;
       btn.style.display = 'none';
     }
   }
@@ -671,7 +889,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
             <span class="ct-rank-pos ${posClass}">${i + 1}</span>
             <div class="ct-rank-avatar" style="background:hsl(${hue},55%,45%)">${initial}</div>
             <div class="ct-rank-info">
-              <div class="ct-rank-name">${name}${isMe ? ' <span class="ct-rank-you">Voc\u00ea</span>' : ''}</div>
+              <div class="ct-rank-name">${name}${isMe ? ' <span class="ct-rank-you">Voce</span>' : ''}</div>
             </div>
             <div class="ct-rank-right">
               <span class="ct-rank-xp">${r.liga_xp_semana} XP</span>
@@ -690,7 +908,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     try { return JSON.parse(atob(token.split('.')[1])).id; } catch { return 0; }
   }
 
-  // ─── ACTIONS ───
+  // --- ACTIONS ---
   window._toggleDica = function(id) {
     const panel = document.getElementById('dica-' + id);
     if (panel) panel.classList.toggle('open');
@@ -704,18 +922,37 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     try {
       const data = await API.post(`/api/capitreino/missoes/${id}/concluir`);
       if (!data) return;
+      capiSound.missionComplete();
       spawnConfetti();
       showXpFloat(data.xp_ganho);
-      if (data.level_up && data.novo_nivel) showLevelUp(data.novo_nivel);
+      capiSound.xpGain();
+      if (data.level_up && data.novo_nivel) {
+        capiSound.levelUp();
+        showLevelUp(data.novo_nivel);
+      }
+      // Show new badges
+      if (data.new_badges && data.new_badges.length > 0) {
+        data.new_badges.forEach((badge, i) => {
+          setTimeout(() => showNewBadge(badge), (data.level_up ? 3500 : 800) + i * 2500);
+        });
+      }
       const status = await API.get('/api/capitreino/status');
       state.status = status;
       await loadAll();
-      showToast(`+${data.xp_ganho} XP! Missão concluída!`);
+      showToast(`+${data.xp_ganho} XP! Missao concluida!`);
+      // Day summary
+      if (data.all_complete && data.day_summary) {
+        const badgeDelay = (data.new_badges?.length || 0) * 2500 + (data.level_up ? 3500 : 800);
+        setTimeout(() => {
+          capiSound.allComplete();
+          showDaySummary(data.day_summary);
+        }, badgeDelay + 500);
+      }
       if (data.dica_extra) {
         setTimeout(() => showToast(data.dica_extra), 3200);
       }
     } catch (e) {
-      showToast(e.message || 'Erro ao concluir missão');
+      showToast(e.message || 'Erro ao concluir missao');
     }
   };
 
@@ -758,34 +995,77 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       const data = await API.post(`/api/capitreino/missoes/${uploadMissaoId}/concluir`, { comprovacao_url: compUrl });
       if (!data) return;
       closeUploadModal();
+      capiSound.missionComplete();
       showXpFloat(data.xp_ganho);
-      if (data.level_up && data.novo_nivel) showLevelUp(data.novo_nivel);
+      capiSound.xpGain();
+      if (data.level_up && data.novo_nivel) {
+        capiSound.levelUp();
+        showLevelUp(data.novo_nivel);
+      }
+      if (data.new_badges && data.new_badges.length > 0) {
+        data.new_badges.forEach((badge, i) => {
+          setTimeout(() => showNewBadge(badge), (data.level_up ? 3500 : 800) + i * 2500);
+        });
+      }
       const status = await API.get('/api/capitreino/status');
       state.status = status;
       await loadAll();
-      showToast(`+${data.xp_ganho} XP! Missão concluída com comprovante!`);
+      showToast(`+${data.xp_ganho} XP! Missao concluida com comprovante!`);
+      if (data.all_complete && data.day_summary) {
+        const badgeDelay = (data.new_badges?.length || 0) * 2500 + (data.level_up ? 3500 : 800);
+        setTimeout(() => {
+          capiSound.allComplete();
+          showDaySummary(data.day_summary);
+        }, badgeDelay + 500);
+      }
     } catch (e) {
       showToast(e.message || 'Erro ao enviar comprovante');
     }
   });
 
-  // ─── CHEST ───
+  // --- CHEST ---
   window.abrirBau = async function() {
     try {
+      // Chest opening animation
+      const icon = document.getElementById('ctBauIcon');
+      icon.classList.remove('ready');
+      icon.classList.add('opening');
+      spawnChestSparkles();
+      capiSound.chestOpen();
+
       const data = await API.post('/api/capitreino/bau/abrir');
       if (!data) return;
-      spawnConfetti();
-      showXpFloat(data.xp_ganho);
+      setTimeout(() => {
+        icon.classList.remove('opening');
+        spawnConfetti();
+        showXpFloat(data.xp_ganho);
+      }, 600);
       const status = await API.get('/api/capitreino/status');
       state.status = status;
       await loadAll();
-      showToast(`Baú aberto! +${data.xp_ganho} XP de bônus!`);
+      showToast(`Bau aberto! +${data.xp_ganho} XP de bonus!`);
     } catch (e) {
-      showToast(e.message || 'Erro ao abrir baú');
+      showToast(e.message || 'Erro ao abrir bau');
     }
   };
 
-  // ─── TRILHA CHANGE ───
+  function spawnChestSparkles() {
+    const wrap = document.getElementById('ctBauIconWrap');
+    for (let i = 0; i < 12; i++) {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'ct-chest-sparkle';
+      const angle = (Math.PI * 2 / 12) * i;
+      const dist = 30 + Math.random() * 20;
+      sparkle.style.setProperty('--sx', Math.cos(angle) * dist + 'px');
+      sparkle.style.setProperty('--sy', Math.sin(angle) * dist + 'px');
+      sparkle.style.left = '50%';
+      sparkle.style.top = '50%';
+      wrap.appendChild(sparkle);
+      setTimeout(() => sparkle.remove(), 1000);
+    }
+  }
+
+  // --- TRILHA CHANGE ---
   window.showTrilhaChange = async function() {
     try {
       const data = await API.get('/api/capitreino/trilhas');
@@ -794,32 +1074,28 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       document.getElementById('ctApp').style.display = 'none';
       document.getElementById('ctOnboarding').style.display = 'block';
       const grid = document.getElementById('ctTrilhaGrid');
-      grid.innerHTML = data.trilhas.map(t => {
-        const ti = TRILHA_ICONS[t.id];
-        const grad = ti ? ti.gradient : `linear-gradient(135deg, ${t.cor || '#555'}, ${t.cor || '#333'})`;
-        const sym = ti ? ti.symbol : '\u25C6';
-        return `
+      grid.innerHTML = data.trilhas.map(t => `
         <div class="ct-trilha-card" onclick="window._selectTrilha('${t.id}')" style="${t.status === 'ativa' ? 'border-color:var(--gold)' : ''}">
-          <div class="ct-trilha-card-icon ct-icon-trilha" style="background:${grad}">${sym}</div>
+          <div class="ct-trilha-card-icon">${getTrilhaIcon(t.id)}</div>
           <div class="ct-trilha-card-body">
             <div class="ct-trilha-card-name">${t.nome} ${t.status === 'ativa' ? '<span style="color:var(--gold);font-size:11px;font-weight:700;letter-spacing:.5px">ATIVA</span>' : ''}</div>
             <div class="ct-trilha-card-desc">${t.descricao}</div>
           </div>
         </div>
-      `}).join('');
+      `).join('');
     } catch (e) { console.error(e); }
   };
 
-  // ─── TABS ───
+  // --- TABS ---
   window.switchTab = function(tab) {
     document.querySelectorAll('.ct-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
     document.getElementById('ctMissoesTab').style.display = tab === 'missoes' ? 'block' : 'none';
-    const histTab = document.getElementById('ctHistoricoTab');
+    document.getElementById('ctRankingTab').style.display = tab === 'ranking' ? 'block' : 'none';
+    document.getElementById('ctHistoricoTab').style.display = tab === 'historico' ? 'block' : 'none';
     if (tab === 'historico') {
-      histTab.classList.add('show');
       loadHistorico();
-    } else {
-      histTab.classList.remove('show');
+      loadHeatmap();
+      loadConquistas();
     }
   };
 
@@ -827,12 +1103,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     try {
       const data = await API.get('/api/capitreino/historico');
       if (!data) return;
-      const div = document.getElementById('ctHistoricoTab');
+      const div = document.getElementById('ctHistoricoList');
       if (!data.historico.length) {
-        div.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhuma missão concluída ainda. Comece agora!</p>';
+        div.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Nenhuma missao concluida ainda. Comece agora!</p>';
         return;
       }
-      div.innerHTML = data.historico.map(h => `
+      div.innerHTML = '<div class="ct-section-title" style="margin-top:16px">Ultimas Missoes</div>' + data.historico.map(h => `
         <div class="ct-hist-item">
           <span class="ct-hist-date">${formatDate(h.concluida_at)}</span>
           <span class="ct-hist-title">${h.titulo}</span>
@@ -842,13 +1118,137 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     } catch (e) { console.error(e); }
   }
 
+  // --- HEATMAP ---
+  async function loadHeatmap() {
+    try {
+      const data = await API.get('/api/capitreino/historico/heatmap');
+      if (!data) return;
+      const section = document.getElementById('ctHeatmapSection');
+      const dayMap = {};
+      let totalMissions = 0, totalXp = 0, maxStreak = 0, curStreak = 0;
+      data.days.forEach(d => {
+        dayMap[d.date] = d;
+        totalMissions += d.missions_completed;
+        totalXp += d.xp_earned;
+      });
+
+      // Build 90-day grid
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 89);
+      // Align to Monday
+      while (startDate.getDay() !== 1) startDate.setDate(startDate.getDate() - 1);
+
+      const weeks = [];
+      let week = [];
+      const d = new Date(startDate);
+      const months = [];
+      let lastMonth = -1;
+
+      while (d <= today || week.length > 0) {
+        const dateStr = d.toISOString().split('T')[0];
+        const dayData = dayMap[dateStr];
+        const missions = dayData ? dayData.missions_completed : 0;
+        const xp = dayData ? dayData.xp_earned : 0;
+
+        if (d.getMonth() !== lastMonth && d <= today) {
+          months.push({ week: weeks.length, name: d.toLocaleDateString('pt-BR', { month: 'short' }) });
+          lastMonth = d.getMonth();
+        }
+
+        if (d <= today) {
+          // Calculate streak
+          if (missions > 0) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+          else curStreak = 0;
+
+          let level = '';
+          if (missions >= 3) level = 'l4';
+          else if (missions >= 2) level = 'l3';
+          else if (missions >= 1) level = 'l2';
+          else if (missions > 0) level = 'l1';
+
+          week.push({ date: dateStr, level, missions, xp, inRange: true });
+        } else {
+          week.push({ date: '', level: '', missions: 0, xp: 0, inRange: false });
+        }
+
+        if (week.length === 7) {
+          weeks.push(week);
+          week = [];
+        }
+        d.setDate(d.getDate() + 1);
+        if (d > today && week.length === 0) break;
+      }
+      if (week.length > 0) {
+        while (week.length < 7) week.push({ date: '', level: '', missions: 0, xp: 0, inRange: false });
+        weeks.push(week);
+      }
+
+      const dayLabels = ['Seg', '', 'Qua', '', 'Sex', '', 'Dom'];
+      let html = '<div class="ct-heatmap-title">Atividade (90 dias)</div>';
+      html += '<div class="ct-heatmap-grid-wrap">';
+      html += '<div class="ct-heatmap-days">' + dayLabels.map(l => `<div class="ct-heatmap-day-label">${l}</div>`).join('') + '</div>';
+      html += '<div class="ct-heatmap-grid">';
+      weeks.forEach(w => {
+        html += '<div class="ct-heatmap-col">';
+        w.forEach(cell => {
+          if (!cell.inRange) {
+            html += '<div class="ct-heatmap-cell" style="visibility:hidden"></div>';
+          } else {
+            const tip = cell.date ? `${new Date(cell.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}: ${cell.missions} missoes, ${cell.xp} XP` : '';
+            html += `<div class="ct-heatmap-cell ${cell.level}"><div class="ct-heatmap-tooltip">${tip}</div></div>`;
+          }
+        });
+        html += '</div>';
+      });
+      html += '</div></div>';
+
+      // Stats summary
+      html += '<div class="ct-heatmap-stats">';
+      html += `<div class="ct-heatmap-stat"><div class="ct-heatmap-stat-val">${totalMissions}</div><div class="ct-heatmap-stat-label">Missoes totais</div></div>`;
+      html += `<div class="ct-heatmap-stat"><div class="ct-heatmap-stat-val">${totalXp}</div><div class="ct-heatmap-stat-label">XP total</div></div>`;
+      html += `<div class="ct-heatmap-stat"><div class="ct-heatmap-stat-val">${maxStreak}</div><div class="ct-heatmap-stat-label">Maior streak</div></div>`;
+      html += `<div class="ct-heatmap-stat"><div class="ct-heatmap-stat-val">${state.status?.streak_atual || 0}</div><div class="ct-heatmap-stat-label">Streak atual</div></div>`;
+      html += '</div>';
+
+      section.innerHTML = html;
+    } catch (e) { console.error('Heatmap error:', e); }
+  }
+
+  // --- CONQUISTAS ---
+  async function loadConquistas() {
+    try {
+      const data = await API.get('/api/capitreino/conquistas');
+      if (!data) return;
+      const section = document.getElementById('ctConquistasSection');
+      let html = '<div class="ct-conquistas-title">Conquistas</div>';
+      html += '<div class="ct-badges-grid">';
+      data.conquistas.forEach(c => {
+        const cls = c.desbloqueado ? 'unlocked' : 'locked';
+        const imgSrc = `/images/badges/${c.imagem}.svg`;
+        html += `
+          <div class="ct-badge-card ${cls}">
+            <div class="${c.desbloqueado ? '' : 'ct-badge-lock'}">
+              <img src="${imgSrc}" alt="${c.nome}" class="ct-badge-img">
+            </div>
+            <div class="ct-badge-name">${c.nome}</div>
+            <div class="ct-badge-desc">${c.descricao}</div>
+            ${c.desbloqueado && c.desbloqueado_em ? `<div style="font-size:10px;color:var(--gold);margin-top:4px">${formatDate(c.desbloqueado_em)}</div>` : ''}
+          </div>
+        `;
+      });
+      html += '</div>';
+      section.innerHTML = html;
+    } catch (e) { console.error('Conquistas error:', e); }
+  }
+
   function formatDate(dt) {
     if (!dt) return '';
     const d = new Date(dt);
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   }
 
-  // ─── LIGA TOGGLE ───
+  // --- LIGA TOGGLE ---
   window.toggleLiga = function() {
     const ranking = document.getElementById('ctLigaRanking');
     const toggle = document.getElementById('ctLigaToggle');
@@ -856,7 +1256,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     toggle.innerHTML = ranking.classList.contains('open') ? '&#9650;' : '&#9660;';
   };
 
-  // ─── VISUAL EFFECTS ───
+  // --- VISUAL EFFECTS ---
   function showXpFloat(xp) {
     const el = document.createElement('div');
     el.className = 'ct-xp-float';
@@ -869,25 +1269,120 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   }
 
   function showLevelUp(nivel) {
+    const overlay = document.getElementById('ctLevelUp');
     document.getElementById('ctLevelUpIcon').innerHTML = getLevelBadge(nivel.nivel || 1, 'lg');
+    document.getElementById('ctLevelUpText').textContent = `Nivel ${nivel.nivel}!`;
     document.getElementById('ctLevelUpName').textContent = nivel.nome;
-    document.getElementById('ctLevelUp').classList.add('show');
+    overlay.classList.add('show');
+    spawnConfetti();
+    // Golden particles
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'ct-levelup-particle';
+      const angle = (Math.PI * 2 / 20) * i;
+      const dist = 80 + Math.random() * 60;
+      p.style.setProperty('--px', Math.cos(angle) * dist + 'px');
+      p.style.setProperty('--py', Math.sin(angle) * dist + 'px');
+      p.style.left = '50%';
+      p.style.top = '50%';
+      overlay.appendChild(p);
+      setTimeout(() => p.remove(), 1500);
+    }
+    setTimeout(() => overlay.classList.remove('show'), 3000);
+  }
+
+  function showNewBadge(badge) {
+    const modal = document.getElementById('ctBadgeModal');
+    const img = document.getElementById('ctBadgeModalImg');
+    img.src = `/images/badges/${badge.imagem}.svg`;
+    img.alt = badge.nome;
+    document.getElementById('ctBadgeModalTitle').textContent = badge.nome;
+    document.getElementById('ctBadgeModalDesc').textContent = badge.descricao;
+    modal.classList.add('show');
+    spawnConfetti();
+    setTimeout(() => modal.classList.remove('show'), 2500);
+  }
+
+  function showDaySummary(summary) {
+    const overlay = document.getElementById('ctDaySummary');
+    const statsDiv = document.getElementById('ctDaySummaryStats');
+
+    const checkSvg = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const starSvg = '<span class="ct-icon ct-icon-star" style="width:20px;height:20px"></span>';
+    const flameSvg = '<span class="ct-icon ct-icon-flame" style="width:20px;height:20px"></span>';
+
+    statsDiv.innerHTML = `
+      <div class="ct-day-summary-stat">
+        <div class="ct-day-summary-stat-icon">${checkSvg}</div>
+        <div class="ct-day-summary-stat-val">${summary.missions_completed}/${summary.missions_total}</div>
+        <div class="ct-day-summary-stat-label">Missoes Completadas</div>
+      </div>
+      <div class="ct-day-summary-stat">
+        <div class="ct-day-summary-stat-icon">${starSvg}</div>
+        <div class="ct-day-summary-stat-val">+${summary.xp_earned}</div>
+        <div class="ct-day-summary-stat-label">XP Ganho Hoje</div>
+      </div>
+      <div class="ct-day-summary-stat">
+        <div class="ct-day-summary-stat-icon">${flameSvg}</div>
+        <div class="ct-day-summary-stat-val">${summary.streak} dias</div>
+        <div class="ct-day-summary-stat-label">Sequencia</div>
+      </div>
+      <div class="ct-day-summary-stat">
+        <div class="ct-day-summary-stat-icon">${getLevelBadge(summary.level, 'sm')}</div>
+        <div class="ct-day-summary-stat-val">Nivel ${summary.level}</div>
+        <div class="ct-day-summary-stat-label">${summary.level_name}</div>
+      </div>
+    `;
+
+    const badgesSection = document.getElementById('ctDaySummaryBadges');
+    const badgesRow = document.getElementById('ctDaySummaryBadgesRow');
+    if (summary.badges_earned_today && summary.badges_earned_today.length > 0) {
+      badgesSection.style.display = 'block';
+      badgesRow.innerHTML = summary.badges_earned_today.map(b => `<img src="/images/badges/${b.imagem}.svg" alt="${b.nome}" class="ct-day-summary-badge">`).join('');
+    } else {
+      badgesSection.style.display = 'none';
+    }
+
+    overlay.classList.add('show');
     spawnConfetti();
   }
 
   function spawnConfetti() {
     const container = document.getElementById('ctConfetti');
-    const colors = ['#DAA520', '#FFD700', '#FF9800', '#4CAF50', '#2196F3', '#E0115F', '#9C27B0'];
-    for (let i = 0; i < 50; i++) {
+    const colors = ['#DAA520', '#4CAF50', '#9C27B0', '#2196F3', '#FF9800'];
+    const shapes = ['rect', 'circle', 'triangle'];
+    for (let i = 0; i < 60; i++) {
       const piece = document.createElement('div');
       piece.className = 'ct-confetti-piece';
+      const shape = shapes[Math.floor(Math.random() * shapes.length)];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = 6 + Math.random() * 6;
+      const cx = (Math.random() > 0.5 ? 1 : -1) * (10 + Math.random() * 20);
+
       piece.style.left = Math.random() * 100 + '%';
       piece.style.top = '-10px';
-      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.setProperty('--cx', cx + 'px');
       piece.style.animationDelay = Math.random() * .5 + 's';
-      piece.style.animationDuration = (1.5 + Math.random()) + 's';
-      piece.style.width = (6 + Math.random() * 6) + 'px';
-      piece.style.height = (6 + Math.random() * 6) + 'px';
+      piece.style.animationDuration = (2 + Math.random()) + 's';
+
+      if (shape === 'circle') {
+        piece.style.width = size + 'px';
+        piece.style.height = size + 'px';
+        piece.style.borderRadius = '50%';
+        piece.style.background = color;
+      } else if (shape === 'triangle') {
+        piece.style.width = '0';
+        piece.style.height = '0';
+        piece.style.borderLeft = size / 2 + 'px solid transparent';
+        piece.style.borderRight = size / 2 + 'px solid transparent';
+        piece.style.borderBottom = size + 'px solid ' + color;
+        piece.style.background = 'none';
+      } else {
+        piece.style.width = size + 'px';
+        piece.style.height = size * 0.6 + 'px';
+        piece.style.borderRadius = '2px';
+        piece.style.background = color;
+      }
       container.appendChild(piece);
     }
     setTimeout(() => { container.innerHTML = ''; }, 3000);
@@ -900,7 +1395,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     setTimeout(() => toast.classList.remove('show'), 3000);
   }
 
-  // ─── START ───
+  // --- START ---
   init();
 })();
 </script>

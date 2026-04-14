@@ -1,4 +1,4 @@
-const CACHE_NAME = 'capi-v3';
+const CACHE_NAME = 'capi-v4';
 const STATIC_ASSETS = [
   '/app',
   '/capi-logo.png',

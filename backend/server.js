@@ -633,6 +633,14 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS capitreino_conquistas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    badge_id TEXT NOT NULL,
+    desbloqueado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, badge_id)
+  );
 `);
 
 // ─── CAPITREINO: CONSTANTES ─────────────────────────────────────
@@ -716,6 +724,60 @@ const CT_MISSOES_SEXTA = [
   { id: 'sex_01', titulo: 'Missão Secreta de Fechamento', descricao: 'Hoje é sexta! Envie uma mensagem de follow-up para um lead que não converteu esta semana.', tipo: 'fechamento', xp: 100, comprovacao: 'print', dica: 'Sexta é dia de fechar. Revise seus leads da semana e mande uma última mensagem estratégica.' },
   { id: 'sex_02', titulo: 'Prepare o fechamento da semana', descricao: 'Revise todos os leads que entraram essa semana e crie uma estratégia de fechamento para cada um.', tipo: 'fechamento', xp: 100, comprovacao: 'auto', dica: 'Use a Capi: "Me ajude a criar estratégias de fechamento para os leads desta semana"' }
 ];
+
+// ─── CAPITREINO: BADGES ─────────────────────────────────────────
+const CT_BADGES = [
+  { id: 'primeira_missao', nome: 'Primeira Missao', descricao: 'Completou sua primeira missao', imagem: 'badge_primeira_missao', threshold: { type: 'missions_total', value: 1 } },
+  { id: 'streak_7', nome: 'Fogo Sagrado', descricao: 'Manteve uma sequencia de 7 dias', imagem: 'badge_streak_7', threshold: { type: 'streak', value: 7 } },
+  { id: 'streak_30', nome: 'Imparavel', descricao: 'Manteve uma sequencia de 30 dias', imagem: 'badge_streak_30', threshold: { type: 'streak', value: 30 } },
+  { id: 'mestre_xp', nome: 'Mestre XP', descricao: 'Acumulou 1.000 XP', imagem: 'badge_mestre_xp', threshold: { type: 'xp_total', value: 1000 } },
+  { id: 'maratonista', nome: 'Maratonista', descricao: 'Completou todas as missoes em um dia', imagem: 'badge_maratonista', threshold: { type: 'all_daily', value: 1 } },
+  { id: 'campeao_liga', nome: 'Campeao da Liga', descricao: 'Terminou em 1 lugar na liga semanal', imagem: 'badge_campeao_liga', threshold: { type: 'liga_first', value: 1 } }
+];
+
+function ctCheckAndAwardBadges(userId) {
+  const prog = ctGetOrCreateProgress(userId);
+  const hoje = ctHoje();
+  const awarded = [];
+  const existing = db.prepare('SELECT badge_id FROM capitreino_conquistas WHERE user_id = ?').all(userId).map(r => r.badge_id);
+
+  for (const badge of CT_BADGES) {
+    if (existing.includes(badge.id)) continue;
+    let earned = false;
+    switch (badge.threshold.type) {
+      case 'missions_total':
+        earned = (prog.missoes_concluidas || 0) >= badge.threshold.value;
+        break;
+      case 'streak':
+        earned = (prog.streak_atual || 0) >= badge.threshold.value;
+        break;
+      case 'xp_total':
+        earned = (prog.xp_total || 0) >= badge.threshold.value;
+        break;
+      case 'all_daily': {
+        const trilha = ctGetTrilhaAtiva(userId);
+        if (trilha) {
+          const missoesDia = db.prepare("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'concluida' THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?").get(userId, hoje, trilha.trilha_id);
+          earned = missoesDia.total > 0 && missoesDia.concluidas === missoesDia.total;
+        }
+        break;
+      }
+      case 'liga_first': {
+        const semana = ctSemanaAtual();
+        const topUser = db.prepare('SELECT user_id FROM ct_user_progress WHERE liga = ? AND liga_semana = ? ORDER BY liga_xp_semana DESC LIMIT 1').get(prog.liga, semana);
+        earned = topUser && topUser.user_id === userId;
+        break;
+      }
+    }
+    if (earned) {
+      try {
+        db.prepare('INSERT OR IGNORE INTO capitreino_conquistas (user_id, badge_id) VALUES (?, ?)').run(userId, badge.id);
+        awarded.push(badge);
+      } catch (e) { /* ignore duplicate */ }
+    }
+  }
+  return awarded;
+}
 
 // ─── CAPITREINO: HELPERS ────────────────────────────────────────
 function ctGetNivel(xp) {
@@ -4555,7 +4617,37 @@ app.post('/api/capitreino/missoes/:id/concluir', authMiddleware, (req, res) => {
     if (levelUp) {
       db.prepare('UPDATE ct_user_progress SET nivel = ? WHERE user_id = ?').run(newNivel.nivel, userId);
     }
-    const result = { success: true, xp_ganho: xp, xp_total: newProg.xp_total, streak: novoStreak, level_up: levelUp, novo_nivel: levelUp ? newNivel : null };
+    // Check and award badges
+    const newBadges = ctCheckAndAwardBadges(userId);
+
+    // Check if all daily missions are complete for day summary
+    const trilha = ctGetTrilhaAtiva(userId);
+    const trilhaId = trilha ? trilha.trilha_id : null;
+    let allComplete = false;
+    let daySummary = null;
+    if (trilhaId) {
+      const hoje = ctHoje();
+      const missoesDia = db.prepare("SELECT COUNT(*) as total, SUM(CASE WHEN status = 'concluida' THEN 1 ELSE 0 END) as concluidas FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ?").get(userId, hoje, trilhaId);
+      allComplete = missoesDia.total > 0 && missoesDia.concluidas === missoesDia.total;
+      if (allComplete) {
+        const todayXp = db.prepare("SELECT COALESCE(SUM(xp_recompensa),0) as total FROM ct_missoes_diarias WHERE user_id = ? AND dia = ? AND trilha_id = ? AND status = 'concluida'").get(userId, hoje, trilhaId);
+        const todayBadges = db.prepare("SELECT badge_id FROM capitreino_conquistas WHERE user_id = ? AND date(desbloqueado_em) = ?").all(userId, hoje).map(r => {
+          const b = CT_BADGES.find(bg => bg.id === r.badge_id);
+          return b || null;
+        }).filter(Boolean);
+        daySummary = {
+          missions_completed: missoesDia.concluidas,
+          missions_total: missoesDia.total,
+          xp_earned: todayXp.total,
+          streak: novoStreak,
+          level: newNivel.nivel,
+          level_name: newNivel.nome,
+          badges_earned_today: todayBadges
+        };
+      }
+    }
+
+    const result = { success: true, xp_ganho: xp, xp_total: newProg.xp_total, streak: novoStreak, level_up: levelUp, novo_nivel: levelUp ? newNivel : null, new_badges: newBadges, all_complete: allComplete, day_summary: daySummary };
     if (autoVerificado !== null) result.auto_verificado = autoVerificado;
     if (dicaExtra) result.dica_extra = dicaExtra;
     res.json(result);
@@ -4667,6 +4759,49 @@ app.get('/api/capitreino/historico', authMiddleware, (req, res) => {
   } catch (e) {
     console.error('CapiTreino historico error:', e);
     res.status(500).json({ error: 'Erro ao carregar histórico' });
+  }
+});
+
+// GET /api/capitreino/historico/heatmap
+app.get('/api/capitreino/historico/heatmap', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const days = db.prepare(`
+      SELECT dia as date,
+        COUNT(*) as missions_completed,
+        COALESCE(SUM(xp_recompensa), 0) as xp_earned
+      FROM ct_missoes_diarias
+      WHERE user_id = ? AND status = 'concluida'
+        AND dia >= date('now', '-90 days')
+      GROUP BY dia
+      ORDER BY dia
+    `).all(userId);
+    res.json({ days });
+  } catch (e) {
+    console.error('CapiTreino heatmap error:', e);
+    res.status(500).json({ error: 'Erro ao carregar heatmap' });
+  }
+});
+
+// GET /api/capitreino/conquistas
+app.get('/api/capitreino/conquistas', authMiddleware, (req, res) => {
+  try {
+    const userId = req.user.id;
+    const unlocked = db.prepare('SELECT badge_id, desbloqueado_em FROM capitreino_conquistas WHERE user_id = ?').all(userId);
+    const unlockedMap = {};
+    unlocked.forEach(u => { unlockedMap[u.badge_id] = u.desbloqueado_em; });
+    const conquistas = CT_BADGES.map(b => ({
+      badge_id: b.id,
+      nome: b.nome,
+      descricao: b.descricao,
+      imagem: b.imagem,
+      desbloqueado: !!unlockedMap[b.id],
+      desbloqueado_em: unlockedMap[b.id] || null
+    }));
+    res.json({ conquistas });
+  } catch (e) {
+    console.error('CapiTreino conquistas error:', e);
+    res.status(500).json({ error: 'Erro ao carregar conquistas' });
   }
 });
 
