@@ -521,12 +521,12 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
 
   // --- TRAIL IMAGES MAP ---
   const TRILHA_IMAGES = {
-    'primeiros_passos': 'images/trails/trail_primeiros_passos.svg',
-    'advocacia_raiz': 'images/trails/trail_advocacia_raiz.svg',
-    'cacador_clientes': 'images/trails/trail_cacador_clientes.svg',
-    'autoridade_digital': 'images/trails/trail_autoridade_digital.svg',
-    'maquina_anuncios': 'images/trails/trail_maquina_anuncios.svg',
-    'mestre_fechamento': 'images/trails/trail_mestre_fechamento.svg'
+    'primeiros_passos': 'images/trails/trail_primeiros_passos.webp',
+    'advocacia_raiz': 'images/trails/trail_advocacia_raiz.webp',
+    'cacador_clientes': 'images/trails/trail_cacador_clientes.webp',
+    'autoridade_digital': 'images/trails/trail_autoridade_digital.webp',
+    'maquina_anuncios': 'images/trails/trail_maquina_anuncios.webp',
+    'mestre_fechamento': 'images/trails/trail_mestre_fechamento.webp'
   };
 
   // --- PREMIUM ICON MAPS ---
@@ -1225,7 +1225,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
       html += '<div class="ct-badges-grid">';
       data.conquistas.forEach(c => {
         const cls = c.desbloqueado ? 'unlocked' : 'locked';
-        const imgSrc = `/images/badges/${c.imagem}.svg`;
+        const imgSrc = `/images/badges/${c.imagem}.webp`;
         html += `
           <div class="ct-badge-card ${cls}">
             <div class="${c.desbloqueado ? '' : 'ct-badge-lock'}">
@@ -1294,7 +1294,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
   function showNewBadge(badge) {
     const modal = document.getElementById('ctBadgeModal');
     const img = document.getElementById('ctBadgeModalImg');
-    img.src = `/images/badges/${badge.imagem}.svg`;
+    img.src = `/images/badges/${badge.imagem}.webp`;
     img.alt = badge.nome;
     document.getElementById('ctBadgeModalTitle').textContent = badge.nome;
     document.getElementById('ctBadgeModalDesc').textContent = badge.descricao;
@@ -1338,7 +1338,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle
     const badgesRow = document.getElementById('ctDaySummaryBadgesRow');
     if (summary.badges_earned_today && summary.badges_earned_today.length > 0) {
       badgesSection.style.display = 'block';
-      badgesRow.innerHTML = summary.badges_earned_today.map(b => `<img src="/images/badges/${b.imagem}.svg" alt="${b.nome}" class="ct-day-summary-badge">`).join('');
+      badgesRow.innerHTML = summary.badges_earned_today.map(b => `<img src="/images/badges/${b.imagem}.webp" alt="${b.nome}" class="ct-day-summary-badge">`).join('');
     } else {
       badgesSection.style.display = 'none';
     }
