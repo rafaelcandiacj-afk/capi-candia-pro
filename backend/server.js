@@ -3467,7 +3467,7 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
 
 // ─── ROTA: Status do plano do usuário ───────────────────────
 app.get('/api/subscription/status', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   const access = hasActiveAccess({ ...user, email: req.user.email });
   // Calcular days_remaining
@@ -3478,6 +3478,7 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
     days_remaining = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
   }
   const isAdmin = req.user.email === 'rafaelcandia.cj@gmail.com';
+  const hasAutoRenewal = !!(user.pagarme_subscription_id && user.pagarme_subscription_id.startsWith('sub_'));
   const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
   const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
   res.json({
@@ -3487,6 +3488,7 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
     has_access: access !== false,
     is_active: access === true || access === 'free',
     is_admin: isAdmin,
+    has_auto_renewal: hasAutoRenewal,
     days_remaining: days_remaining,
     checkout_url: CHECKOUT_MONTHLY,
     checkout_annual_url: CHECKOUT_ANNUAL,

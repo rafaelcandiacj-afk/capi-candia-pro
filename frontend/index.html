@@ -1392,8 +1392,9 @@ async function checkSubscriptionStatus(){
     if(!data.plan_expires_at) return;
     var days = data.days_remaining;
     if(days === null || days === undefined) return;
-    // Expired — show block overlay
-    if(days < 0){
+    var autoRenew = data.has_auto_renewal;
+    // Expired — show block overlay (only if NO auto-renewal)
+    if(days < 0 && !autoRenew){
       var overlay = document.getElementById('expirationOverlay');
       if(overlay){
         document.getElementById('expBtnPrimary').href = data.checkout_url || '#';
@@ -1408,21 +1409,36 @@ async function checkSubscriptionStatus(){
     if(sessionStorage.getItem('renewalBannerClosed') === 'true') return;
     var banner = document.getElementById('renewalBanner');
     if(!banner) return;
-    // Set URLs
-    document.getElementById('renewalBtnPrimary').href = data.checkout_url || '#';
-    document.getElementById('renewalBtnSecondary').href = data.checkout_annual_url || '#';
-    // Determine level and text
     var textEl = document.getElementById('renewalBannerText');
+    var btnPrimary = document.getElementById('renewalBtnPrimary');
+    var btnSecondary = document.getElementById('renewalBtnSecondary');
     banner.className = 'renewal-banner';
-    if(days <= 1){
-      banner.classList.add('level-red');
-      textEl.textContent = '\u00DALTIMO DIA! Sua assinatura vence hoje. Renove agora!';
-    } else if(days <= 3){
-      banner.classList.add('level-orange');
-      textEl.textContent = 'Aten\u00e7\u00e3o! Sua assinatura vence em ' + days + ' dias. Renove para n\u00e3o perder acesso!';
-    } else {
+    if(autoRenew){
+      // Has auto-renewal: show calm informational banner, no checkout buttons
       banner.classList.add('level-gold');
-      textEl.textContent = 'Sua assinatura vence em ' + days + ' dias. Renove agora e continue usando a CapiCand-IA!';
+      if(days <= 1){
+        textEl.textContent = 'Sua assinatura renova automaticamente hoje. Nenhuma a\u00e7\u00e3o necess\u00e1ria!';
+      } else {
+        textEl.textContent = 'Sua assinatura renova automaticamente em ' + days + ' dias. Fique tranquilo!';
+      }
+      btnPrimary.style.display = 'none';
+      btnSecondary.style.display = 'none';
+    } else {
+      // No auto-renewal: show urgency banner with checkout buttons
+      btnPrimary.href = data.checkout_url || '#';
+      btnSecondary.href = data.checkout_annual_url || '#';
+      btnPrimary.style.display = '';
+      btnSecondary.style.display = '';
+      if(days <= 1){
+        banner.classList.add('level-red');
+        textEl.textContent = '\u00daLTIMO DIA! Sua assinatura vence hoje. Renove agora!';
+      } else if(days <= 3){
+        banner.classList.add('level-orange');
+        textEl.textContent = 'Aten\u00e7\u00e3o! Sua assinatura vence em ' + days + ' dias. Renove para n\u00e3o perder acesso!';
+      } else {
+        banner.classList.add('level-gold');
+        textEl.textContent = 'Sua assinatura vence em ' + days + ' dias. Renove agora e continue usando a CapiCand-IA!';
+      }
     }
     banner.classList.add('visible');
   }catch(e){
