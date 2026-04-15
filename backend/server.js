@@ -1375,6 +1375,194 @@ setInterval(async () => {
   }
 }, 24 * 60 * 60 * 1000); // Roda 1x por dia
 
+// ─── CRON: AVISOS DE VENCIMENTO + RENOVAÇÃO ──────────────────────
+// Adicionar coluna para rastrear avisos enviados
+try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_7d TEXT').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_3d TEXT').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_0d TEXT').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_expired TEXT').run(); } catch(e) {}
+
+const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
+const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
+
+function renewalEmailTemplate(nome, diasRestantes, tipo) {
+  const firstName = nome ? nome.split(' ')[0] : 'Advogado';
+  
+  let titulo, subtitulo, corpo, ctaText, urgencyColor, urgencyBg;
+  
+  if (tipo === '7dias') {
+    titulo = `${firstName}, sua assinatura vence em 7 dias`;
+    subtitulo = 'Renove agora e continue com acesso completo';
+    corpo = `<p style="color:#444;font-size:15px;line-height:1.7">Sua assinatura da <strong style="color:#8B6914">Capi Când-IA Pro</strong> vence em <strong>7 dias</strong>.</p>
+    <p style="color:#444;font-size:15px;line-height:1.7">Para não perder acesso às petições, análise de documentos, teses jurídicas e todo o poder da sua IA jurídica, renove com antecedência.</p>`;
+    ctaText = 'Renovar minha assinatura';
+    urgencyColor = '#8B6914';
+    urgencyBg = '#fdf8ee';
+  } else if (tipo === '3dias') {
+    titulo = `${firstName}, faltam apenas 3 dias!`;
+    subtitulo = 'Sua assinatura está prestes a expirar';
+    corpo = `<p style="color:#444;font-size:15px;line-height:1.7">Sua assinatura da <strong style="color:#8B6914">Capi Când-IA Pro</strong> expira em <strong>3 dias</strong>.</p>
+    <p style="color:#444;font-size:15px;line-height:1.7">Não fique sem sua assistente jurídica com IA. Renove agora para continuar usando petições automáticas, análise de documentos, honorários por estado e muito mais.</p>`;
+    ctaText = 'Renovar agora — não perder acesso';
+    urgencyColor = '#e67e00';
+    urgencyBg = '#fff8f0';
+  } else if (tipo === 'hoje') {
+    titulo = `${firstName}, sua assinatura vence HOJE!`;
+    subtitulo = 'Último dia para renovar sem perder acesso';
+    corpo = `<p style="color:#444;font-size:15px;line-height:1.7"><strong style="color:#d32f2f">Hoje é o último dia</strong> da sua assinatura da <strong style="color:#8B6914">Capi Când-IA Pro</strong>.</p>
+    <p style="color:#444;font-size:15px;line-height:1.7">A partir de amanhã, você perderá acesso a:</p>
+    <ul style="color:#444;font-size:15px;line-height:2">
+      <li>Montagem de petições com IA</li>
+      <li>Análise de documentos e contratos</li>
+      <li>Consulta de honorários (tabela OAB)</li>
+      <li>Geração de conteúdo para Instagram</li>
+      <li>CapiTreino e todas as funcionalidades premium</li>
+    </ul>
+    <p style="color:#444;font-size:15px;line-height:1.7">Renove agora e continue aproveitando tudo sem interrupção.</p>`;
+    ctaText = 'RENOVAR AGORA — ÚLTIMO DIA';
+    urgencyColor = '#d32f2f';
+    urgencyBg = '#fef2f2';
+  } else if (tipo === 'expirado') {
+    titulo = `${firstName}, sentimos sua falta na Capi`;
+    subtitulo = 'Sua assinatura expirou — mas você pode voltar agora';
+    corpo = `<p style="color:#444;font-size:15px;line-height:1.7">Sua assinatura da <strong style="color:#8B6914">Capi Când-IA Pro</strong> expirou e seu acesso foi suspenso.</p>
+    <p style="color:#444;font-size:15px;line-height:1.7">Seus dados, conversas e documentos continuam salvos. Basta renovar para recuperar tudo instantaneamente.</p>
+    <p style="color:#444;font-size:15px;line-height:1.7">A Capi continua evoluindo todos os dias — novas teses, funcionalidades e melhorias esperando por você.</p>`;
+    ctaText = 'Reativar minha assinatura';
+    urgencyColor = '#8B6914';
+    urgencyBg = '#fdf8ee';
+  }
+
+  return `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#faf9f7;padding:0;border-radius:12px;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#8B6914,#d4a017);padding:30px;text-align:center">
+      <h1 style="color:#fff;font-size:24px;margin:0;font-weight:700">Capi Când-IA Pro</h1>
+      <p style="color:rgba(255,255,255,0.8);font-size:13px;margin-top:4px">A IA do Advogado Brasileiro</p>
+    </div>
+    <div style="padding:32px">
+      <div style="background:${urgencyBg};border-left:4px solid ${urgencyColor};padding:16px 20px;border-radius:0 8px 8px 0;margin-bottom:24px">
+        <h2 style="color:${urgencyColor};font-size:18px;margin:0 0 4px">${titulo}</h2>
+        <p style="color:#666;font-size:14px;margin:0">${subtitulo}</p>
+      </div>
+      ${corpo}
+      <div style="text-align:center;margin:32px 0">
+        <a href="${CHECKOUT_MONTHLY}" style="background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;box-shadow:0 4px 14px rgba(184,134,11,0.3)">${ctaText}</a>
+      </div>
+      <p style="text-align:center;color:#888;font-size:13px">Ou assine o <a href="${CHECKOUT_ANNUAL}" style="color:#8B6914;font-weight:600">plano anual com desconto</a></p>
+    </div>
+    <div style="background:#f3f1ee;padding:20px;text-align:center;border-top:1px solid #e8e4de">
+      <p style="color:#999;font-size:12px;margin:0">Comunidade Capi Candia — A maior IA jurídica para o advogado brasileiro</p>
+      <p style="color:#bbb;font-size:11px;margin-top:8px">Se você renovou pelo cartão de crédito, ignore este email — sua cobrança é automática.</p>
+    </div>
+  </div>`;
+}
+
+// Roda a cada 6 horas para verificar assinaturas prestes a vencer
+setInterval(async () => {
+  try {
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Buscar todos os usuários pagos com data de expiração
+    const usuarios = db.prepare(`
+      SELECT id, name, email, plan_type, plan_expires_at, 
+             renewal_reminder_7d, renewal_reminder_3d, renewal_reminder_0d, renewal_reminder_expired
+      FROM users 
+      WHERE plan_type IN ('paid', 'gift') 
+        AND plan_expires_at IS NOT NULL
+        AND email != 'rafaelcandia.cj@gmail.com'
+        AND email NOT LIKE '%teste%'
+    `).all();
+
+    for (const user of usuarios) {
+      const nome = user.name || 'Advogado';
+      const expDate = new Date(user.plan_expires_at);
+      const diffMs = expDate.getTime() - agora.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      try {
+        // 7 dias antes
+        if (diffDias === 7 && user.renewal_reminder_7d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias'));
+          db.prepare('UPDATE users SET renewal_reminder_7d = ? WHERE id = ?').run(hoje, user.id);
+          console.log(`📧 Aviso 7 dias enviado para: ${user.email}`);
+        }
+        // 3 dias antes
+        else if (diffDias === 3 && user.renewal_reminder_3d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias'));
+          db.prepare('UPDATE users SET renewal_reminder_3d = ? WHERE id = ?').run(hoje, user.id);
+          console.log(`📧 Aviso 3 dias enviado para: ${user.email}`);
+        }
+        // No dia do vencimento
+        else if (diffDias === 0 && user.renewal_reminder_0d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje'));
+          db.prepare('UPDATE users SET renewal_reminder_0d = ? WHERE id = ?').run(hoje, user.id);
+          console.log(`📧 Aviso dia do vencimento enviado para: ${user.email}`);
+        }
+        // 1 dia após expiração
+        else if (diffDias === -1 && user.renewal_reminder_expired !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado'));
+          db.prepare('UPDATE users SET renewal_reminder_expired = ? WHERE id = ?').run(hoje, user.id);
+          console.log(`📧 Aviso expiração enviado para: ${user.email}`);
+          // Notificar o Rafael também
+          await sendEmail('rafaelcandia.cj@gmail.com', `⚠️ Assinatura expirada: ${nome} (${user.email})`, 
+            `<div style="font-family:Arial;padding:20px"><h3 style="color:#d32f2f">Assinatura expirada</h3><p><strong>${nome}</strong> (${user.email}) teve a assinatura expirada hoje.</p><p>Tipo: ${user.plan_type} | Expirava em: ${user.plan_expires_at}</p></div>`);
+        }
+      } catch(emailErr) {
+        console.error(`⚠️ Erro ao enviar aviso renovação para ${user.email}:`, emailErr.message);
+      }
+    }
+    
+    console.log(`✅ Job renovação executado: ${usuarios.length} assinaturas verificadas`);
+  } catch(e) {
+    console.error('⚠️ Erro no job de renovação:', e.message);
+  }
+}, 6 * 60 * 60 * 1000); // Roda a cada 6 horas
+
+// Rodar imediatamente na inicialização (após 30 segundos para dar tempo de tudo carregar)
+setTimeout(async () => {
+  try {
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+    const usuarios = db.prepare(`
+      SELECT id, name, email, plan_type, plan_expires_at,
+             renewal_reminder_7d, renewal_reminder_3d, renewal_reminder_0d, renewal_reminder_expired
+      FROM users 
+      WHERE plan_type IN ('paid', 'gift') 
+        AND plan_expires_at IS NOT NULL
+        AND email != 'rafaelcandia.cj@gmail.com'
+        AND email NOT LIKE '%teste%'
+    `).all();
+    let enviados = 0;
+    for (const user of usuarios) {
+      const nome = user.name || 'Advogado';
+      const expDate = new Date(user.plan_expires_at);
+      const diffMs = expDate.getTime() - agora.getTime();
+      const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      try {
+        if (diffDias === 7 && user.renewal_reminder_7d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias'));
+          db.prepare('UPDATE users SET renewal_reminder_7d = ? WHERE id = ?').run(hoje, user.id);
+          enviados++;
+        } else if (diffDias === 3 && user.renewal_reminder_3d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias'));
+          db.prepare('UPDATE users SET renewal_reminder_3d = ? WHERE id = ?').run(hoje, user.id);
+          enviados++;
+        } else if (diffDias === 0 && user.renewal_reminder_0d !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje'));
+          db.prepare('UPDATE users SET renewal_reminder_0d = ? WHERE id = ?').run(hoje, user.id);
+          enviados++;
+        } else if (diffDias <= -1 && diffDias >= -3 && user.renewal_reminder_expired !== hoje) {
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado'));
+          db.prepare('UPDATE users SET renewal_reminder_expired = ? WHERE id = ?').run(hoje, user.id);
+          enviados++;
+        }
+      } catch(e) { console.error(`⚠️ Erro aviso ${user.email}:`, e.message); }
+    }
+    console.log(`✅ Job renovação inicial: ${enviados} emails enviados de ${usuarios.length} assinaturas`);
+  } catch(e) { console.error('⚠️ Erro job renovação inicial:', e.message); }
+}, 30000);
+
 app.post('/api/auth/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email obrigatório' });
