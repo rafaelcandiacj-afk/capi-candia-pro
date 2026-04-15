@@ -735,6 +735,82 @@
     body.dark-mode .expiration-card .exp-link-logout{color:#777}
     body.dark-mode .expiration-card-icon{background:linear-gradient(135deg,#2a0a0a,#331010)}
 
+    /* ── PREMIUM UPGRADE: Minha Assinatura ── */
+    .subscription-section{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:24px}
+    .sub-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+    .sub-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-family:'Rajdhani',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+    .sub-badge.pro{background:linear-gradient(135deg,rgba(184,134,11,.15),rgba(212,160,23,.1));color:var(--gold);border:1px solid rgba(184,134,11,.3)}
+    .sub-badge.free{background:rgba(150,150,150,.1);color:var(--text2);border:1px solid rgba(150,150,150,.2)}
+    .sub-info-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:.84rem;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.04)}
+    .sub-info-row:last-child{border-bottom:none}
+    .sub-info-value{color:var(--text);font-weight:500}
+    .sub-info-value.green{color:#4ade80}
+    .sub-info-value.red{color:#ef5350}
+    .sub-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+    .sub-stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;text-align:center}
+    .sub-stat-number{font-family:'Rajdhani',sans-serif;font-size:1.8rem;font-weight:700;color:var(--gold);line-height:1}
+    .sub-stat-label{font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+    .sub-upgrade-btn{display:block;width:100%;padding:12px;margin-top:16px;background:linear-gradient(135deg,#b8860b,#d4a017);border:none;border-radius:var(--radius-sm);color:#fff;font-family:'Rajdhani',sans-serif;font-size:.9rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s;text-align:center;text-decoration:none}
+    .sub-upgrade-btn:hover{box-shadow:0 4px 16px rgba(184,134,11,.35);transform:translateY(-1px)}
+    .sub-cancel-link{display:inline-block;margin-top:12px;font-size:.78rem;color:var(--text2);cursor:pointer;text-decoration:underline;transition:color .2s}
+    .sub-cancel-link:hover{color:#ef5350}
+
+    /* ── PREMIUM UPGRADE: Alterar Senha ── */
+    .security-section{border-top:1px solid var(--border);padding-top:20px;margin-top:8px}
+    .security-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;color:var(--text2);font-size:.85rem;font-weight:600;transition:color .2s}
+    .security-toggle:hover{color:var(--gold)}
+    .security-toggle-arrow{transition:transform .2s;font-size:.7rem}
+    .security-toggle-arrow.open{transform:rotate(90deg)}
+    .security-fields{display:none;padding-top:12px}
+    .security-fields.open{display:block}
+    .change-pw-feedback{font-size:.82rem;padding:8px 12px;border-radius:var(--radius-sm);margin-top:8px;display:none}
+    .change-pw-feedback.success{display:block;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);color:#4ade80}
+    .change-pw-feedback.error{display:block;background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);color:#ef9a9a}
+
+    /* ── PREMIUM UPGRADE: Zona de Perigo ── */
+    .danger-zone{border-top:1px solid rgba(239,83,80,.15);padding-top:20px;margin-top:8px}
+    .danger-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 0;color:#ef5350;font-size:.85rem;font-weight:600;transition:opacity .2s}
+    .danger-toggle:hover{opacity:.8}
+    .danger-fields{display:none;padding-top:12px}
+    .danger-fields.open{display:block}
+    .btn-danger{width:100%;padding:12px;background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);border-radius:var(--radius-sm);color:#ef5350;font-family:'Rajdhani',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+    .btn-danger:hover{background:rgba(239,83,80,.2);box-shadow:0 2px 12px rgba(239,83,80,.2)}
+    .btn-danger:disabled{opacity:.4;cursor:not-allowed}
+
+    /* ── PREMIUM UPGRADE: Modal Cancelar Assinatura ── */
+    .cancel-reason-select{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;margin-bottom:12px;appearance:none;-webkit-appearance:none;outline:none}
+    .cancel-reason-select:focus{border-color:var(--gold)}
+    .cancel-reason-text{width:100%;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.85rem;resize:vertical;min-height:60px;outline:none}
+    .cancel-reason-text:focus{border-color:var(--gold)}
+
+    /* ── PREMIUM UPGRADE: Modal Excluir Conta ── */
+    .delete-confirm-check{display:flex;align-items:flex-start;gap:10px;margin:16px 0;cursor:pointer;font-size:.85rem;color:var(--text2);line-height:1.5}
+    .delete-confirm-check input[type="checkbox"]{margin-top:3px;accent-color:#ef5350;width:16px;height:16px;flex-shrink:0}
+
+    /* ── PREMIUM UPGRADE: FAQ Modal ── */
+    .faq-item{border-bottom:1px solid var(--border);padding:14px 0}
+    .faq-item:last-child{border-bottom:none}
+    .faq-question{display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text);transition:color .2s}
+    .faq-question:hover{color:var(--gold)}
+    .faq-arrow{transition:transform .2s;font-size:.7rem;color:var(--text2)}
+    .faq-arrow.open{transform:rotate(90deg)}
+    .faq-answer{display:none;padding:10px 0 4px;font-size:.84rem;color:var(--text2);line-height:1.7}
+    .faq-answer.open{display:block}
+    .faq-contact{margin-top:20px;padding:16px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center}
+    .faq-contact p{font-size:.85rem;color:var(--text2);margin-bottom:8px}
+    .faq-contact a{color:var(--gold);text-decoration:none;font-weight:600;font-size:.88rem}
+    .faq-contact a:hover{text-decoration:underline}
+
+    /* ── PREMIUM UPGRADE: LGPD Checkbox ── */
+    .lgpd-check{display:flex;align-items:flex-start;gap:10px;margin:16px 0 4px;cursor:pointer;font-size:.82rem;color:var(--text2);line-height:1.5}
+    .lgpd-check input[type="checkbox"]{margin-top:3px;accent-color:var(--gold);width:16px;height:16px;flex-shrink:0}
+    .lgpd-check a{color:var(--gold);text-decoration:underline}
+
+    /* ── PREMIUM UPGRADE: Footer Links ── */
+    .auth-footer-links{text-align:center;margin-top:16px;font-size:.76rem;color:var(--text-muted)}
+    .auth-footer-links a{color:var(--text2);text-decoration:none;margin:0 8px;transition:color .2s}
+    .auth-footer-links a:hover{color:var(--gold)}
+
   </style>
 <script>
 /* Fix mobile viewport: usa visualViewport para altura real (lida com teclado virtual iOS) */
@@ -806,6 +882,10 @@ document.addEventListener('touchmove', function(e){
         <div style="margin-top:14px;padding:10px 14px;background:#fdf8ee;border:1px solid #e8d88a;border-radius:8px;font-size:.78rem;color:#7a6200;line-height:1.6;text-align:center">
           💡 <strong>Já assinou?</strong> Use o mesmo email da sua compra.<br>Nunca acessou? Clique em "Primeiro acesso" acima.
         </div>
+        <div class="auth-footer-links" style="margin-top:12px">
+          <a href="/termos" target="_blank">Termos de Uso</a>
+          <a href="/privacidade" target="_blank">Política de Privacidade</a>
+        </div>
       </div>
 
       <!-- TELA PRIMEIRO ACESSO / ESQUECI SENHA -->
@@ -835,9 +915,17 @@ document.addEventListener('touchmove', function(e){
             <label>Confirmar senha</label>
             <input type="password" id="resetPasswordConfirm" class="input-field" placeholder="Repita a senha" minlength="6" required>
           </div>
-          <button type="submit" id="resetBtn" class="btn-primary">🔐 Criar minha senha e entrar</button>
+          <label class="lgpd-check">
+            <input type="checkbox" id="lgpdCheckbox" onchange="document.getElementById('resetBtn').disabled=!this.checked">
+            <span>Li e aceito os <a href="/termos" target="_blank">Termos de Uso</a> e a <a href="/privacidade" target="_blank">Política de Privacidade</a></span>
+          </label>
+          <button type="submit" id="resetBtn" class="btn-primary" disabled>Criar minha senha e entrar</button>
         </form>
       </div>
+    </div>
+    <div class="auth-footer-links">
+      <a href="/termos" target="_blank">Termos de Uso</a>
+      <a href="/privacidade" target="_blank">Política de Privacidade</a>
     </div>
   </div>
 </div>
@@ -1022,8 +1110,13 @@ document.addEventListener('touchmove', function(e){
       <button class="mobile-menu-item" onclick="window.location.href='/capitreino.html';closeMobileMenu()" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
+      <button class="mobile-menu-item" onclick="openFaqModal();closeMobileMenu()">Ajuda / FAQ</button>
       <button class="mobile-menu-item" id="darkModeBtn" onclick="toggleDarkMode();closeMobileMenu()">🌙 Modo Escuro</button>
 
+      <div style="padding:4px 16px;display:flex;gap:12px;font-size:.72rem">
+        <a href="/termos" target="_blank" style="color:var(--text2);text-decoration:none">Termos de Uso</a>
+        <a href="/privacidade" target="_blank" style="color:var(--text2);text-decoration:none">Privacidade</a>
+      </div>
       <div class="mobile-menu-divider"></div>
       <button class="mobile-menu-item danger" onclick="logout()">Sair</button>
     </div>
@@ -2362,6 +2455,7 @@ function dismissNotif(id,btn){
 function openProfileModal(){
   const user=JSON.parse(localStorage.getItem('capi_user')||'{}');
   document.getElementById('profileAvatarLetter').textContent=(user.name||user.email||'?').charAt(0).toUpperCase();
+  loadSubscriptionDetails();
   // Preenche campos salvos
   if(userProfile.nome) document.getElementById('profile_nome').value=userProfile.nome;
   if(userProfile.area) document.getElementById('profile_area').value=userProfile.area;
@@ -2429,6 +2523,246 @@ async function loadProfile(){
       }
     }
   }catch(e){}
+}
+
+// ── PREMIUM: CARREGAR ASSINATURA NO PERFIL ──────────────
+async function loadSubscriptionDetails(){
+  try{
+    const token=localStorage.getItem('capi_token');
+    const r=await fetch('/api/subscription/details',{headers:{'Authorization':'Bearer '+token}});
+    if(!r.ok) return;
+    const d=await r.json();
+
+    // Badge
+    const badge=document.getElementById('subBadge');
+    if(d.plan_type==='paid'||d.plan_type==='gift'){
+      badge.className='sub-badge pro';
+      badge.textContent=d.plan_type==='gift'?'Presente':'Pro '+d.plan_name;
+    } else {
+      badge.className='sub-badge free';
+      badge.textContent='Gratuito';
+    }
+
+    // Membro desde
+    if(d.member_since){
+      const dt=new Date(d.member_since);
+      const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+      document.getElementById('subMemberSince').textContent=meses[dt.getMonth()]+' de '+dt.getFullYear();
+    }
+
+    // Renovação / Expiração
+    const renewRow=document.getElementById('subRenewalRow');
+    const renewLabel=document.getElementById('subRenewalLabel');
+    const renewDate=document.getElementById('subRenewalDate');
+    if(d.plan_expires_at){
+      const exp=new Date(d.plan_expires_at);
+      const formatted=exp.toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+      if(d.cancel_at_period_end){
+        renewLabel.textContent='Acesso até';
+        renewDate.textContent=formatted;
+        renewDate.className='sub-info-value red';
+      } else {
+        renewLabel.textContent=d.has_auto_renewal?'Próxima renovação':'Expira em';
+        renewDate.textContent=formatted;
+        renewDate.className='sub-info-value';
+      }
+      renewRow.style.display='';
+    } else {
+      renewRow.style.display='none';
+    }
+
+    // Auto-renewal
+    const autoRow=document.getElementById('subAutoRenewRow');
+    const autoVal=document.getElementById('subAutoRenew');
+    if(d.plan_type==='paid'||d.plan_type==='gift'){
+      if(d.cancel_at_period_end){
+        autoVal.textContent='Cancelada';
+        autoVal.className='sub-info-value red';
+      } else if(d.has_auto_renewal){
+        autoVal.textContent='Sim';
+        autoVal.className='sub-info-value green';
+      } else {
+        autoVal.textContent='Não';
+        autoVal.className='sub-info-value red';
+      }
+      autoRow.style.display='';
+    } else {
+      autoRow.style.display='none';
+    }
+
+    // Stats
+    document.getElementById('subTotalMsgs').textContent=d.total_messages||0;
+    document.getElementById('subTotalConvs').textContent=d.total_conversations||0;
+    document.getElementById('subTotalPecas').textContent=d.total_pecas||0;
+
+    // Upgrade or Cancel
+    const upgradeArea=document.getElementById('subUpgradeArea');
+    const cancelArea=document.getElementById('subCancelArea');
+    if(d.plan_type==='free'){
+      upgradeArea.style.display='block';
+      document.getElementById('subUpgradeBtn').href=d.checkout_url;
+      cancelArea.style.display='none';
+    } else {
+      upgradeArea.style.display='none';
+      cancelArea.style.display=d.cancel_at_period_end?'none':'block';
+    }
+
+    // Store for cancel modal
+    window._subDetails=d;
+  }catch(e){console.error('Erro ao carregar assinatura:',e);}
+}
+
+// ── PREMIUM: ALTERAR SENHA ──────────────────────────────
+function toggleSecurityFields(){
+  const f=document.getElementById('securityFields');
+  const a=document.getElementById('securityArrow');
+  f.classList.toggle('open');
+  a.classList.toggle('open');
+}
+
+async function changePassword(){
+  const current=document.getElementById('pw_current').value;
+  const newPw=document.getElementById('pw_new').value;
+  const confirm=document.getElementById('pw_confirm').value;
+  const feedback=document.getElementById('changePwFeedback');
+  const btn=document.getElementById('changePwBtn');
+
+  feedback.className='change-pw-feedback';
+  feedback.style.display='none';
+
+  if(!current||!newPw||!confirm){
+    feedback.textContent='Preencha todos os campos.';
+    feedback.className='change-pw-feedback error';
+    return;
+  }
+  if(newPw.length<6){
+    feedback.textContent='A nova senha deve ter no mínimo 6 caracteres.';
+    feedback.className='change-pw-feedback error';
+    return;
+  }
+  if(newPw!==confirm){
+    feedback.textContent='As senhas não coincidem.';
+    feedback.className='change-pw-feedback error';
+    return;
+  }
+
+  btn.disabled=true;
+  btn.textContent='Alterando...';
+  try{
+    const token=localStorage.getItem('capi_token');
+    const r=await fetch('/api/auth/change-password',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({current_password:current,new_password:newPw})
+    });
+    const data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Erro ao alterar senha');
+    feedback.textContent='Senha alterada com sucesso!';
+    feedback.className='change-pw-feedback success';
+    document.getElementById('pw_current').value='';
+    document.getElementById('pw_new').value='';
+    document.getElementById('pw_confirm').value='';
+  }catch(e){
+    feedback.textContent=e.message;
+    feedback.className='change-pw-feedback error';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Alterar Senha';
+  }
+}
+
+// ── PREMIUM: ZONA DE PERIGO ─────────────────────────────
+function toggleDangerFields(){
+  var f=document.getElementById('dangerFields');
+  var a=document.getElementById('dangerArrow');
+  f.classList.toggle('open');
+  a.classList.toggle('open');
+}
+
+// ── PREMIUM: CANCELAR ASSINATURA ────────────────────────
+function openCancelModal(){
+  var d=window._subDetails;
+  if(d&&d.plan_expires_at){
+    var exp=new Date(d.plan_expires_at).toLocaleDateString('pt-BR',{day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('cancelAccessUntil').textContent='Você terá acesso até '+exp+'.';
+  }
+  document.getElementById('cancelReasonSelect').value='';
+  document.getElementById('cancelReasonText').value='';
+  document.getElementById('cancelReasonText').style.display='none';
+  document.getElementById('cancelSubModal').classList.remove('hidden');
+}
+function closeCancelModal(){document.getElementById('cancelSubModal').classList.add('hidden');}
+
+async function confirmCancelSubscription(){
+  var btn=document.getElementById('confirmCancelBtn');
+  btn.disabled=true;
+  btn.textContent='Cancelando...';
+  try{
+    var reasonSel=document.getElementById('cancelReasonSelect').value;
+    var reasonTxt=document.getElementById('cancelReasonText').value;
+    var reason=reasonSel==='outro'?reasonTxt:(reasonSel||'');
+    var token=localStorage.getItem('capi_token');
+    var r=await fetch('/api/subscription/cancel',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({reason:reason})
+    });
+    var data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Erro ao cancelar');
+    closeCancelModal();
+    showToast(data.message||'Assinatura cancelada com sucesso.');
+    loadSubscriptionDetails();
+  }catch(e){
+    showToast(e.message);
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Confirmar Cancelamento';
+  }
+}
+
+// ── PREMIUM: EXCLUIR CONTA ──────────────────────────────
+function openDeleteAccountModal(){
+  document.getElementById('deleteAccountPassword').value='';
+  document.getElementById('deleteAccountCheck').checked=false;
+  document.getElementById('confirmDeleteBtn').disabled=true;
+  document.getElementById('deleteAccountModal').classList.remove('hidden');
+}
+function closeDeleteAccountModal(){document.getElementById('deleteAccountModal').classList.add('hidden');}
+
+async function confirmDeleteAccount(){
+  var pw=document.getElementById('deleteAccountPassword').value;
+  if(!pw){showToast('Digite sua senha para confirmar.');return;}
+  var btn=document.getElementById('confirmDeleteBtn');
+  btn.disabled=true;
+  btn.textContent='Excluindo...';
+  try{
+    var token=localStorage.getItem('capi_token');
+    var r=await fetch('/api/account',{
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({password:pw})
+    });
+    var data=await r.json();
+    if(!r.ok) throw new Error(data.error||'Erro ao excluir conta');
+    closeDeleteAccountModal();
+    localStorage.clear();
+    showToast('Conta excluída. Você será redirecionado.');
+    setTimeout(function(){window.location.reload();},2000);
+  }catch(e){
+    showToast(e.message);
+    btn.disabled=false;
+    btn.textContent='Excluir Permanentemente';
+  }
+}
+
+// ── PREMIUM: FAQ MODAL ──────────────────────────────────
+function openFaqModal(){document.getElementById('faqModal').classList.remove('hidden');}
+function closeFaqModal(){document.getElementById('faqModal').classList.add('hidden');}
+function toggleFaq(el){
+  var answer=el.nextElementSibling;
+  var arrow=el.querySelector('.faq-arrow');
+  answer.classList.toggle('open');
+  arrow.classList.toggle('open');
 }
 
 // ── TERMÔMETRO DE TOM ──────────────────────────────────
@@ -4314,6 +4648,35 @@ init();
     <button class="modal-close" onclick="closeProfileModal()">✕</button>
     <div class="modal-title">Meu Perfil</div>
     <div class="profile-avatar" id="profileAvatarLetter">M</div>
+
+    <!-- MINHA ASSINATURA -->
+    <div class="subscription-section" id="subscriptionSection">
+      <div class="sub-header">
+        <span style="font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text)">Minha Assinatura</span>
+        <span class="sub-badge free" id="subBadge">Carregando...</span>
+      </div>
+      <div id="subInfoRows">
+        <div class="sub-info-row"><span>Membro desde</span><span class="sub-info-value" id="subMemberSince">—</span></div>
+        <div class="sub-info-row" id="subRenewalRow"><span id="subRenewalLabel">Próxima renovação</span><span class="sub-info-value" id="subRenewalDate">—</span></div>
+        <div class="sub-info-row" id="subAutoRenewRow"><span>Renovação automática</span><span class="sub-info-value" id="subAutoRenew">—</span></div>
+      </div>
+      <div class="sub-stats">
+        <div class="sub-stat-card"><div class="sub-stat-number" id="subTotalMsgs">—</div><div class="sub-stat-label">Mensagens</div></div>
+        <div class="sub-stat-card"><div class="sub-stat-number" id="subTotalConvs">—</div><div class="sub-stat-label">Conversas</div></div>
+        <div class="sub-stat-card"><div class="sub-stat-number" id="subTotalPecas">—</div><div class="sub-stat-label">Peças Geradas</div></div>
+      </div>
+      <div id="subUpgradeArea" style="display:none">
+        <a class="sub-upgrade-btn" id="subUpgradeBtn" href="#" target="_blank">Fazer Upgrade</a>
+      </div>
+      <div id="subCancelArea" style="display:none">
+        <span class="sub-cancel-link" onclick="openCancelModal()">Cancelar assinatura</span>
+      </div>
+      <div style="text-align:center;margin-top:8px">
+        <a href="/termos" target="_blank" style="font-size:.72rem;color:var(--text2);margin-right:12px;text-decoration:none">Termos de Uso</a>
+        <a href="/privacidade" target="_blank" style="font-size:.72rem;color:var(--text2);text-decoration:none">Privacidade</a>
+      </div>
+    </div>
+
     <div class="form-group">
       <label>Nome completo</label>
       <input type="text" id="profile_nome" class="form-input" placeholder="Dr. João Silva">
@@ -4419,7 +4782,135 @@ init();
     </div>
     <div class="modal-footer">
       <button class="btn-modal-cancel" onclick="closeProfileModal()">Cancelar</button>
-      <button class="btn-modal-ok" onclick="saveProfile()">💾 Salvar Perfil</button>
+      <button class="btn-modal-ok" onclick="saveProfile()">Salvar Perfil</button>
+    </div>
+
+    <!-- SEGURANÇA: ALTERAR SENHA -->
+    <div class="security-section">
+      <div class="security-toggle" onclick="toggleSecurityFields()">
+        <span>Alterar Senha</span>
+        <span class="security-toggle-arrow" id="securityArrow">&#9654;</span>
+      </div>
+      <div class="security-fields" id="securityFields">
+        <div class="form-group">
+          <label>Senha atual</label>
+          <input type="password" id="pw_current" class="form-input" placeholder="Sua senha atual">
+        </div>
+        <div class="form-group">
+          <label>Nova senha</label>
+          <input type="password" id="pw_new" class="form-input" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="form-group">
+          <label>Confirmar nova senha</label>
+          <input type="password" id="pw_confirm" class="form-input" placeholder="Repita a nova senha">
+        </div>
+        <button class="btn-primary" style="margin-top:4px" onclick="changePassword()" id="changePwBtn">Alterar Senha</button>
+        <div class="change-pw-feedback" id="changePwFeedback"></div>
+      </div>
+    </div>
+
+    <!-- ZONA DE PERIGO -->
+    <div class="danger-zone">
+      <div class="danger-toggle" onclick="toggleDangerFields()">
+        <span>Zona de Perigo</span>
+        <span class="security-toggle-arrow" id="dangerArrow" style="color:#ef5350">&#9654;</span>
+      </div>
+      <div class="danger-fields" id="dangerFields">
+        <p style="font-size:.82rem;color:var(--text2);line-height:1.6;margin-bottom:14px">A exclusão da conta é irreversível. Todos os seus dados, conversas, peças e configurações serão permanentemente apagados.</p>
+        <button class="btn-danger" onclick="openDeleteAccountModal()">Excluir minha conta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CANCELAR ASSINATURA ──────────────────────── -->
+<div id="cancelSubModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:460px">
+    <button class="modal-close" onclick="closeCancelModal()">&#10005;</button>
+    <div class="modal-title" style="color:#ef5350">Cancelar Assinatura</div>
+    <p style="font-size:.88rem;color:var(--text2);line-height:1.6;margin-bottom:16px">Tem certeza que deseja cancelar? Você continuará com acesso até o fim do período já pago.</p>
+    <p style="font-size:.85rem;color:var(--text);margin-bottom:16px" id="cancelAccessUntil"></p>
+    <label style="display:block;font-size:.78rem;color:var(--text2);margin-bottom:6px">Motivo do cancelamento (opcional)</label>
+    <select class="cancel-reason-select" id="cancelReasonSelect" onchange="document.getElementById('cancelReasonText').style.display=this.value==='outro'?'block':'none'">
+      <option value="">Selecione um motivo...</option>
+      <option value="Não estou usando o suficiente">Não estou usando o suficiente</option>
+      <option value="Valor acima do meu orçamento">Valor acima do meu orçamento</option>
+      <option value="Não atendeu minhas expectativas">Não atendeu minhas expectativas</option>
+      <option value="Encontrei alternativa melhor">Encontrei alternativa melhor</option>
+      <option value="Problemas técnicos">Problemas técnicos</option>
+      <option value="outro">Outro motivo</option>
+    </select>
+    <textarea class="cancel-reason-text" id="cancelReasonText" placeholder="Descreva o motivo..." style="display:none"></textarea>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn-modal-cancel" onclick="closeCancelModal()">Voltar</button>
+      <button class="btn-danger" onclick="confirmCancelSubscription()" id="confirmCancelBtn" style="width:auto;padding:10px 20px">Confirmar Cancelamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL EXCLUIR CONTA ──────────────────────────── -->
+<div id="deleteAccountModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:460px">
+    <button class="modal-close" onclick="closeDeleteAccountModal()">&#10005;</button>
+    <div class="modal-title" style="color:#ef5350">Excluir Conta</div>
+    <p style="font-size:.88rem;color:var(--text2);line-height:1.6;margin-bottom:16px">Esta ação é irreversível. Todos os seus dados serão permanentemente apagados, incluindo conversas, peças jurídicas, favoritos e configurações.</p>
+    <div class="form-group">
+      <label>Digite sua senha para confirmar</label>
+      <input type="password" id="deleteAccountPassword" class="form-input" placeholder="Sua senha">
+    </div>
+    <label class="delete-confirm-check">
+      <input type="checkbox" id="deleteAccountCheck" onchange="document.getElementById('confirmDeleteBtn').disabled=!this.checked">
+      <span>Entendo que esta ação não pode ser desfeita e que todos os meus dados serão permanentemente excluídos</span>
+    </label>
+    <div class="modal-footer" style="margin-top:16px">
+      <button class="btn-modal-cancel" onclick="closeDeleteAccountModal()">Cancelar</button>
+      <button class="btn-danger" onclick="confirmDeleteAccount()" id="confirmDeleteBtn" disabled style="width:auto;padding:10px 20px">Excluir Permanentemente</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL FAQ / SUPORTE ──────────────────────────── -->
+<div id="faqModal" class="modal-overlay hidden">
+  <div class="modal-box" style="max-width:560px">
+    <button class="modal-close" onclick="closeFaqModal()">&#10005;</button>
+    <div class="modal-title">Ajuda e Suporte</div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Como funciona a Capi Când-IA?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">A Capi Când-IA é uma inteligência artificial especializada em Direito brasileiro, treinada com mais de 300 teses jurídicas e o método Cândia. Ela auxilia advogados na elaboração de peças, consulta a teses, cálculo de honorários, geração de conteúdo jurídico e simulação de audiências.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>A IA substitui um advogado?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Não. A Capi Când-IA é uma ferramenta de apoio ao profissional do Direito. Todas as respostas e peças geradas devem ser revisadas por um advogado habilitado antes de serem utilizadas. A responsabilidade técnica permanece com o profissional.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Meus dados estão seguros?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Sim. Utilizamos criptografia para armazenamento de senhas, comunicação via HTTPS e seguimos as diretrizes da LGPD (Lei Geral de Proteção de Dados). Seus dados são tratados com sigilo e você pode solicitar a exclusão a qualquer momento.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Como cancelo minha assinatura?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Acesse seu perfil clicando no ícone de perfil, vá até a seção "Minha Assinatura" e clique em "Cancelar assinatura". O cancelamento é efetivado ao final do ciclo de cobrança vigente, garantindo seu acesso até a data de expiração.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Como funciona a renovação?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Sua assinatura renova automaticamente a cada ciclo (30 dias para plano mensal, 12 meses para anual). Você recebe avisos por email 7 dias, 3 dias e no dia da renovação. Caso prefira, pode cancelar antes da renovação.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Posso usar em vários dispositivos?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Sim. A Capi Când-IA funciona em qualquer navegador moderno, seja no computador, tablet ou celular. Basta acessar com seu email e senha.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Como exporto minhas peças?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Ao gerar uma peça jurídica, você pode copiar o texto diretamente ou utilizar o botão de download para exportar em formato Word (.docx). As peças ficam salvas na seção "Minhas Peças" para consulta posterior.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(this)"><span>Preciso de ajuda, como entro em contato?</span><span class="faq-arrow">&#9654;</span></div>
+      <div class="faq-answer">Você pode entrar em contato pelo email de suporte ou pelo grupo no WhatsApp. Nossa equipe responde em até 24 horas úteis.</div>
+    </div>
+
+    <div class="faq-contact">
+      <p>Precisa de mais ajuda?</p>
+      <a href="mailto:rafaelcandia.cj@gmail.com">rafaelcandia.cj@gmail.com</a>
     </div>
   </div>
 </div>

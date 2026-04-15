@@ -1295,11 +1295,12 @@ app.get('/api/admin/online', adminMiddleware, (req, res) => {
 
 // ─── AUTH ─────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, accepted_terms } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Preencha todos os campos' });
+  if (!accepted_terms) return res.status(400).json({ error: 'Você deve aceitar os Termos de Uso e a Política de Privacidade' });
   try {
     const hash = await bcrypt.hash(password, 10);
-    const result = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email.toLowerCase(), hash);
+    const result = db.prepare('INSERT INTO users (name, email, password, accepted_terms_at) VALUES (?, ?, ?, datetime(\'now\'))').run(name, email.toLowerCase(), hash);
     const token = jwt.sign({ id: result.lastInsertRowid, email, name }, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: { id: result.lastInsertRowid, name, email } });
   } catch (e) {
@@ -3127,6 +3128,10 @@ try { db.prepare("ALTER TABLE user_profiles ADD COLUMN tom_preferido TEXT DEFAUL
 try { db.prepare("ALTER TABLE user_profiles ADD COLUMN especialidade_secundaria TEXT").run(); } catch(e) {}
 try { db.prepare("ALTER TABLE user_profiles ADD COLUMN bio TEXT").run(); } catch(e) {}
 
+// ─── MIGRATION: campos premium upgrade ─────
+try { db.exec(`ALTER TABLE users ADD COLUMN cancel_at_period_end INTEGER DEFAULT 0`); } catch(e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN accepted_terms_at TEXT`); } catch(e) {}
+
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
 // ─── TABELA: projetos ─────
@@ -3562,6 +3567,181 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
   if (!user_id) return res.status(400).json({ error: 'user_id obrigatório' });
   db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE id = ?`).run(user_id);
   res.json({ ok: true });
+});
+
+// ─── PREMIUM UPGRADE: SUBSCRIPTION DETAILS ──────────────────
+app.get('/api/subscription/details', authMiddleware, (req, res) => {
+  try {
+    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, cancel_at_period_end, created_at FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+    const planType = user.plan_type || 'free';
+    let planName = 'Gratuito';
+    if (planType === 'paid') {
+      // Detectar se mensal ou anual baseado na diferença entre activated_at e expires_at
+      if (user.plan_activated_at && user.plan_expires_at) {
+        const diffDays = Math.round((new Date(user.plan_expires_at) - new Date(user.plan_activated_at)) / (1000*60*60*24));
+        planName = diffDays > 60 ? 'Anual' : 'Mensal';
+      } else {
+        planName = 'Mensal';
+      }
+    } else if (planType === 'gift') {
+      planName = 'Presente';
+    }
+
+    let daysRemaining = null;
+    if (user.plan_expires_at) {
+      daysRemaining = Math.ceil((new Date(user.plan_expires_at) - new Date()) / (1000*60*60*24));
+    }
+
+    const hasAutoRenewal = !!(user.pagarme_subscription_id && user.pagarme_subscription_id.startsWith('sub_'));
+
+    // Contadores de uso
+    const totalMessages = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(user.id)?.c || 0;
+    const totalConversations = db.prepare("SELECT COUNT(*) as c FROM conversations WHERE user_id = ?").get(user.id)?.c || 0;
+    const totalPecas = db.prepare("SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?").get(user.id)?.c || 0;
+
+    const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
+    const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
+
+    res.json({
+      plan_type: planType,
+      plan_name: planName,
+      plan_expires_at: user.plan_expires_at,
+      plan_activated_at: user.plan_activated_at,
+      days_remaining: daysRemaining,
+      has_auto_renewal: hasAutoRenewal,
+      cancel_at_period_end: !!user.cancel_at_period_end,
+      total_messages: totalMessages,
+      total_conversations: totalConversations,
+      total_pecas: totalPecas,
+      member_since: user.created_at,
+      checkout_url: CHECKOUT_MONTHLY,
+      checkout_annual_url: CHECKOUT_ANNUAL
+    });
+  } catch (e) {
+    console.error('Erro subscription/details:', e.message);
+    res.status(500).json({ error: 'Erro ao buscar dados da assinatura' });
+  }
+});
+
+// ─── PREMIUM UPGRADE: CHANGE PASSWORD ───────────────────────
+app.post('/api/auth/change-password', authMiddleware, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    if (!current_password || !new_password) return res.status(400).json({ error: 'Preencha todos os campos' });
+    if (new_password.length < 6) return res.status(400).json({ error: 'A nova senha deve ter no mínimo 6 caracteres' });
+
+    const user = db.prepare('SELECT password FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+    const valid = await bcrypt.compare(current_password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Senha atual incorreta' });
+
+    const hash = await bcrypt.hash(new_password, 10);
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(hash, req.user.id);
+
+    res.json({ success: true, message: 'Senha alterada com sucesso' });
+  } catch (e) {
+    console.error('Erro change-password:', e.message);
+    res.status(500).json({ error: 'Erro ao alterar senha' });
+  }
+});
+
+// ─── PREMIUM UPGRADE: CANCEL SUBSCRIPTION ───────────────────
+app.post('/api/subscription/cancel', authMiddleware, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    if (user.plan_type === 'free') return res.status(400).json({ error: 'Você não possui uma assinatura ativa' });
+
+    db.prepare('UPDATE users SET cancel_at_period_end = 1 WHERE id = ?').run(req.user.id);
+
+    const expiresFormatted = user.plan_expires_at
+      ? new Date(user.plan_expires_at).toLocaleDateString('pt-BR')
+      : 'fim do ciclo atual';
+
+    // Email para o usuário
+    const userHtml = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8e4de;padding:40px 32px;border-radius:12px">
+        <h2 style="color:#b8860b;text-align:center">Cancelamento de Assinatura</h2>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Olá, <strong>${(user.name || '').split(' ')[0] || 'Usuário'}</strong>.</p>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Confirmamos o cancelamento da sua assinatura da <strong style="color:#b8860b">Capi Când-IA Pro</strong>.</p>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Você continuará com acesso completo até <strong style="color:#fff">${expiresFormatted}</strong>.</p>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Se mudar de ideia, basta renovar sua assinatura a qualquer momento.</p>
+        <p style="font-size:12px;color:#555;text-align:center;margin-top:32px">Capi Când-IA Pro</p>
+      </div>`;
+    sendEmail(user.email, 'Confirmação de cancelamento — Capi Când-IA Pro', userHtml).catch(e => console.error('Erro email cancelamento user:', e.message));
+
+    // Email para o admin
+    const adminHtml = `
+      <div style="font-family:Arial;padding:20px">
+        <h3 style="color:#d32f2f">Cancelamento de assinatura</h3>
+        <p><strong>${user.name}</strong> (${user.email}) solicitou cancelamento.</p>
+        <p>Plano: ${user.plan_type} | Expira em: ${expiresFormatted}</p>
+        ${reason ? `<p>Motivo: ${reason}</p>` : ''}
+      </div>`;
+    sendEmail('rafaelcandia.cj@gmail.com', `Cancelamento: ${user.name} (${user.email})`, adminHtml).catch(e => console.error('Erro email cancelamento admin:', e.message));
+
+    res.json({ success: true, message: `Assinatura cancelada. Você terá acesso até ${expiresFormatted}.` });
+  } catch (e) {
+    console.error('Erro cancel subscription:', e.message);
+    res.status(500).json({ error: 'Erro ao cancelar assinatura' });
+  }
+});
+
+// ─── PREMIUM UPGRADE: DELETE ACCOUNT (LGPD art. 18) ─────────
+app.delete('/api/account', authMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: 'Senha obrigatória para confirmar exclusão' });
+
+    const user = db.prepare('SELECT id, name, email, password FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) return res.status(401).json({ error: 'Senha incorreta' });
+
+    // Deletar dados relacionados em ordem
+    const userId = user.id;
+    db.prepare('DELETE FROM messages WHERE user_id = ?').run(userId);
+    db.prepare('DELETE FROM conversations WHERE user_id = ?').run(userId);
+    try { db.prepare('DELETE FROM user_memory WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM favorites WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM notifications WHERE id IN (SELECT id FROM notifications)').run(); } catch(e) {}
+    try { db.prepare('DELETE FROM user_profiles WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM pecas_salvas WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM message_analytics WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM conversation_uploads WHERE user_id = ?').run(userId); } catch(e) {}
+    try { db.prepare('DELETE FROM ai_usage_log WHERE user_id = ?').run(userId); } catch(e) {}
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+    // Email de confirmação para o usuário
+    const userHtml = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8e4de;padding:40px 32px;border-radius:12px">
+        <h2 style="color:#b8860b;text-align:center">Conta Excluída</h2>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Olá, <strong>${(user.name || '').split(' ')[0] || 'Usuário'}</strong>.</p>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Sua conta e todos os seus dados foram permanentemente excluídos da <strong style="color:#b8860b">Capi Când-IA Pro</strong>, conforme previsto na LGPD (art. 18).</p>
+        <p style="color:#ccc;font-size:15px;line-height:1.7">Lamentamos vê-lo(a) partir. Se desejar voltar no futuro, será sempre bem-vindo(a).</p>
+        <p style="font-size:12px;color:#555;text-align:center;margin-top:32px">Capi Când-IA Pro</p>
+      </div>`;
+    sendEmail(user.email, 'Confirmação de exclusão de conta — Capi Când-IA Pro', userHtml).catch(e => console.error('Erro email exclusão user:', e.message));
+
+    // Email para admin
+    const adminHtml = `
+      <div style="font-family:Arial;padding:20px">
+        <h3 style="color:#d32f2f">Conta excluída</h3>
+        <p><strong>${user.name}</strong> (${user.email}) excluiu a conta permanentemente.</p>
+        <p>ID: ${userId}</p>
+      </div>`;
+    sendEmail('rafaelcandia.cj@gmail.com', `Conta excluída: ${user.name} (${user.email})`, adminHtml).catch(e => console.error('Erro email exclusão admin:', e.message));
+
+    res.json({ success: true, message: 'Conta excluída permanentemente' });
+  } catch (e) {
+    console.error('Erro delete account:', e.message);
+    res.status(500).json({ error: 'Erro ao excluir conta' });
+  }
 });
 
 // ─── CHECKOUT REDIRECT ──────────────────────────────────────
@@ -4650,6 +4830,20 @@ app.get('/api/admin/users/:id/memory', adminMiddleware, (req, res) => {
 // Dashboard HTML page
 app.get('/dashboard.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dashboard.html'));
+});
+
+// Termos de Uso e Política de Privacidade
+app.get('/termos', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/termos.html'));
+});
+app.get('/termos.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/termos.html'));
+});
+app.get('/privacidade', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/privacidade.html'));
+});
+app.get('/privacidade.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/privacidade.html'));
 });
 
 // Serve landing page na raiz / — ANTES do express.static
