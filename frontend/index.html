@@ -461,14 +461,17 @@
     .confetti-piece{position:fixed;width:8px;height:8px;top:-10px;z-index:260;animation:confetti-fall 3s linear forwards;pointer-events:none}
 
     /* ── ONBOARDING ── */
-    .onboarding-screen{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;height:auto;background:var(--bg);padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:40px;padding-bottom:40px}
+    .onboarding-screen{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100dvh;height:auto;background:var(--bg);padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:40px;padding-bottom:40px}
     .onboarding-card{width:100%;max-width:480px;animation:fadeUp .5s ease}
     .onboarding-logo{text-align:center;margin-bottom:24px}
     .onboarding-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 28px rgba(184,134,11,.3)}
     .onboarding-title{font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;color:var(--gold);text-align:center;margin-bottom:6px;text-shadow:0 0 14px rgba(184,134,11,.35)}
     .onboarding-sub{color:var(--text);font-size:.88rem;text-align:center;margin-bottom:28px;line-height:1.6;opacity:.8}
     .onboarding-progress{display:flex;gap:8px;justify-content:center;margin-bottom:24px}
-    .onboarding-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;animation:fadeUp .45s ease}
+    .onboarding-step{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;animation:fadeUp .45s ease;position:relative}
+    .ob-chips-scroll{max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:4px}
+    .ob-chips-scroll::-webkit-scrollbar{width:3px}
+    .ob-chips-scroll::-webkit-scrollbar-thumb{background:var(--gold);border-radius:4px}
     .onboarding-step-title{font-family:'Rajdhani',sans-serif;font-size:1.2rem;font-weight:700;color:var(--gold);letter-spacing:.04em;margin-bottom:16px;text-align:center}
     .onboarding-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--gold),#d4a017);border:none;border-radius:var(--radius-sm);color:#0a0800;font-family:'Rajdhani',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .3s ease;margin-top:16px}
     .onboarding-btn:hover:not(:disabled){box-shadow:0 0 28px rgba(184,134,11,.45),0 0 8px rgba(184,134,11,.3);transform:translateY(-2px)}
@@ -957,27 +960,29 @@ document.addEventListener('touchmove', function(e){
       <div class="onboarding-step-title">Sua especialidade</div>
       <div class="form-group">
         <label style="display:block;margin-bottom:12px">Em qual área do Direito você atua? <span style="font-size:.78rem;opacity:.6">(pode marcar mais de uma)</span></label>
-        <div id="ob_area_chips" style="display:flex;flex-wrap:wrap;gap:8px">
-          <div class="area-chip" data-value="Direito de Família" onclick="toggleAreaChip(this)">Família</div>
-          <div class="area-chip" data-value="Previdenciário" onclick="toggleAreaChip(this)">Previdenciário</div>
-          <div class="area-chip" data-value="Trabalhista" onclick="toggleAreaChip(this)">Trabalhista</div>
-          <div class="area-chip" data-value="Criminal" onclick="toggleAreaChip(this)">Criminal</div>
-          <div class="area-chip" data-value="Tributário" onclick="toggleAreaChip(this)">Tributário</div>
-          <div class="area-chip" data-value="Empresarial" onclick="toggleAreaChip(this)">Empresarial</div>
-          <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">Cível</div>
-          <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">Consumidor</div>
-          <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">Imobiliário</div>
-          <div class="area-chip" data-value="Digital" onclick="toggleAreaChip(this)">Digital</div>
-          <div class="area-chip" data-value="Administrativo" onclick="toggleAreaChip(this)">Administrativo</div>
-          <div class="area-chip" data-value="Ambiental" onclick="toggleAreaChip(this)">Ambiental</div>
-          <div class="area-chip" data-value="Bancário" onclick="toggleAreaChip(this)">Bancário</div>
-          <div class="area-chip" data-value="Eleitoral" onclick="toggleAreaChip(this)">Eleitoral</div>
-          <div class="area-chip" data-value="Saúde" onclick="toggleAreaChip(this)">Saúde</div>
-          <div class="area-chip" data-value="Militar" onclick="toggleAreaChip(this)">Militar</div>
-          <div class="area-chip" data-value="Agrário" onclick="toggleAreaChip(this)">Agrário</div>
-          <div class="area-chip" data-value="Internacional" onclick="toggleAreaChip(this)">Internacional</div>
-          <div class="area-chip" data-value="Desportivo" onclick="toggleAreaChip(this)">Desportivo</div>
-          <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">+ Outra</div>
+        <div class="ob-chips-scroll">
+          <div id="ob_area_chips" style="display:flex;flex-wrap:wrap;gap:8px">
+            <div class="area-chip" data-value="Direito de Família" onclick="toggleAreaChip(this)">Família</div>
+            <div class="area-chip" data-value="Previdenciário" onclick="toggleAreaChip(this)">Previdenciário</div>
+            <div class="area-chip" data-value="Trabalhista" onclick="toggleAreaChip(this)">Trabalhista</div>
+            <div class="area-chip" data-value="Criminal" onclick="toggleAreaChip(this)">Criminal</div>
+            <div class="area-chip" data-value="Tributário" onclick="toggleAreaChip(this)">Tributário</div>
+            <div class="area-chip" data-value="Empresarial" onclick="toggleAreaChip(this)">Empresarial</div>
+            <div class="area-chip" data-value="Cível" onclick="toggleAreaChip(this)">Cível</div>
+            <div class="area-chip" data-value="Consumidor" onclick="toggleAreaChip(this)">Consumidor</div>
+            <div class="area-chip" data-value="Imobiliário" onclick="toggleAreaChip(this)">Imobiliário</div>
+            <div class="area-chip" data-value="Digital" onclick="toggleAreaChip(this)">Digital</div>
+            <div class="area-chip" data-value="Administrativo" onclick="toggleAreaChip(this)">Administrativo</div>
+            <div class="area-chip" data-value="Ambiental" onclick="toggleAreaChip(this)">Ambiental</div>
+            <div class="area-chip" data-value="Bancário" onclick="toggleAreaChip(this)">Bancário</div>
+            <div class="area-chip" data-value="Eleitoral" onclick="toggleAreaChip(this)">Eleitoral</div>
+            <div class="area-chip" data-value="Saúde" onclick="toggleAreaChip(this)">Saúde</div>
+            <div class="area-chip" data-value="Militar" onclick="toggleAreaChip(this)">Militar</div>
+            <div class="area-chip" data-value="Agrário" onclick="toggleAreaChip(this)">Agrário</div>
+            <div class="area-chip" data-value="Internacional" onclick="toggleAreaChip(this)">Internacional</div>
+            <div class="area-chip" data-value="Desportivo" onclick="toggleAreaChip(this)">Desportivo</div>
+            <div class="area-chip" data-value="Outra" onclick="toggleAreaChip(this)">+ Outra</div>
+          </div>
         </div>
       </div>
       <button class="onboarding-btn" id="obNext2" onclick="obNext(2)" disabled>Próximo</button>
@@ -3974,7 +3979,12 @@ function showOnboarding(user) {
 
 function toggleAreaChip(el){
   el.classList.toggle('selected');
-  $('obNext2').disabled = document.querySelectorAll('.area-chip.selected').length === 0;
+  var hasSelection = document.querySelectorAll('.area-chip.selected').length > 0;
+  $('obNext2').disabled = !hasSelection;
+  // Auto-scroll para o botão Próximo ficar visível no mobile
+  if(hasSelection){
+    setTimeout(function(){ $('obNext2').scrollIntoView({behavior:'smooth',block:'nearest'}); },150);
+  }
 }
 function getSelectedAreas(){
   return Array.from(document.querySelectorAll('.area-chip.selected')).map(function(el){return el.dataset.value;});
