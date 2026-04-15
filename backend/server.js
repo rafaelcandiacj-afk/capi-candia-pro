@@ -487,6 +487,8 @@ db.exec(`
     filename TEXT NOT NULL,
     original_name TEXT NOT NULL,
     file_path TEXT NOT NULL,
+    size_bytes INTEGER DEFAULT 0,
+    page_count INTEGER,
     extracted_text TEXT,
     created_at TEXT DEFAULT (datetime('now'))
   );
@@ -855,6 +857,10 @@ if (!userProfileCols.includes('escritorio')) db.prepare('ALTER TABLE user_profil
 try { db.prepare('ALTER TABLE user_memory ADD COLUMN relevance_score REAL DEFAULT 1.0').run(); } catch(e) {}
 try { db.prepare('ALTER TABLE user_memory ADD COLUMN access_count INTEGER DEFAULT 0').run(); } catch(e) {}
 try { db.prepare('ALTER TABLE user_memory ADD COLUMN source TEXT DEFAULT "chat"').run(); } catch(e) {}
+
+// Migração: conversation_uploads extras (size_bytes, page_count)
+try { db.prepare('ALTER TABLE conversation_uploads ADD COLUMN size_bytes INTEGER DEFAULT 0').run(); } catch(e) {}
+try { db.prepare('ALTER TABLE conversation_uploads ADD COLUMN page_count INTEGER').run(); } catch(e) {}
 
 // Inserir prompt padrão se não existir
 const existingPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get();
@@ -1884,13 +1890,20 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   if (allUploadIds.length > 0) {
     const docs = [];
     for (const uid of allUploadIds) {
-      const upload = db.prepare('SELECT original_name, extracted_text FROM conversation_uploads WHERE id = ? AND user_id = ?').get(uid, req.user.id);
+      const upload = db.prepare('SELECT original_name, page_count, extracted_text FROM conversation_uploads WHERE id = ? AND user_id = ?').get(uid, req.user.id);
       if (upload && upload.extracted_text) docs.push(upload);
     }
     if (docs.length > 0) {
       docCtx = '\n\n━━━ DOCUMENTOS ENVIADOS PELO USUÁRIO ━━━\n';
       docs.forEach((d, i) => {
-        docCtx += `\n[Documento ${i+1}] ${d.original_name}:\n${d.extracted_text}\n`;
+        const pageInfo = d.page_count ? ` - ${d.page_count} páginas` : '';
+        // Trunca texto a ~48000 chars (~12000 tokens) para caber no contexto
+        const maxChars = 48000;
+        let text = d.extracted_text;
+        if (text.length > maxChars) {
+          text = text.substring(0, maxChars) + '\n\n[...DOCUMENTO TRUNCADO - exibindo primeiros ' + Math.round(maxChars/1000) + 'K de ' + Math.round(d.extracted_text.length/1000) + 'K caracteres...]';
+        }
+        docCtx += `\n[DOCUMENTO ANEXADO: ${d.original_name}${pageInfo}]\n${text}\n[FIM DO DOCUMENTO]\n`;
       });
       docCtx += '━━━ FIM DOS DOCUMENTOS ━━━\nAnalise e responda com base nestes documentos quando relevante.';
     }
@@ -2927,8 +2940,8 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
         } catch(e) {}
       }
       const result = db.prepare(
-        'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, extracted_text) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(req.body.conversation_id || null, req.user.id, file.filename, file.originalname, file.path, extractedText);
+        'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, size_bytes, page_count, extracted_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(req.body.conversation_id || null, req.user.id, file.filename, file.originalname, file.path, file.size || 0, pageCount, extractedText);
       const fileSizeKB = Math.round(file.size / 1024);
       const fileSizeStr = fileSizeKB > 1024 ? (fileSizeKB / 1024).toFixed(1) + ' MB' : fileSizeKB + ' KB';
       results.push({
@@ -2948,6 +2961,37 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
     res.json(results.length === 1 ? results[0] : results);
   } catch (e) {
     res.status(500).json({ error: 'Erro ao processar arquivo: ' + e.message });
+  }
+});
+
+// ─── UPLOAD DOCUMENT (alias compatível com /api/upload-document) ─────
+app.post('/api/upload-document', authMiddleware, uploadConv.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+  try {
+    const file = req.file;
+    const extractedText = await processUploadedFile(file);
+    const ext = path.extname(file.originalname).toLowerCase();
+    let pageCount = null;
+    if (ext === '.pdf') {
+      try {
+        const pdfMod = require('pdf-parse');
+        const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+        const buf = fs.readFileSync(file.path);
+        const info = await pdfParse(buf);
+        pageCount = info.numpages || null;
+      } catch(e) {}
+    }
+    const result = db.prepare(
+      'INSERT INTO conversation_uploads (conversation_id, user_id, filename, original_name, file_path, size_bytes, page_count, extracted_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    ).run(req.body.conversation_id || null, req.user.id, file.filename, file.originalname, file.path, file.size || 0, pageCount, extractedText);
+    res.json({
+      id: result.lastInsertRowid,
+      filename: file.originalname,
+      page_count: pageCount,
+      text_preview: extractedText.substring(0, 500)
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Erro ao processar documento: ' + e.message });
   }
 });
 
