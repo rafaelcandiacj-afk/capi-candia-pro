@@ -3470,12 +3470,26 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
   const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   const access = hasActiveAccess({ ...user, email: req.user.email });
+  // Calcular days_remaining
+  let days_remaining = null;
+  if (user.plan_expires_at) {
+    const now = new Date();
+    const exp = new Date(user.plan_expires_at);
+    days_remaining = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+  }
+  const isAdmin = req.user.email === 'rafaelcandia.cj@gmail.com';
+  const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
+  const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
   res.json({
     plan_type: user.plan_type || 'free',
     plan_expires_at: user.plan_expires_at,
     plan_activated_at: user.plan_activated_at,
     has_access: access !== false,
     is_active: access === true || access === 'free',
+    is_admin: isAdmin,
+    days_remaining: days_remaining,
+    checkout_url: CHECKOUT_MONTHLY,
+    checkout_annual_url: CHECKOUT_ANNUAL,
     redirect_url: access === false ? 'https://capicand-ia.com#planos' : null
   });
 });
