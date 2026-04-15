@@ -1382,8 +1382,8 @@ try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_3d TEXT').run();
 try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_0d TEXT').run(); } catch(e) {}
 try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_expired TEXT').run(); } catch(e) {}
 
-const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
-const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
+const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
+const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
 
 function renewalEmailTemplate(nome, diasRestantes, tipo) {
   const firstName = nome ? nome.split(' ')[0] : 'Advogado';
@@ -3478,8 +3478,8 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
     days_remaining = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
   }
   const isAdmin = req.user.email === 'rafaelcandia.cj@gmail.com';
-  const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
-  const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
+  const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
+  const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
   res.json({
     plan_type: user.plan_type || 'free',
     plan_expires_at: user.plan_expires_at,
@@ -3567,8 +3567,8 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
 app.get('/checkout', (req, res) => {
   const plan = req.query.plan || 'monthly';
   // URLs do PagarMe serão configuradas via env vars
-  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-mensal';
-  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/capi-candia-ia-anual';
+  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
+  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
   const url = plan === 'annual' ? PAGARME_ANNUAL_URL : PAGARME_MONTHLY_URL;
   res.redirect(302, url);
 });
