@@ -461,7 +461,7 @@
     .confetti-piece{position:fixed;width:8px;height:8px;top:-10px;z-index:260;animation:confetti-fall 3s linear forwards;pointer-events:none}
 
     /* ── ONBOARDING ── */
-    .onboarding-screen{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);padding:20px}
+    .onboarding-screen{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;height:auto;background:var(--bg);padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:40px;padding-bottom:40px}
     .onboarding-card{width:100%;max-width:480px;animation:fadeUp .5s ease}
     .onboarding-logo{text-align:center;margin-bottom:24px}
     .onboarding-logo img{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 28px rgba(184,134,11,.3)}
