@@ -1416,10 +1416,10 @@ async function checkSubscriptionStatus(){
     banner.className = 'renewal-banner';
     if(days <= 1){
       banner.classList.add('level-red');
-      textEl.textContent = 'ULTIMO DIA! Sua assinatura vence hoje. Renove agora!';
+      textEl.textContent = '\u00DALTIMO DIA! Sua assinatura vence hoje. Renove agora!';
     } else if(days <= 3){
       banner.classList.add('level-orange');
-      textEl.textContent = 'Atencao! Sua assinatura vence em ' + days + ' dias. Renove para nao perder acesso!';
+      textEl.textContent = 'Aten\u00e7\u00e3o! Sua assinatura vence em ' + days + ' dias. Renove para n\u00e3o perder acesso!';
     } else {
       banner.classList.add('level-gold');
       textEl.textContent = 'Sua assinatura vence em ' + days + ' dias. Renove agora e continue usando a CapiCand-IA!';
@@ -4867,7 +4867,7 @@ init();
     </div>
     <h2>Sua assinatura expirou</h2>
     <p>Renove agora para voltar a usar a CapiCand-IA e todas as suas funcionalidades.</p>
-    <a id="expBtnPrimary" class="exp-btn-primary" href="#" target="_blank">Renovar Agora — R$47/mes</a>
+    <a id="expBtnPrimary" class="exp-btn-primary" href="#" target="_blank">Renovar Agora — R$47/mês</a>
     <a id="expBtnSecondary" class="exp-btn-secondary" href="#" target="_blank">Plano Anual (economize!)</a>
     <button class="exp-link-logout" onclick="logout()">Sair</button>
   </div>
