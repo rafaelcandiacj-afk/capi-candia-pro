@@ -1376,8 +1376,8 @@ async function init(){
       else{ localStorage.removeItem('capi_token'); localStorage.removeItem('capi_user'); showAuth(); }
     }catch(e){ showAuth(); }
   } else showAuth();
-  $('chatInput').addEventListener('input',()=>{
-    $('sendBtn').disabled=($('chatInput').value.trim()==='' && pendingUploadIds.length===0)||isLoading;
+  if($('chatInput')) $('chatInput').addEventListener('input',()=>{
+    if($('sendBtn')) $('sendBtn').disabled=($('chatInput')?$('chatInput').value.trim()==='' && pendingUploadIds.length===0:true)||isLoading;
   });
 }
 
@@ -1423,7 +1423,8 @@ if('serviceWorker' in navigator){
 
 // ─── BANNER CAPITREINO ───
 function fecharBannerCapiTreino() {
-  document.getElementById('bannerCapiTreino').style.display = 'none';
+  const b = document.getElementById('bannerCapiTreino');
+  if(b) b.style.display = 'none';
   localStorage.setItem('bannerCapiTreinoFechado', 'true');
 }
 if (localStorage.getItem('bannerCapiTreinoFechado') === 'true') {
@@ -1564,7 +1565,7 @@ function showChat(user){
   $('sidebarName').textContent=user.name||user.email;
   $('sidebarEmail').textContent=user.email;
   $('sidebarInitial').textContent=(user.name||user.email).charAt(0).toUpperCase();
-  $('chatInput').focus();
+  if($('chatInput')) $('chatInput').focus();
   loadProfile();
   loadFavorites();
   loadTemplates();
@@ -1931,7 +1932,7 @@ async function loadConversation(id){
     } else {
       _activeProjectId = null;
     }
-    $('chatMessages').innerHTML='';
+    if($('chatMessages')) $('chatMessages').innerHTML='';
     if(data.messages.length === 0){
       // Conversa vazia — mostra tela de boas-vindas
       newConversationUI();
@@ -1971,7 +1972,7 @@ function newConversation(){
 
 function newConversationUI(){
   const imgSrc=(CAPI_LOGO_SRC||document.querySelector('.auth-logo-img').src);
-  $('chatMessages').innerHTML='';
+  if($('chatMessages')) $('chatMessages').innerHTML='';
   const div=document.createElement('div');
   div.id='welcomeScreen';div.className='chat-welcome';
   div.innerHTML=`
@@ -1986,8 +1987,8 @@ function newConversationUI(){
       <button class="suggestion-chip" onclick="sendSuggestion(this)">Script para fechar o cliente difícil</button>
       <button class="suggestion-chip" onclick="window.location.href='/editor-peca.html'">Abrir editor de petição</button>
     </div>`;
-  $('chatMessages').appendChild(div);
-  $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;
+  if($('chatMessages')) $('chatMessages').appendChild(div);
+  if($('chatInput')){$('chatInput').value='';$('chatInput').style.height='auto';}if($('sendBtn')) $('sendBtn').disabled=true;
 }
 
 function formatDate(dt){
@@ -2004,8 +2005,8 @@ function formatDate(dt){
 // ── CHAT ──
 function sendSuggestion(btn){
   const chipText=btn.textContent.trim();
-  $('chatInput').value=chipText.replace(/^[^\w]+/,'').trim();
-  $('sendBtn').disabled=false;
+  if($('chatInput')) $('chatInput').value=chipText.replace(/^[^\w]+/,'').trim();
+  if($('sendBtn')) $('sendBtn').disabled=false;
   // Registra analytics
   const token=localStorage.getItem('capi_token');
   fetch('/api/analytics/chip',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({chip_text:chipText})}).catch(()=>{});
@@ -2017,7 +2018,9 @@ async function sendMessage(){
     showToast('Aguarde o upload terminar antes de enviar...');
     return;
   }
-  const text=$('chatInput').value.trim();
+  const chatInput=$('chatInput');
+  if(!chatInput) return;
+  const text=chatInput.value.trim();
   const hasUploads = pendingUploadIds.length > 0;
   if((!text && !hasUploads)||isLoading) return;
   // Se tem upload mas nenhum texto, usa prompt automático
@@ -2033,7 +2036,7 @@ async function sendMessage(){
     convHistory.push({role:'user', content: finalText});
   }
   appendMessage('user',finalText,null,uploadFileNames);
-  $('chatInput').value='';$('chatInput').style.height='auto';$('sendBtn').disabled=true;
+  chatInput.value='';chatInput.style.height='auto';const sendBtn=$('sendBtn');if(sendBtn) sendBtn.disabled=true;
   isLoading=true;
   const typingEl=showTyping();
   try{
@@ -2081,10 +2084,10 @@ async function sendMessage(){
     appendMessage('assistant', msgErro + retryBtn);
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
-    pendingUploadIds=[];pendingUploadNames=[];window._uploadMeta={};document.getElementById('fileBadgeArea').innerHTML='';
-    isLoading=false;$('sendBtn').disabled=$('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+    pendingUploadIds=[];pendingUploadNames=[];window._uploadMeta={};const fba=document.getElementById('fileBadgeArea');if(fba) fba.innerHTML='';
+    isLoading=false;if($('sendBtn')) $('sendBtn').disabled=($('chatInput')?$('chatInput').value.trim():'')==='' && pendingUploadIds.length===0;
     // Restaura placeholder original
-    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
+    if($('chatInput')) $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
   }
 }
 
@@ -2258,7 +2261,7 @@ function appendMessage(role,content,suggestions,uploadFiles){
       contChip.innerHTML='▶️ Continuar resposta';
       contChip.onclick=()=>{
         contDiv.remove();
-        $('chatInput').value='Continue a resposta do ponto onde parou, sem repetir o que já foi escrito.';
+        if($('chatInput')) $('chatInput').value='Continue a resposta do ponto onde parou, sem repetir o que já foi escrito.';
         sendMessage();
       };
       contDiv.appendChild(contChip);
@@ -2266,7 +2269,7 @@ function appendMessage(role,content,suggestions,uploadFiles){
     }
   }
   wrapper.appendChild(msgContent);
-  $('chatMessages').appendChild(wrapper);
+  if($('chatMessages')) $('chatMessages').appendChild(wrapper);
   scrollBottom();
 }
 
@@ -2331,11 +2334,11 @@ function showTyping(){
   av.innerHTML='<img src="'+imgSrc+'" alt="Capi">';
   const b=document.createElement('div');b.className='message-bubble';
   b.innerHTML='<div class="typing-indicator"><span></span><span></span><span></span></div>';
-  w.appendChild(av);w.appendChild(b);$('chatMessages').appendChild(w);
+  w.appendChild(av);w.appendChild(b);const chatMsgs=$('chatMessages');if(chatMsgs) chatMsgs.appendChild(w);
   scrollBottom();return w;
 }
 function removeTyping(el){if(el&&el.parentNode)el.parentNode.removeChild(el);}
-function scrollBottom(){$('chatMessages').scrollTop=$('chatMessages').scrollHeight;}
+function scrollBottom(){const el=$('chatMessages');if(el) el.scrollTop=el.scrollHeight;}
 function handleKey(e){
   if(e.key==='Enter'){
     const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
@@ -2344,7 +2347,7 @@ function handleKey(e){
       return; // deixa o comportamento padrão do textarea (nova linha)
     } else {
       // Desktop: Enter envia, Shift+Enter quebra linha
-      if(!e.shiftKey){ e.preventDefault(); if(!$('sendBtn').disabled) sendMessage(); }
+      if(!e.shiftKey){ e.preventDefault(); if($('sendBtn')&&!$('sendBtn').disabled) sendMessage(); }
     }
   }
 }
@@ -3521,9 +3524,9 @@ async function handleConvUpload(input){
   }
 
   if(pendingUploadIds.length > 0){
-    $('sendBtn').disabled = false;
-    $('chatInput').setAttribute('placeholder', '💡 Escreva o que precisa ou toque em enviar →');
-    $('chatInput').focus();
+    if($('sendBtn')) $('sendBtn').disabled = false;
+    if($('chatInput')){$('chatInput').setAttribute('placeholder', '💡 Escreva o que precisa ou toque em enviar →');
+    $('chatInput').focus();}
   }
   input.value = '';
 }
@@ -3534,9 +3537,9 @@ function removeUploadByBadge(badge){
   if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
   if(window._uploadMeta) delete window._uploadMeta[uploadId];
   badge.remove();
-  $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+  if($('sendBtn')) $('sendBtn').disabled = ($('chatInput')?$('chatInput').value.trim():'')==='' && pendingUploadIds.length===0;
   if(pendingUploadIds.length===0){
-    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
+    if($('chatInput')) $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
   }
 }
 function removeUpload(btn, uploadId, fileName){
@@ -3544,9 +3547,9 @@ function removeUpload(btn, uploadId, fileName){
   if(fileName) pendingUploadNames = pendingUploadNames.filter(n => n !== fileName);
   if(window._uploadMeta) delete window._uploadMeta[uploadId];
   btn.closest('.file-badge').remove();
-  $('sendBtn').disabled = $('chatInput').value.trim()==='' && pendingUploadIds.length===0;
+  if($('sendBtn')) $('sendBtn').disabled = ($('chatInput')?$('chatInput').value.trim():'')==='' && pendingUploadIds.length===0;
   if(pendingUploadIds.length===0){
-    $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
+    if($('chatInput')) $('chatInput').setAttribute('placeholder','Mensagem para a Capi... (anexe um arquivo com o clipe ao lado)');
   }
 }
 
@@ -3607,9 +3610,9 @@ async function toggleRecording() {
         const text = (data.text || '').trim();
         if (!text) { showToast('⚠️ Não entendi o áudio, tente novamente'); return; }
         const inp = document.getElementById('chatInput');
-        inp.value = text;
-        autoResize(inp);
-        document.getElementById('sendBtn').disabled = false;
+        if(inp){inp.value = text;
+        autoResize(inp);}
+        const sBtn = document.getElementById('sendBtn'); if(sBtn) sBtn.disabled = false;
         showToast('✅ Áudio transcrito! Revise e envie.');
         inp.focus();
       } catch(e) {
@@ -3643,8 +3646,8 @@ function gerarTese(){
   let prompt=`Gere uma tese jurídica completa para ${area}`;
   if(publico) prompt+=` focada em ${publico}`;
   prompt+=`. Canal de divulgação: ${canal}. Use o formato completo com categoria, subcategoria, copy para Meta Ads, palavras-chave Google Ads e script WhatsApp.`;
-  $('chatInput').value=prompt;
-  $('sendBtn').disabled=false;
+  if($('chatInput')) $('chatInput').value=prompt;
+  if($('sendBtn')) $('sendBtn').disabled=false;
   sendMessage();
 }
 
@@ -3677,8 +3680,8 @@ function gerarConteudo(){
   let prompt='Crie um conteúdo jurídico EDUCATIVO no estilo Rafael Cândia para:\n\n📱 Tipo: '+tipo+'\n⚖️ Área: '+area+'\n🎯 Objetivo: '+objetivo;
   if(tom) prompt+='\n🎤 Tom: '+tom;
   prompt+='\n✨ Diferencial: '+(diferencial||'Nenhum informado')+'\n\nENTREGUE:\n1. Roteiro/estrutura do conteúdo\n2. Legenda educativa (informativa, sem captação direta de clientela)\n3. Hashtags estratégicas\n4. Dica de arte visual\n5. Script de atendimento (apenas para quem JÁ entrou em contato) — IMPORTANTE: o script é para o ADVOGADO usar com o CLIENTE, portanto use linguagem profissional e respeitosa (ex: "Olá", "Prezado", "Pode me contar mais sobre seu caso?"). NUNCA use gírias como "papi", "capivarístico" ou "vergonha não paga boleto" no script de atendimento ao cliente.\n\nREGRAS ÉTICAS OAB OBRIGATÓRIAS:\n- Conteúdo deve ser educativo e informativo (Provimento 205/2021)\n- Proibido: copy de captação, promessa de resultados, abordagem ativa de leads frios\n- Use linguagem do Rafael no roteiro e legenda — direto, impactante, sem juridiquês, mas dentro da ética.';
-  $('chatInput').value=prompt;
-  $('sendBtn').disabled=false;
+  if($('chatInput')) $('chatInput').value=prompt;
+  if($('sendBtn')) $('sendBtn').disabled=false;
   sendMessage();
 }
 
@@ -3750,9 +3753,8 @@ async function deleteFavorite(e,id){
 // ── HONORÁRIOS ──────────────────────────────────────────
 function abrirChatHonorarios() {
   const msg = 'Preciso saber quanto cobrar. Me diz o estado onde será a ação e descreve o caso que te oriento com os valores mínimos da tabela OAB.';
-  $('chatInput').value = msg;
-  $('sendBtn').disabled = false;
-  $('chatInput').focus();
+  if($('chatInput')) {$('chatInput').value = msg;$('chatInput').focus();}
+  if($('sendBtn')) $('sendBtn').disabled = false;
 }
 
 // ── JOGO: SIMULADOR DE ATENDIMENTO ──────────────────────
@@ -4285,8 +4287,8 @@ OAB/${oab || '[UF número]'}
 ⚠️ ATENÇÃO: Esta petição foi gerada como base técnica. Ao finalizar, volte ao modo papi e aponte: o que revisar, quais dados preencher e qual é o prazo para protocolo.`;
 
   closePeticaoModal();
-  $('chatInput').value = prompt;
-  $('sendBtn').disabled = false;
+  if($('chatInput')) $('chatInput').value = prompt;
+  if($('sendBtn')) $('sendBtn').disabled = false;
   sendMessage();
 }
 
@@ -4327,8 +4329,8 @@ Preciso que você calcule quanto devo cobrar neste caso, com justificativa detal
 
 Seja direto e prático. Use o estilo Capi — números concretos, sem enrolação.`;
 
-  $('chatInput').value = prompt;
-  $('sendBtn').disabled = false;
+  if($('chatInput')) $('chatInput').value = prompt;
+  if($('sendBtn')) $('sendBtn').disabled = false;
   sendMessage();
 }
 
@@ -4374,8 +4376,8 @@ Storytelling: [copy com narrativa]
 📱 **FUNIL DE ATENDIMENTO**
 [como converter visualizações em consultas — passo a passo no WhatsApp]`;
 
-  $('chatInput').value = prompt;
-  $('sendBtn').disabled = false;
+  if($('chatInput')) $('chatInput').value = prompt;
+  if($('sendBtn')) $('sendBtn').disabled = false;
   sendMessage();
 }
 
@@ -4630,6 +4632,7 @@ function createAudienciaModal(){
 
 function appendAudienciaMensagem(role, texto){
   const container=document.getElementById('audMessages');
+  if(!container) return;
   const div=document.createElement('div');
   const isJuiz=role==='juiz';
   div.style.cssText=`display:flex;gap:8px;align-items:flex-start;${isJuiz?'':'flex-direction:row-reverse'}`;
