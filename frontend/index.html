@@ -814,6 +814,113 @@
     .auth-footer-links a{color:var(--text2);text-decoration:none;margin:0 8px;transition:color .2s}
     .auth-footer-links a:hover{color:var(--gold)}
 
+    /* ══════════════════════════════════════════════════════════════
+       WIZARD — Criação Guiada de Peças Jurídicas
+       ══════════════════════════════════════════════════════════════ */
+    .wizard-overlay{display:none;position:fixed;inset:0;z-index:6000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);align-items:center;justify-content:center}
+    .wizard-overlay.open{display:flex}
+    .wizard-container{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;width:min(680px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.45);animation:wizardIn .3s ease}
+    @keyframes wizardIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+    .wizard-header{padding:18px 24px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(180deg,var(--gold-dim),transparent)}
+    .wizard-header-left{display:flex;align-items:center;gap:10px}
+    .wizard-header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#b8860b,#d4a017);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
+    .wizard-header-text h3{margin:0;font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;color:var(--text);letter-spacing:.02em}
+    .wizard-header-text span{font-size:.72rem;color:var(--text2)}
+    .wizard-close{background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer;padding:4px 8px;border-radius:8px;transition:var(--trans)}
+    .wizard-close:hover{background:var(--bg3);color:var(--text)}
+
+    /* Progress bar */
+    .wizard-progress{display:flex;align-items:center;gap:0;padding:12px 24px 8px;flex-shrink:0}
+    .wizard-step-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:var(--text-muted);background:var(--bg);transition:all .25s ease;flex-shrink:0;position:relative}
+    .wizard-step-dot.active{border-color:var(--gold);background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;box-shadow:0 0 12px var(--gold-glow)}
+    .wizard-step-dot.done{border-color:var(--gold);background:var(--gold-dim);color:var(--gold)}
+    .wizard-step-line{flex:1;height:2px;background:var(--border);transition:background .25s}
+    .wizard-step-line.done{background:var(--gold)}
+    .wizard-step-label{position:absolute;top:32px;font-size:.55rem;white-space:nowrap;color:var(--text-muted);font-weight:600;letter-spacing:.02em}
+    .wizard-step-dot.active .wizard-step-label{color:var(--gold)}
+
+    /* Body */
+    .wizard-body{overflow-y:auto;padding:20px 24px 16px;flex:1;min-height:0}
+    .wizard-body::-webkit-scrollbar{width:5px}
+    .wizard-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+    /* Footer */
+    .wizard-footer{padding:14px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;background:var(--bg)}
+    .wizard-btn-back{background:none;border:1px solid var(--border);color:var(--text2);padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:600;cursor:pointer;transition:var(--trans);font-family:'DM Sans',sans-serif}
+    .wizard-btn-back:hover{border-color:var(--gold);color:var(--gold)}
+    .wizard-btn-next{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border:none;padding:10px 28px;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(184,134,11,.3)}
+    .wizard-btn-next:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(184,134,11,.4)}
+    .wizard-btn-next:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+    .wizard-btn-generate{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border:none;padding:12px 32px;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:'Rajdhani',sans-serif;letter-spacing:.03em;text-transform:uppercase;position:relative;overflow:hidden;transition:all .2s;box-shadow:0 4px 20px rgba(184,134,11,.35)}
+    .wizard-btn-generate::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(45deg,transparent,rgba(255,255,255,.15),transparent);transform:rotate(45deg);animation:wizardShimmer 2.5s ease-in-out infinite}
+    @keyframes wizardShimmer{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+    .wizard-btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(184,134,11,.45)}
+    .wizard-btn-generate:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .wizard-btn-generate:disabled::after{display:none}
+
+    /* Step 1: Type cards */
+    .wizard-type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+    .wizard-type-card{background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:14px 12px;cursor:pointer;text-align:center;transition:all .2s;position:relative}
+    .wizard-type-card:hover{border-color:var(--gold);background:var(--gold-dim);transform:translateY(-2px);box-shadow:0 4px 16px var(--gold-glow)}
+    .wizard-type-card.selected{border-color:var(--gold);background:var(--gold-dim);box-shadow:0 0 0 2px var(--gold),0 4px 16px var(--gold-glow)}
+    .wizard-type-card.selected::after{content:'✓';position:absolute;top:6px;right:8px;font-size:.7rem;color:var(--gold);font-weight:700}
+    .wizard-type-icon{font-size:1.5rem;margin-bottom:6px;display:block}
+    .wizard-type-name{font-size:.78rem;font-weight:600;color:var(--text);line-height:1.3}
+    .wizard-type-other{grid-column:1/-1}
+    .wizard-type-other input{width:100%;margin-top:8px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:.82rem;font-family:'DM Sans',sans-serif}
+    .wizard-type-other input:focus{outline:none;border-color:var(--gold)}
+
+    /* Form fields (Steps 2-4) */
+    .wizard-field{margin-bottom:14px}
+    .wizard-field label{display:block;font-size:.7rem;font-weight:700;color:var(--text2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;font-family:'Rajdhani',sans-serif}
+    .wizard-field input,.wizard-field textarea,.wizard-field select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:.85rem;font-family:'DM Sans',sans-serif;transition:border-color .2s;box-sizing:border-box}
+    .wizard-field input:focus,.wizard-field textarea:focus,.wizard-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-glow)}
+    .wizard-field textarea{resize:vertical;min-height:80px;line-height:1.5}
+    .wizard-field .field-hint{font-size:.68rem;color:var(--text-muted);margin-top:3px}
+    .wizard-field-row{display:flex;gap:12px}
+    .wizard-field-row .wizard-field{flex:1}
+    .wizard-check{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.82rem;color:var(--text2);margin-top:8px}
+    .wizard-check input[type="checkbox"]{accent-color:var(--gold);width:16px;height:16px;flex-shrink:0}
+
+    /* Step 5: Review */
+    .wizard-review-section{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+    .wizard-review-title{font-size:.7rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Rajdhani',sans-serif}
+    .wizard-review-value{font-size:.84rem;color:var(--text);line-height:1.5;white-space:pre-wrap}
+    .wizard-review-empty{color:var(--text-muted);font-style:italic;font-size:.8rem}
+
+    /* Loading state */
+    .wizard-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;gap:16px;text-align:center}
+    .wizard-loading-spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--gold);animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .wizard-loading-text{font-size:.88rem;color:var(--text2);font-weight:500}
+    .wizard-loading-sub{font-size:.75rem;color:var(--text-muted)}
+    .wizard-loading-progress{width:100%;max-width:300px;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+    .wizard-loading-bar{height:100%;background:linear-gradient(90deg,#b8860b,#d4a017);border-radius:4px;transition:width .5s ease;width:0}
+
+    /* Sidebar button */
+    .btn-criar-peca{display:flex;align-items:center;gap:8px;width:calc(100% - 24px);margin:6px 12px 2px;padding:10px 14px;border:1.5px solid var(--gold);border-radius:10px;background:linear-gradient(135deg,rgba(184,134,11,.08),rgba(184,134,11,.03));color:var(--gold);font-size:.82rem;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;text-align:left}
+    .btn-criar-peca:hover{background:linear-gradient(135deg,rgba(184,134,11,.18),rgba(184,134,11,.08));border-color:var(--gold-light);transform:translateY(-1px);box-shadow:0 4px 12px var(--gold-glow)}
+    .btn-criar-peca svg{flex-shrink:0}
+
+    /* Mobile responsive */
+    @media(max-width:768px){
+      .wizard-container{width:100vw;max-height:100vh;border-radius:0;height:100vh}
+      .wizard-type-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+      .wizard-type-card{padding:10px 8px}
+      .wizard-type-icon{font-size:1.2rem}
+      .wizard-type-name{font-size:.72rem}
+      .wizard-body{padding:16px 16px 12px}
+      .wizard-header{padding:14px 16px 10px}
+      .wizard-footer{padding:12px 16px}
+      .wizard-field-row{flex-direction:column;gap:0}
+      .wizard-progress{padding:10px 16px 6px}
+      .wizard-step-dot{width:24px;height:24px;font-size:.62rem}
+      .wizard-step-label{font-size:.5rem}
+      .wizard-btn-next,.wizard-btn-back{padding:10px 16px;font-size:.82rem}
+      .wizard-btn-generate{padding:12px 24px;font-size:.88rem}
+    }
+
   </style>
 <script>
 /* Fix mobile viewport: usa visualViewport para altura real (lida com teclado virtual iOS) */
@@ -1019,6 +1126,10 @@ document.addEventListener('touchmove', function(e){
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nova conversa
     </button>
+    <button class="btn-criar-peca" onclick="openWizard()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      Criar Peça Guiada
+    </button>
     <!-- Projetos -->
     <div class="projects-section" id="projectsSection">
       <div class="projects-header">
@@ -1067,6 +1178,7 @@ document.addEventListener('touchmove', function(e){
       <!-- Desktop: toolbar inline no header -->
       <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
+          <button class="teses-btn" onclick="openWizard()" style="font-weight:700;color:var(--gold);border-color:var(--gold)">Criar Peça</button>
           <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
           <button class="teses-btn" onclick="openTesesModal()">Teses</button>
           <button class="teses-btn" onclick="window.location.href='/treinamento-audiencia.html'">Treinamento em Audiências</button>
@@ -1098,6 +1210,7 @@ document.addEventListener('touchmove', function(e){
     </header>
     <!-- Mobile toolbar: linha separada com scroll horizontal -->
     <div class="mobile-toolbar">
+      <button class="teses-btn" onclick="openWizard()" style="font-weight:700;color:var(--gold);border-color:var(--gold)">Criar Peça</button>
       <button class="teses-btn" onclick="openTesesModal()">Teses</button>
       <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
       <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
@@ -5266,6 +5379,41 @@ init();
   </div>
 </div>
 
+<!-- WIZARD CRIAÇÃO GUIADA DE PEÇAS -->
+<div class="wizard-overlay" id="wizardOverlay">
+  <div class="wizard-container">
+    <div class="wizard-header">
+      <div class="wizard-header-left">
+        <div class="wizard-header-icon">⚖️</div>
+        <div class="wizard-header-text">
+          <h3>Criar Peça Jurídica</h3>
+          <span>Assistente guiado de criação</span>
+        </div>
+      </div>
+      <button class="wizard-close" onclick="closeWizard()" title="Fechar">&times;</button>
+    </div>
+
+    <div class="wizard-progress" id="wizardProgress">
+      <div class="wizard-step-dot active" data-step="1">1<span class="wizard-step-label">Tipo</span></div>
+      <div class="wizard-step-line" data-line="1"></div>
+      <div class="wizard-step-dot" data-step="2">2<span class="wizard-step-label">Dados</span></div>
+      <div class="wizard-step-line" data-line="2"></div>
+      <div class="wizard-step-dot" data-step="3">3<span class="wizard-step-label">Fatos</span></div>
+      <div class="wizard-step-line" data-line="3"></div>
+      <div class="wizard-step-dot" data-step="4">4<span class="wizard-step-label">Pedidos</span></div>
+      <div class="wizard-step-line" data-line="4"></div>
+      <div class="wizard-step-dot" data-step="5">5<span class="wizard-step-label">Revisão</span></div>
+    </div>
+
+    <div class="wizard-body" id="wizardBody"></div>
+
+    <div class="wizard-footer">
+      <button class="wizard-btn-back" id="wizardBtnBack" onclick="wizardBack()" style="visibility:hidden">← Voltar</button>
+      <button class="wizard-btn-next" id="wizardBtnNext" onclick="wizardNext()">Próximo →</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MINHAS PEÇAS -->
 <div id="minhasPecasModal" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
   <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:min(780px,96vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)">
@@ -5321,6 +5469,308 @@ init();
     </div>
   </div>
 </div>
+
+<!-- WIZARD SCRIPT -->
+<script>
+(function(){
+  /* ══════════════════════════════════════════════════════════════
+     WIZARD — Criação Guiada de Peças Jurídicas
+     ══════════════════════════════════════════════════════════════ */
+  const WIZARD_TYPES = [
+    { id:'peticao_inicial', name:'Petição Inicial', icon:'📋', needsProcesso:false },
+    { id:'contestacao', name:'Contestação', icon:'🛡️', needsProcesso:true },
+    { id:'recurso_apelacao', name:'Recurso de Apelação', icon:'📤', needsProcesso:true },
+    { id:'agravo_instrumento', name:'Agravo de Instrumento', icon:'⚡', needsProcesso:true },
+    { id:'habeas_corpus', name:'Habeas Corpus', icon:'🔓', needsProcesso:false },
+    { id:'mandado_seguranca', name:'Mandado de Segurança', icon:'🏛️', needsProcesso:false },
+    { id:'embargos_declaracao', name:'Embargos de Declaração', icon:'📝', needsProcesso:true },
+    { id:'contrarrazoes', name:'Contrarrazões', icon:'↩️', needsProcesso:true },
+    { id:'acordo_transacao', name:'Acordo / Transação', icon:'🤝', needsProcesso:false },
+    { id:'notificacao_extrajudicial', name:'Notificação Extrajudicial', icon:'📩', needsProcesso:false },
+    { id:'contrato', name:'Contrato (geral)', icon:'📄', needsProcesso:false },
+    { id:'parecer_juridico', name:'Parecer Jurídico', icon:'🔍', needsProcesso:false }
+  ];
+
+  let wizardStep = 1;
+  let wizardData = { tipo:'', tipoLabel:'', tipoOutro:'', foro:'', vara:'', autor:'', reu:'', numero_processo:'', fatos:'', fundamentos:'', pedidos:'', valor_causa:'', observacoes:'', incluir_jurisprudencia:true, upload_ids:[] };
+  let wizardNeedsProcesso = false;
+  // Distinguish petition-like types vs contract/parecer
+  const objectiveTypes = ['contrato','parecer_juridico','acordo_transacao','notificacao_extrajudicial'];
+
+  window.openWizard = function(){
+    wizardStep = 1;
+    wizardData = { tipo:'', tipoLabel:'', tipoOutro:'', foro:'', vara:'', autor:'', reu:'', numero_processo:'', fatos:'', fundamentos:'', pedidos:'', valor_causa:'', observacoes:'', incluir_jurisprudencia:true, upload_ids:[] };
+    wizardNeedsProcesso = false;
+    document.getElementById('wizardOverlay').classList.add('open');
+    renderWizardStep();
+    // close mobile menu if open
+    if(typeof closeMobileMenu === 'function') closeMobileMenu();
+    if(typeof closeNavMais === 'function') closeNavMais();
+  };
+
+  window.closeWizard = function(){
+    document.getElementById('wizardOverlay').classList.remove('open');
+  };
+
+  // Close on backdrop click
+  document.getElementById('wizardOverlay').addEventListener('click', function(e){
+    if(e.target === this) closeWizard();
+  });
+
+  function updateProgress(){
+    document.querySelectorAll('#wizardProgress .wizard-step-dot').forEach(dot => {
+      const s = parseInt(dot.dataset.step);
+      dot.classList.toggle('active', s === wizardStep);
+      dot.classList.toggle('done', s < wizardStep);
+    });
+    document.querySelectorAll('#wizardProgress .wizard-step-line').forEach(line => {
+      const l = parseInt(line.dataset.line);
+      line.classList.toggle('done', l < wizardStep);
+    });
+    const backBtn = document.getElementById('wizardBtnBack');
+    const nextBtn = document.getElementById('wizardBtnNext');
+    backBtn.style.visibility = wizardStep > 1 ? 'visible' : 'hidden';
+    if(wizardStep === 5){
+      nextBtn.style.display = 'none';
+    } else {
+      nextBtn.style.display = '';
+      nextBtn.textContent = 'Próximo →';
+    }
+  }
+
+  function renderWizardStep(){
+    updateProgress();
+    const body = document.getElementById('wizardBody');
+    switch(wizardStep){
+      case 1: renderStep1(body); break;
+      case 2: renderStep2(body); break;
+      case 3: renderStep3(body); break;
+      case 4: renderStep4(body); break;
+      case 5: renderStep5(body); break;
+    }
+    body.scrollTop = 0;
+  }
+
+  /* ── Step 1: Tipo de Peça ── */
+  function renderStep1(body){
+    let html = '<div style="margin-bottom:14px"><div style="font-family:Rajdhani,sans-serif;font-size:.95rem;font-weight:700;color:var(--text)">Selecione o tipo de peça</div><div style="font-size:.75rem;color:var(--text2);margin-top:2px">Escolha o modelo que deseja criar</div></div>';
+    html += '<div class="wizard-type-grid">';
+    WIZARD_TYPES.forEach(t => {
+      const sel = wizardData.tipo === t.id ? ' selected' : '';
+      html += `<div class="wizard-type-card${sel}" onclick="wizardSelectType('${t.id}')"><span class="wizard-type-icon">${t.icon}</span><span class="wizard-type-name">${t.name}</span></div>`;
+    });
+    // Outro
+    const otherSel = wizardData.tipo === 'outro' ? ' selected' : '';
+    html += `<div class="wizard-type-card wizard-type-other${otherSel}" onclick="wizardSelectType('outro')"><span class="wizard-type-icon">➕</span><span class="wizard-type-name">Outro</span><input type="text" id="wizardTipoOutro" placeholder="Descreva o tipo de peça..." value="${escHtml(wizardData.tipoOutro)}" onclick="event.stopPropagation()" oninput="wizardData.tipoOutro=this.value" style="${wizardData.tipo==='outro'?'':'display:none'}"></div>`;
+    html += '</div>';
+    body.innerHTML = html;
+  }
+
+  window.wizardSelectType = function(id){
+    wizardData.tipo = id;
+    const t = WIZARD_TYPES.find(x=>x.id===id);
+    wizardData.tipoLabel = t ? t.name : (id==='outro' ? wizardData.tipoOutro : id);
+    wizardNeedsProcesso = t ? t.needsProcesso : false;
+    renderStep1(document.getElementById('wizardBody'));
+    if(id === 'outro'){
+      const inp = document.getElementById('wizardTipoOutro');
+      if(inp){ inp.style.display=''; inp.focus(); }
+    }
+  };
+
+  /* ── Step 2: Dados do Caso ── */
+  function renderStep2(body){
+    const showProcesso = wizardNeedsProcesso;
+    let html = '<div style="margin-bottom:14px"><div style="font-family:Rajdhani,sans-serif;font-size:.95rem;font-weight:700;color:var(--text)">Dados do Caso</div><div style="font-size:.75rem;color:var(--text2);margin-top:2px">Preencha as informações das partes e do processo</div></div>';
+    html += '<div class="wizard-field-row"><div class="wizard-field"><label>Foro / Tribunal</label><input type="text" id="wForo" placeholder="Ex: Comarca de São Paulo - SP" value="'+escHtml(wizardData.foro)+'"></div>';
+    html += '<div class="wizard-field"><label>Vara (opcional)</label><input type="text" id="wVara" placeholder="Ex: 3ª Vara Cível" value="'+escHtml(wizardData.vara)+'"></div></div>';
+    if(showProcesso){
+      html += '<div class="wizard-field"><label>Número do Processo</label><input type="text" id="wNumProc" placeholder="Ex: 0001234-56.2026.8.26.0100" value="'+escHtml(wizardData.numero_processo)+'"></div>';
+    }
+    html += '<div class="wizard-field"><label>Autor / Requerente</label><input type="text" id="wAutor" placeholder="Nome completo e qualificação" value="'+escHtml(wizardData.autor)+'"><div class="field-hint">Ex: João da Silva, brasileiro, casado, CPF xxx.xxx.xxx-xx</div></div>';
+    html += '<div class="wizard-field"><label>Réu / Requerido</label><input type="text" id="wReu" placeholder="Nome completo e qualificação" value="'+escHtml(wizardData.reu)+'"><div class="field-hint">Ex: Empresa XYZ Ltda, CNPJ xx.xxx.xxx/0001-xx</div></div>';
+    body.innerHTML = html;
+  }
+
+  function saveStep2(){
+    const f = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+    wizardData.foro = f('wForo');
+    wizardData.vara = f('wVara');
+    wizardData.numero_processo = f('wNumProc');
+    wizardData.autor = f('wAutor');
+    wizardData.reu = f('wReu');
+  }
+
+  /* ── Step 3: Fatos e Fundamentos ── */
+  function renderStep3(body){
+    let html = '<div style="margin-bottom:14px"><div style="font-family:Rajdhani,sans-serif;font-size:.95rem;font-weight:700;color:var(--text)">Fatos e Fundamentos</div><div style="font-size:.75rem;color:var(--text2);margin-top:2px">Descreva a situação e a base jurídica</div></div>';
+    html += '<div class="wizard-field"><label>Descreva os fatos do caso</label><textarea id="wFatos" rows="5" placeholder="Narre cronologicamente os fatos que levam a esta ação. Quanto mais detalhes, melhor será a peça gerada.">'+escHtml(wizardData.fatos)+'</textarea><div class="field-hint">Inclua datas, valores, partes envolvidas e detalhes relevantes</div></div>';
+    html += '<div class="wizard-field"><label>Fundamentos jurídicos (opcional)</label><textarea id="wFundamentos" rows="3" placeholder="Ex: Art. 14 do CDC, responsabilidade objetiva do fornecedor. Deixe em branco para a IA sugerir.">'+escHtml(wizardData.fundamentos)+'</textarea><div class="field-hint">A IA complementará com fundamentação adicional se necessário</div></div>';
+    html += '<label class="wizard-check"><input type="checkbox" id="wJurisp" '+(wizardData.incluir_jurisprudencia?'checked':'')+'> Incluir jurisprudência sugerida pela IA</label>';
+    body.innerHTML = html;
+  }
+
+  function saveStep3(){
+    const f = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+    wizardData.fatos = f('wFatos');
+    wizardData.fundamentos = f('wFundamentos');
+    const cb = document.getElementById('wJurisp');
+    wizardData.incluir_jurisprudencia = cb ? cb.checked : true;
+  }
+
+  /* ── Step 4: Pedidos ── */
+  function renderStep4(body){
+    const isObjective = objectiveTypes.includes(wizardData.tipo);
+    let html = '<div style="margin-bottom:14px"><div style="font-family:Rajdhani,sans-serif;font-size:.95rem;font-weight:700;color:var(--text)">'+(isObjective?'Objetivo':'Pedidos')+'</div><div style="font-size:.75rem;color:var(--text2);margin-top:2px">'+(isObjective?'Descreva o que deseja alcançar':'Liste os pedidos que devem constar na peça')+'</div></div>';
+    html += '<div class="wizard-field"><label>'+(isObjective?'Qual é o objetivo?':'Quais são os pedidos?')+'</label><textarea id="wPedidos" rows="4" placeholder="'+(isObjective?'Ex: Elaborar contrato de prestação de serviços com cláusula de exclusividade...':'Ex: Condenação em danos morais no valor de R$ 20.000, devolução do valor pago, tutela de urgência...')+'">'+escHtml(wizardData.pedidos)+'</textarea></div>';
+    html += '<div class="wizard-field-row"><div class="wizard-field"><label>Valor da causa (opcional)</label><input type="text" id="wValor" placeholder="Ex: 50.000,00" value="'+escHtml(wizardData.valor_causa)+'" oninput="this.value=this.value.replace(/[^0-9.,]/g,\'\')"></div>';
+    html += '<div class="wizard-field"><label>Observações adicionais</label><input type="text" id="wObs" placeholder="Qualquer informação extra..." value="'+escHtml(wizardData.observacoes)+'"></div></div>';
+    body.innerHTML = html;
+  }
+
+  function saveStep4(){
+    const f = id => { const el=document.getElementById(id); return el ? el.value.trim() : ''; };
+    wizardData.pedidos = f('wPedidos');
+    wizardData.valor_causa = f('wValor');
+    wizardData.observacoes = f('wObs');
+  }
+
+  /* ── Step 5: Revisão ── */
+  function renderStep5(body){
+    const tipoLabel = wizardData.tipo === 'outro' ? (wizardData.tipoOutro || 'Outro') : wizardData.tipoLabel;
+    let html = '<div style="margin-bottom:14px"><div style="font-family:Rajdhani,sans-serif;font-size:.95rem;font-weight:700;color:var(--text)">Revisão</div><div style="font-size:.75rem;color:var(--text2);margin-top:2px">Confira os dados antes de gerar a peça</div></div>';
+    const sections = [
+      { title:'Tipo de Peça', value: tipoLabel },
+      { title:'Foro / Tribunal', value: wizardData.foro },
+      { title:'Vara', value: wizardData.vara },
+      { title:'Número do Processo', value: wizardData.numero_processo },
+      { title:'Autor / Requerente', value: wizardData.autor },
+      { title:'Réu / Requerido', value: wizardData.reu },
+      { title:'Fatos', value: wizardData.fatos },
+      { title:'Fundamentos Jurídicos', value: wizardData.fundamentos || 'IA irá sugerir' },
+      { title: objectiveTypes.includes(wizardData.tipo) ? 'Objetivo' : 'Pedidos', value: wizardData.pedidos },
+      { title:'Valor da Causa', value: wizardData.valor_causa ? 'R$ '+wizardData.valor_causa : '' },
+      { title:'Observações', value: wizardData.observacoes },
+      { title:'Jurisprudência IA', value: wizardData.incluir_jurisprudencia ? 'Sim' : 'Não' }
+    ];
+    sections.forEach(s => {
+      if(!s.value) return;
+      html += '<div class="wizard-review-section"><div class="wizard-review-title">'+s.title+'</div><div class="wizard-review-value">'+escHtml(s.value)+'</div></div>';
+    });
+    html += '<div style="text-align:center;margin-top:8px"><button class="wizard-btn-generate" id="wizardBtnGenerate" onclick="wizardGenerate()">GERAR PEÇA</button></div>';
+    body.innerHTML = html;
+    document.getElementById('wizardBtnNext').style.display = 'none';
+  }
+
+  /* ── Navigation ── */
+  window.wizardNext = function(){
+    if(wizardStep === 1){
+      if(!wizardData.tipo){ showToast('Selecione o tipo de peça'); return; }
+      if(wizardData.tipo === 'outro' && !wizardData.tipoOutro.trim()){ showToast('Descreva o tipo de peça'); return; }
+      if(wizardData.tipo === 'outro') wizardData.tipoLabel = wizardData.tipoOutro.trim();
+    }
+    if(wizardStep === 2) saveStep2();
+    if(wizardStep === 3){
+      saveStep3();
+      if(!wizardData.fatos){ showToast('Descreva os fatos do caso'); return; }
+    }
+    if(wizardStep === 4){
+      saveStep4();
+      if(!wizardData.pedidos){ showToast('Preencha os pedidos'); return; }
+    }
+    if(wizardStep < 5){
+      wizardStep++;
+      renderWizardStep();
+    }
+  };
+
+  window.wizardBack = function(){
+    if(wizardStep === 2) saveStep2();
+    if(wizardStep === 3) saveStep3();
+    if(wizardStep === 4) saveStep4();
+    if(wizardStep > 1){
+      wizardStep--;
+      renderWizardStep();
+    }
+  };
+
+  /* ── Generate ── */
+  window.wizardGenerate = async function(){
+    const btn = document.getElementById('wizardBtnGenerate');
+    if(btn) btn.disabled = true;
+    const body = document.getElementById('wizardBody');
+    const footer = document.querySelector('.wizard-footer');
+    footer.style.display = 'none';
+    body.innerHTML = '<div class="wizard-loading"><div class="wizard-loading-spinner"></div><div class="wizard-loading-text">Gerando sua peça jurídica...</div><div class="wizard-loading-sub">Isso pode levar até 60 segundos</div><div class="wizard-loading-progress"><div class="wizard-loading-bar" id="wizardLoadBar"></div></div></div>';
+    // Animate progress bar
+    let pct = 0;
+    const bar = document.getElementById('wizardLoadBar');
+    const interval = setInterval(()=>{
+      pct = Math.min(pct + (pct < 60 ? 3 : 1), 92);
+      if(bar) bar.style.width = pct + '%';
+    }, 800);
+    try {
+      const token = localStorage.getItem('capi_token');
+      const tipoLabel = wizardData.tipo === 'outro' ? wizardData.tipoOutro : wizardData.tipoLabel;
+      const res = await fetch('/api/pecas/generate', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body:JSON.stringify({
+          tipo: tipoLabel,
+          foro: wizardData.foro,
+          vara: wizardData.vara,
+          autor: wizardData.autor,
+          reu: wizardData.reu,
+          numero_processo: wizardData.numero_processo,
+          fatos: wizardData.fatos,
+          fundamentos: wizardData.fundamentos,
+          pedidos: wizardData.pedidos,
+          valor_causa: wizardData.valor_causa,
+          observacoes: wizardData.observacoes,
+          incluir_jurisprudencia: wizardData.incluir_jurisprudencia,
+          upload_ids: wizardData.upload_ids
+        })
+      });
+      clearInterval(interval);
+      if(bar) bar.style.width = '100%';
+      if(!res.ok){
+        const errData = await res.json().catch(()=>({}));
+        throw new Error(errData.error || 'Erro ao gerar peça');
+      }
+      const data = await res.json();
+      // Open the new conversation
+      closeWizard();
+      footer.style.display = '';
+      if(data.conversation_id){
+        currentConvId = data.conversation_id;
+        convHistory = [{role:'user', content:'[Peça gerada via Wizard] '+tipoLabel}, {role:'assistant', content:data.content}];
+        // Clear welcome, show messages
+        const welcome = document.getElementById('welcomeScreen');
+        if(welcome) welcome.remove();
+        document.getElementById('chatMessages').innerHTML = '';
+        appendMessage('user', 'Peça gerada via Wizard: '+tipoLabel);
+        appendMessage('assistant', data.content, data.suggestions || ['Revise o parágrafo dos fatos','Adicione mais jurisprudência','Altere o valor dos danos morais','Exporte para Word']);
+        loadConversations();
+        if(typeof showToast === 'function') showToast('Peça gerada com sucesso!');
+      }
+    } catch(err){
+      clearInterval(interval);
+      footer.style.display = '';
+      body.innerHTML = '<div class="wizard-loading"><div style="font-size:2rem;margin-bottom:8px">⚠️</div><div class="wizard-loading-text" style="color:#ef5350">'+escHtml(err.message)+'</div><div style="margin-top:16px"><button class="wizard-btn-next" onclick="window._wizardRenderStep()">Voltar à revisão</button></div></div>';
+    }
+  };
+
+  function escHtml(s){
+    if(!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Expose renderWizardStep for error recovery
+  window._wizardRenderStep = renderWizardStep;
+  // Make wizardData accessible for saveStep functions called from window scope
+  window.wizardData = wizardData;
+})();
+</script>
 
 <!-- Drag & Drop Overlay -->
 <div id="dragOverlay" class="drag-overlay">

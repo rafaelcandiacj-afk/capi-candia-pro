@@ -5852,6 +5852,204 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
   }
 });
 
+// ══════════════════════════════════════════════════════════════
+// WIZARD — Geração guiada de peças jurídicas
+// ══════════════════════════════════════════════════════════════
+app.post('/api/pecas/generate', authMiddleware, async (req, res) => {
+  try {
+    const { tipo, foro, vara, autor, reu, numero_processo, fatos, fundamentos, pedidos, valor_causa, observacoes, incluir_jurisprudencia, upload_ids } = req.body;
+    if (!tipo || !tipo.trim()) return res.status(400).json({ error: 'Tipo de peça é obrigatório' });
+    if (!fatos || !fatos.trim()) return res.status(400).json({ error: 'Fatos são obrigatórios' });
+    if (!pedidos || !pedidos.trim()) return res.status(400).json({ error: 'Pedidos são obrigatórios' });
+
+    // Get user profile
+    const profile = db.prepare('SELECT * FROM user_profiles WHERE user_id = ?').get(req.user.id);
+    const nome = profile?.nome || 'Advogado(a)';
+    const oab = profile?.oab || '[OAB]';
+    const cidade = profile?.cidade || '[Cidade]';
+    const estado = profile?.estado || '[Estado]';
+
+    const hoje = new Date();
+    const dataFormatada = hoje.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // Get uploaded document context if any
+    let docContext = '';
+    if (upload_ids && upload_ids.length > 0) {
+      const placeholders = upload_ids.map(() => '?').join(',');
+      const docs = db.prepare(`SELECT original_name, extracted_text FROM conversation_uploads WHERE id IN (${placeholders}) AND user_id = ?`).all(...upload_ids, req.user.id);
+      docs.forEach(d => {
+        if (d.extracted_text) {
+          docContext += `\n\n--- DOCUMENTO ANEXADO: ${d.original_name} ---\n${d.extracted_text.substring(0, 15000)}\n`;
+        }
+      });
+    }
+
+    const systemPrompt = `Você é o melhor advogado processualista do Brasil, reconhecido por produzir peças jurídicas densas, persuasivas e tecnicamente impecáveis.
+
+Sua missão é redigir uma peça jurídica COMPLETA, ENCORPADA, REAL e PRONTA PARA PROTOCOLAR.
+
+FILOSOFIA: Cada peça que você produz é um "Projeto de Sentença" (Art. 489 CPC) — escrita para que o juiz copie seus argumentos direto na decisão.
+
+DADOS DO ADVOGADO:
+- Nome: ${nome}
+- OAB: ${oab}
+- Cidade: ${cidade}/${estado}
+- Data: ${dataFormatada}
+
+INSTRUÇÕES OBRIGATÓRIAS:
+1. Gere a peça COMPLETA, do cabeçalho ao fechamento
+2. Use formatação profissional com numeração adequada
+3. Inclua fundamentação legal (artigos de lei${incluir_jurisprudencia ? ', jurisprudência e súmulas pertinentes' : ''})
+4. Use linguagem jurídica formal adequada ao tipo de peça
+5. Inclua TODOS os elementos obrigatórios para este tipo de peça
+6. Ao final, inclua local, data e espaço para assinatura
+7. USE OS FATOS FORNECIDOS — não use placeholders genéricos
+8. Colchetes APENAS para CPF, RG, endereço, dados não informados
+9. Gere o texto completo em formato legível (não JSON), com parágrafos bem estruturados
+10. A peça deve ter no MÍNIMO 2000 palavras para ser considerada completa
+11. Seção de fatos: MÍNIMO 5 parágrafos longos e detalhados
+12. Seção de direito: MÍNIMO 6 parágrafos com artigos específicos
+13. Seção de pedidos: liste TODOS os pedidos de forma detalhada`;
+
+    const userMessage = `Gere uma peça jurídica completa com base nos dados abaixo:
+
+TIPO DE PEÇA: ${tipo}
+${foro ? 'FORO: ' + foro : ''}
+${vara ? 'VARA: ' + vara : ''}
+AUTOR/REQUERENTE: ${autor || '[A ser qualificado]'}
+RÉU/REQUERIDO: ${reu || '[A ser qualificado]'}
+${numero_processo ? 'PROCESSO Nº: ' + numero_processo : ''}
+
+FATOS:
+${fatos}
+
+FUNDAMENTOS JURÍDICOS:
+${fundamentos || 'Sugira os fundamentos mais adequados para o caso'}
+
+PEDIDOS:
+${pedidos}
+
+${valor_causa ? 'VALOR DA CAUSA: R$ ' + valor_causa : ''}
+${observacoes ? 'OBSERVAÇÕES: ' + observacoes : ''}
+${docContext ? '\nDOCUMENTOS ANEXADOS PARA CONTEXTO:' + docContext : ''}
+
+Gere a peça jurídica COMPLETA agora.`;
+
+    // Call OpenAI gpt-4.1
+    console.log(`📋 Wizard: gerando ${tipo} para user ${req.user.id}...`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
+    let raw = null;
+
+    // Try Gemini first if available
+    if (GEMINI_API_KEY) {
+      try {
+        console.log('🔵 Wizard: tentando Gemini 2.5 Flash...');
+        const gemCtrl = new AbortController();
+        const gemTimeout = setTimeout(() => gemCtrl.abort(), 120000);
+        const gemRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: systemPrompt + '\n\n' + userMessage }] }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 32000 }
+          }),
+          signal: gemCtrl.signal
+        });
+        clearTimeout(gemTimeout);
+        if (gemRes.ok) {
+          const gemData = await gemRes.json();
+          raw = gemData.candidates?.[0]?.content?.parts?.[0]?.text || null;
+          if (raw) console.log('✅ Wizard Gemini respondeu:', raw.length, 'chars');
+        } else {
+          throw new Error('Gemini HTTP ' + gemRes.status);
+        }
+      } catch (gemErr) {
+        console.warn('⚠️ Wizard Gemini falhou, fallback OpenAI:', gemErr.message);
+        raw = null;
+      }
+    }
+
+    // Fallback: OpenAI
+    if (!raw) {
+      console.log('🟡 Wizard: gerando via OpenAI gpt-4.1...');
+      const oaiCtrl = new AbortController();
+      const oaiTimeout = setTimeout(() => oaiCtrl.abort(), 120000);
+      try {
+        const oaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+          body: JSON.stringify({
+            model: 'gpt-4.1',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userMessage }
+            ],
+            max_tokens: 32000,
+            temperature: 0.4
+          }),
+          signal: oaiCtrl.signal
+        });
+        clearTimeout(oaiTimeout);
+        if (!oaiRes.ok) {
+          const errData = await oaiRes.json().catch(() => ({}));
+          return res.status(502).json({ error: errData.error?.message || 'Erro na IA' });
+        }
+        const oaiData = await oaiRes.json();
+        raw = oaiData.choices?.[0]?.message?.content || '';
+      } catch (oaiErr) {
+        clearTimeout(oaiTimeout);
+        throw oaiErr;
+      }
+    }
+    clearTimeout(timeout);
+
+    if (!raw || raw.length < 100) {
+      return res.status(502).json({ error: 'A IA não conseguiu gerar a peça. Tente novamente.' });
+    }
+
+    // Create conversation with the generated document
+    const title = tipo.substring(0, 55) + ' — Wizard';
+    const conv = db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(req.user.id, title);
+    const convId = conv.lastInsertRowid;
+
+    // Insert messages: user request + AI response
+    const userSummary = `[Wizard] Gerar ${tipo}\nForo: ${foro || '-'}\nAutor: ${autor || '-'}\nRéu: ${reu || '-'}\nFatos: ${fatos.substring(0, 200)}...`;
+    db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, req.user.id, 'user', userSummary, 0);
+    db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, req.user.id, 'assistant', raw, Math.round(raw.length / 3.5));
+
+    // Auto-save to favorites
+    db.prepare('INSERT INTO favorites (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, `${tipo} — Wizard`, raw);
+
+    // Log usage
+    const estInputTokens = Math.round(userMessage.length / 3.5);
+    const estOutputTokens = Math.round(raw.length / 3.5);
+    const usedModel = GEMINI_API_KEY && raw ? 'gemini-2.5-flash' : 'gpt-4.1';
+    if (typeof logAiUsage === 'function') {
+      const estThinkingTokens = usedModel === 'gemini-2.5-flash' ? estOutputTokens * 3 : 0;
+      const estCost = usedModel === 'gemini-2.5-flash'
+        ? (estInputTokens / 1e6) * 0.15 + (estThinkingTokens / 1e6) * 3.50 + (estOutputTokens / 1e6) * 0.60
+        : (estInputTokens / 1e6) * 2.00 + (estOutputTokens / 1e6) * 8.00;
+      logAiUsage(req.user.id, 'wizard_gerar', usedModel, estInputTokens, estOutputTokens, estThinkingTokens, estCost);
+    }
+
+    console.log(`✅ Wizard: peça gerada (${raw.length} chars) → conversa ${convId}`);
+    return res.json({
+      content: raw,
+      conversation_id: convId,
+      suggestions: [
+        'Revise a seção de fatos',
+        'Adicione mais jurisprudência',
+        'Mude o tom para mais formal',
+        'Exporte para Word'
+      ]
+    });
+  } catch (err) {
+    console.error('❌ Wizard erro:', err.message);
+    return res.status(500).json({ error: 'Erro interno ao gerar peça. Tente novamente.' });
+  }
+});
+
 const server = app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
 // Railway/proxies podem matar conexões idle — mantém vivas por mais tempo
 server.keepAliveTimeout = 120000; // 120s (Railway default é 60s)
