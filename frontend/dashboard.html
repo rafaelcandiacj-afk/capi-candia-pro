@@ -1,3375 +1,457 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard do Advogado — CAPI Când-IA Pro</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
-
-  <style>
-    /* ─── Design Tokens ─────────────────────────────────────────────── */
-    :root {
-      /* Brand palette — warm brown/gold legal AI */
-      --color-brand:          #C4A265;
-      --color-brand-dark:     #8B6914;
-      --color-brand-deeper:   #6B4F10;
-      --color-brand-muted:    rgba(196, 162, 101, 0.15);
-      --color-brand-glow:     rgba(196, 162, 101, 0.08);
-
-      /* Surfaces */
-      --color-bg:             #0E0D0B;
-      --color-surface:        #141210;
-      --color-surface-2:      #1A1814;
-      --color-surface-3:      #201E19;
-      --color-surface-hover:  #252219;
-      --color-border:         rgba(196, 162, 101, 0.15);
-      --color-border-strong:  rgba(196, 162, 101, 0.30);
-      --color-divider:        rgba(255,255,255,0.06);
-
-      /* Text */
-      --color-text:           #E8E0D0;
-      --color-text-muted:     #8A7E6A;
-      --color-text-faint:     #4A4336;
-      --color-text-gold:      #C4A265;
-      --color-text-bright:    #F5EDD8;
-
-      /* Status */
-      --color-success:        #5A9E6B;
-      --color-success-bg:     rgba(90, 158, 107, 0.15);
-      --color-warning:        #C4922A;
-      --color-warning-bg:     rgba(196, 146, 42, 0.15);
-      --color-error:          #C46A6A;
-      --color-error-bg:       rgba(196, 106, 106, 0.15);
-      --color-info:           #6A9EC4;
-      --color-info-bg:        rgba(106, 158, 196, 0.15);
-
-      /* Typography */
-      --font-body:            'Inter', 'Roboto', system-ui, sans-serif;
-      --font-display:         'Roboto', 'Inter', system-ui, sans-serif;
-
-      /* Type scale */
-      --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.8125rem);
-      --text-sm:   clamp(0.8125rem,0.78rem + 0.3vw,  0.9375rem);
-      --text-base: clamp(0.9375rem,0.9rem  + 0.25vw, 1rem);
-      --text-md:   clamp(1rem,     0.95rem + 0.3vw,  1.125rem);
-      --text-lg:   clamp(1.125rem, 1rem    + 0.65vw, 1.375rem);
-      --text-xl:   clamp(1.375rem, 1.1rem  + 1.1vw,  1.75rem);
-      --text-2xl:  clamp(1.75rem,  1.3rem  + 1.8vw,  2.25rem);
-
-      /* Spacing */
-      --sp-1:  0.25rem;
-      --sp-2:  0.5rem;
-      --sp-3:  0.75rem;
-      --sp-4:  1rem;
-      --sp-5:  1.25rem;
-      --sp-6:  1.5rem;
-      --sp-8:  2rem;
-      --sp-10: 2.5rem;
-      --sp-12: 3rem;
-      --sp-16: 4rem;
-
-      /* Radii */
-      --radius-sm:   0.375rem;
-      --radius-md:   0.625rem;
-      --radius-lg:   0.875rem;
-      --radius-xl:   1.125rem;
-      --radius-full: 9999px;
-
-      /* Shadows */
-      --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-      --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
-      --shadow-lg:  0 12px 40px rgba(0,0,0,0.6);
-      --shadow-gold:0 4px 24px rgba(196,162,101,0.12);
-      --shadow-gold-strong: 0 0 32px rgba(196,162,101,0.20), 0 4px 24px rgba(196,162,101,0.12);
-
-      /* Transitions */
-      --t-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
-      --t-base: 280ms cubic-bezier(0.16, 1, 0.3, 1);
-
-      /* Layout */
-      --content-max: 1200px;
-    }
-
-    /* ─── Base Reset ─────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-      scroll-behavior: smooth;
-      scroll-padding-top: var(--sp-16);
-    }
-
-    body {
-      min-height: 100dvh;
-      font-family: var(--font-body);
-      font-size: var(--text-base);
-      color: var(--color-text);
-      background-color: var(--color-bg);
-      line-height: 1.6;
-    }
-
-    img, svg { display: block; max-width: 100%; }
-    button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
-    input, textarea, select { font: inherit; color: inherit; }
-    ul, ol { list-style: none; }
-    a { color: inherit; text-decoration: none; }
-
-    h1, h2, h3, h4 {
-      font-family: var(--font-display);
-      text-wrap: balance;
-      line-height: 1.2;
-    }
-
-    :focus-visible {
-      outline: 2px solid var(--color-brand);
-      outline-offset: 3px;
-      border-radius: var(--radius-sm);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-
-    /* ─── Scrollbar ──────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: var(--color-surface); }
-    ::-webkit-scrollbar-thumb { background: var(--color-brand-muted); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(196,162,101,0.3); }
-
-    /* ─── Keyframes ──────────────────────────────────────────────────── */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50%       { transform: scale(1.08); opacity: 0.85; }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes shimmer {
-      0%   { background-position: -600px 0; }
-      100% { background-position: 600px 0; }
-    }
-    @keyframes badgePulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(196,162,101,0.4); }
-      50%       { box-shadow: 0 0 0 8px rgba(196,162,101,0); }
-    }
-    @keyframes countUp {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes glowPulse {
-      0%, 100% { opacity: 0.6; }
-      50%       { opacity: 1; }
-    }
-
-    /* ─── Loading Overlay ───────────────────────────────────────────── */
-    #loading-overlay {
-      position: fixed; inset: 0; z-index: 1000;
-      background: var(--color-bg);
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: var(--sp-5);
-      transition: opacity var(--t-base), visibility var(--t-base);
-    }
-    #loading-overlay.hidden {
-      opacity: 0; visibility: hidden; pointer-events: none;
-    }
-    .loading-logo {
-      font-size: 4rem;
-      animation: pulse 1.8s ease-in-out infinite;
-    }
-    .capi-mascot-img {
-      width: 1em; height: 1em;
-      object-fit: cover;
-      border-radius: 50%;
-      vertical-align: middle;
-      display: inline-block;
-    }
-    .loading-logo .capi-mascot-img { width: 4rem; height: 4rem; }
-    .header-logo-icon .capi-mascot-img { width: 2rem; height: 2rem; }
-    .hero-mascot .capi-mascot-img { width: 3.5rem; height: 3.5rem; }
-    .mascot .capi-mascot-img { width: 2.5rem; height: 2.5rem; }
-    .loading-text {
-      color: var(--color-brand);
-      font-size: var(--text-md);
-      font-weight: 500;
-      letter-spacing: 0.04em;
-    }
-    .loading-sub {
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-    }
-    .spinner {
-      width: 28px; height: 28px;
-      border: 2px solid var(--color-brand-muted);
-      border-top-color: var(--color-brand);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    /* ─── Main Layout ────────────────────────────────────────────────── */
-    .page-wrapper {
-      max-width: var(--content-max);
-      margin: 0 auto;
-      padding: 0 var(--sp-5);
-    }
-
-    /* ─── Header ─────────────────────────────────────────────────────── */
-    .site-header {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(14,13,11,0.85);
-      backdrop-filter: blur(16px) saturate(1.6);
-      -webkit-backdrop-filter: blur(16px) saturate(1.6);
-      border-bottom: 1px solid var(--color-border);
-    }
-    .header-inner {
-      max-width: var(--content-max);
-      margin: 0 auto;
-      padding: 0 var(--sp-5);
-      height: 64px;
-      display: flex;
-      align-items: center;
-      gap: var(--sp-4);
-    }
-    .header-back {
-      display: flex; align-items: center; justify-content: center;
-      width: 36px; height: 36px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
-      color: var(--color-text-muted);
-      transition: all var(--t-fast);
-      flex-shrink: 0;
-    }
-    .header-back:hover {
-      background: var(--color-brand-glow);
-      border-color: var(--color-brand);
-      color: var(--color-brand);
-    }
-    .header-logo {
-      display: flex; align-items: center; gap: var(--sp-2);
-      flex: 1;
-    }
-    .header-logo-icon { font-size: 1.5rem; }
-    .header-logo-text {
-      display: flex; flex-direction: column;
-      line-height: 1.1;
-    }
-    .header-logo-title {
-      font-family: var(--font-display);
-      font-size: var(--text-md);
-      font-weight: 700;
-      color: var(--color-text-bright);
-    }
-    .header-logo-sub {
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-    .header-right {
-      display: flex; align-items: center; gap: var(--sp-3);
-    }
-    .header-welcome {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      display: none;
-    }
-    @media (min-width: 640px) { .header-welcome { display: block; } }
-    .header-badge {
-      display: inline-flex; align-items: center; gap: var(--sp-1);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--color-brand-muted);
-      border: 1px solid var(--color-border-strong);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
-
-    /* ─── Hero Welcome ───────────────────────────────────────────────── */
-    .hero-section {
-      padding: var(--sp-8) 0 var(--sp-6);
-      animation: fadeIn 0.5s ease both;
-    }
-    .hero-inner {
-      background: linear-gradient(135deg, rgba(139,105,20,0.18) 0%, rgba(196,162,101,0.08) 50%, transparent 100%);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-8);
-      position: relative;
-      overflow: hidden;
-    }
-    .hero-inner::before {
-      content: '';
-      position: absolute; top: 0; right: 0;
-      width: 340px; height: 100%;
-      background: radial-gradient(ellipse at top right, rgba(196,162,101,0.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .hero-top {
-      display: flex; align-items: flex-start;
-      justify-content: space-between;
-      gap: var(--sp-4);
-      flex-wrap: wrap;
-    }
-    .hero-greeting {
-      font-size: var(--text-xl);
-      font-weight: 700;
-      color: var(--color-text-bright);
-      margin-bottom: var(--sp-2);
-    }
-    .hero-greeting .name-highlight {
-      color: var(--color-brand);
-    }
-    .hero-sub {
-      font-size: var(--text-base);
-      color: var(--color-text-muted);
-      max-width: 60ch;
-    }
-    .hero-mascot {
-      font-size: 3.5rem;
-      flex-shrink: 0;
-      animation: pulse 3s ease-in-out infinite;
-    }
-    .hero-meta {
-      display: flex; align-items: center; gap: var(--sp-4);
-      margin-top: var(--sp-4);
-      flex-wrap: wrap;
-    }
-    .hero-meta-item {
-      display: flex; align-items: center; gap: var(--sp-2);
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-    }
-    .hero-meta-item .dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: var(--color-brand);
-    }
-
-    /* Hero economy highlight */
-    .hero-economy-strip {
-      margin-top: var(--sp-6);
-      padding-top: var(--sp-5);
-      border-top: 1px solid var(--color-divider);
-      display: flex;
-      align-items: center;
-      gap: var(--sp-8);
-      flex-wrap: wrap;
-    }
-    .hero-economy-item {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-1);
-    }
-    .hero-economy-label {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      font-weight: 600;
-    }
-    .hero-economy-value {
-      font-size: var(--text-xl);
-      font-weight: 700;
-      color: var(--color-brand);
-      font-family: var(--font-display);
-      line-height: 1;
-      text-shadow: 0 0 24px rgba(196,162,101,0.35);
-      animation: countUp 0.5s ease both;
-    }
-    .hero-economy-sub {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-    .hero-badges-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      flex-wrap: wrap;
-      margin-top: var(--sp-4);
-    }
-    .hero-pill {
-      display: inline-flex; align-items: center; gap: var(--sp-1);
-      padding: var(--sp-1) var(--sp-3);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      border: 1px solid;
-    }
-    .hero-pill.streak {
-      background: rgba(196,146,42,0.15);
-      border-color: rgba(196,146,42,0.3);
-      color: var(--color-warning);
-    }
-    .hero-pill.member {
-      background: var(--color-brand-muted);
-      border-color: var(--color-border-strong);
-      color: var(--color-brand);
-    }
-
-    /* ─── Section Layout ─────────────────────────────────────────────── */
-    .main-content {
-      padding-bottom: var(--sp-16);
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-8);
-    }
-    .section-header {
-      display: flex; align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-4);
-      margin-bottom: var(--sp-5);
-      flex-wrap: wrap;
-    }
-    .section-title-group {
-      display: flex; align-items: center; gap: var(--sp-3);
-    }
-    .section-icon {
-      font-size: 1.25rem;
-      width: 40px; height: 40px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--color-brand-muted);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      flex-shrink: 0;
-    }
-    .section-title {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--color-text-bright);
-    }
-    .section-count {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      font-weight: 400;
-    }
-
-    /* ─── Economy Cards (NEW) ────────────────────────────────────────── */
-    .economy-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--sp-4);
-    }
-    @media (max-width: 768px) {
-      .economy-grid { grid-template-columns: 1fr; }
-    }
-    @media (min-width: 480px) and (max-width: 768px) {
-      .economy-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-
-    .economy-card {
-      position: relative;
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-6);
-      overflow: hidden;
-      transition: all var(--t-base);
-      animation: fadeInUp 0.5s ease both;
-    }
-    .economy-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand), var(--color-brand-dark));
-    }
-    .economy-card::after {
-      content: '';
-      position: absolute; top: 3px; right: 0; bottom: 0; left: 0;
-      background: radial-gradient(ellipse at top center, rgba(196,162,101,0.06) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .economy-card:hover {
-      border-color: var(--color-border-strong);
-      box-shadow: var(--shadow-gold-strong);
-      transform: translateY(-2px);
-    }
-    .economy-card:nth-child(1) { animation-delay: 0.1s; }
-    .economy-card:nth-child(2) { animation-delay: 0.2s; }
-    .economy-card:nth-child(3) { animation-delay: 0.3s; }
-
-    .economy-card-label {
-      font-size: var(--text-xs);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      color: var(--color-text-muted);
-      margin-bottom: var(--sp-4);
-      display: flex; align-items: center; gap: var(--sp-2);
-    }
-    .economy-card-icon {
-      font-size: 1rem;
-      width: 28px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--color-brand-muted);
-      border-radius: var(--radius-sm);
-    }
-    .economy-big-number {
-      font-family: var(--font-display);
-      font-size: clamp(2rem, 4vw, 2.75rem);
-      font-weight: 700;
-      color: var(--color-brand);
-      line-height: 1;
-      margin-bottom: var(--sp-2);
-      text-shadow: 0 0 32px rgba(196,162,101,0.25);
-    }
-    .economy-big-unit {
-      font-size: var(--text-md);
-      font-weight: 500;
-      color: var(--color-text-muted);
-    }
-    .economy-sub-row {
-      display: flex; align-items: center; gap: var(--sp-3);
-      margin-top: var(--sp-3);
-      flex-wrap: wrap;
-    }
-    .economy-sub-item {
-      display: flex; align-items: center; gap: var(--sp-1);
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-    .economy-sub-value {
-      font-weight: 600;
-      color: var(--color-text);
-    }
-    .economy-sub-dot {
-      width: 4px; height: 4px;
-      border-radius: 50%;
-      background: var(--color-brand);
-      flex-shrink: 0;
-    }
-
-    /* Ranking visual */
-    .ranking-visual {
-      margin-top: var(--sp-4);
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-    }
-    .ranking-bar-track {
-      flex: 1;
-      height: 6px;
-      background: var(--color-surface-3);
-      border-radius: var(--radius-full);
-      overflow: hidden;
-    }
-    .ranking-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand));
-      border-radius: var(--radius-full);
-      transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .ranking-percentile-label {
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
-    /* ─── Evolution Chart (NEW) ──────────────────────────────────────── */
-    .chart-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-6);
-    }
-    .chart-legend {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-5);
-      margin-bottom: var(--sp-6);
-      flex-wrap: wrap;
-    }
-    .chart-legend-item {
-      display: flex; align-items: center; gap: var(--sp-2);
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      font-weight: 500;
-    }
-    .chart-legend-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .chart-legend-dot.mensagens { background: var(--color-brand); }
-    .chart-legend-dot.horas { background: var(--color-success); }
-
-    .chart-area {
-      width: 100%;
-      overflow-x: auto;
-      padding-bottom: var(--sp-2);
-      scrollbar-width: none;
-    }
-    .chart-area::-webkit-scrollbar { display: none; }
-
-    .chart-svg-wrap {
-      min-width: 400px;
-      position: relative;
-    }
-
-    /* Tooltip */
-    .chart-tooltip {
-      position: absolute;
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border-strong);
-      border-radius: var(--radius-md);
-      padding: var(--sp-3) var(--sp-4);
-      font-size: var(--text-xs);
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity var(--t-fast);
-      z-index: 10;
-      white-space: nowrap;
-      box-shadow: var(--shadow-md);
-    }
-    .chart-tooltip.visible { opacity: 1; }
-    .chart-tooltip-title {
-      font-weight: 700;
-      color: var(--color-text-bright);
-      margin-bottom: 4px;
-    }
-    .chart-tooltip-row {
-      display: flex; align-items: center; gap: var(--sp-2);
-      color: var(--color-text-muted);
-    }
-    .chart-tooltip-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-    }
-
-    /* ─── Tool Breakdown (NEW) ───────────────────────────────────────── */
-    .tools-grid {
-      display: flex;
-      flex-direction: column;
-      gap: var(--sp-3);
-    }
-    .tool-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-4);
-      padding: var(--sp-3) var(--sp-4);
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      transition: all var(--t-fast);
-      animation: fadeInUp 0.4s ease both;
-    }
-    .tool-row:hover {
-      border-color: var(--color-border-strong);
-      background: var(--color-surface-hover);
-    }
-    .tool-emoji {
-      font-size: 1.25rem;
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      background: var(--color-brand-muted);
-      border-radius: var(--radius-md);
-      flex-shrink: 0;
-    }
-    .tool-info {
-      flex: 1;
-      min-width: 0;
-    }
-    .tool-name-row {
-      display: flex; align-items: center;
-      justify-content: space-between;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-2);
-    }
-    .tool-name {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--color-text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .tool-count {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .tool-count strong {
-      color: var(--color-brand);
-      font-weight: 700;
-    }
-    .tool-bar-track {
-      height: 4px;
-      background: var(--color-surface-3);
-      border-radius: var(--radius-full);
-      overflow: hidden;
-    }
-    .tool-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand));
-      border-radius: var(--radius-full);
-      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1) var(--bar-delay, 0s);
-    }
-    .tool-pct {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      min-width: 36px;
-      text-align: right;
-      flex-shrink: 0;
-    }
-
-    /* ─── Badges/Conquistas (NEW) ────────────────────────────────────── */
-    .badges-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--sp-4);
-    }
-    @media (max-width: 900px) { .badges-grid { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 600px) { .badges-grid { grid-template-columns: repeat(2, 1fr); } }
-
-    .badge-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-4);
-      text-align: center;
-      transition: all var(--t-base);
-      position: relative;
-      overflow: hidden;
-      animation: fadeInUp 0.4s ease both;
-    }
-    .badge-card.earned {
-      border-color: var(--color-border-strong);
-    }
-    .badge-card.earned:hover {
-      box-shadow: var(--shadow-gold-strong);
-      transform: translateY(-2px);
-      animation: badgePulse 2s ease infinite;
-    }
-    .badge-card.locked {
-      opacity: 0.55;
-      filter: grayscale(0.7);
-    }
-    .badge-card.earned::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--color-brand), transparent);
-    }
-
-    .badge-icon-wrap {
-      position: relative;
-      display: inline-block;
-      margin-bottom: var(--sp-3);
-    }
-    .badge-icon {
-      font-size: 2rem;
-      line-height: 1;
-    }
-    .badge-lock-overlay {
-      position: absolute;
-      bottom: -4px; right: -4px;
-      width: 18px; height: 18px;
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px;
-    }
-    .badge-title {
-      font-size: var(--text-xs);
-      font-weight: 700;
-      color: var(--color-text-bright);
-      margin-bottom: var(--sp-1);
-      line-height: 1.3;
-    }
-    .badge-desc {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .badge-date {
-      margin-top: var(--sp-2);
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 600;
-    }
-    .badge-progress {
-      margin-top: var(--sp-2);
-      font-size: var(--text-xs);
-      color: var(--color-text-faint);
-      font-style: italic;
-    }
-
-    /* ─── Activity Calendar ─────────────────────────────────────────── */
-    .calendar-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-6);
-    }
-    .calendar-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-      justify-content: flex-start;
-    }
-    .calendar-day {
-      width: 14px;
-      height: 14px;
-      border-radius: 2px;
-      background: var(--color-surface-3);
-      transition: all var(--t-fast);
-      cursor: default;
-      position: relative;
-    }
-    .calendar-day:hover {
-      transform: scale(1.4);
-      z-index: 2;
-    }
-    .calendar-day[data-level="1"] { background: rgba(196,162,101,0.25); }
-    .calendar-day[data-level="2"] { background: rgba(196,162,101,0.45); }
-    .calendar-day[data-level="3"] { background: rgba(196,162,101,0.70); }
-    .calendar-day[data-level="4"] { background: var(--color-brand); }
-    .calendar-legend {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-3);
-      margin-top: var(--sp-4);
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-    .calendar-legend-squares {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-    }
-    .calendar-legend-sq {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-    }
-    .calendar-tooltip {
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border-strong);
-      border-radius: var(--radius-sm);
-      padding: 4px 8px;
-      font-size: 10px;
-      color: var(--color-text);
-      white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity var(--t-fast);
-      z-index: 10;
-    }
-    .calendar-day:hover .calendar-tooltip { opacity: 1; }
-    .calendar-stats-row {
-      display: flex;
-      gap: var(--sp-6);
-      margin-bottom: var(--sp-5);
-      flex-wrap: wrap;
-    }
-    .calendar-stat {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .calendar-stat-value {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--color-brand);
-    }
-    .calendar-stat-label {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      font-weight: 500;
-    }
-    @media (max-width: 600px) {
-      .calendar-day { width: 11px; height: 11px; }
-    }
-
-    /* ─── Stats Cards ────────────────────────────────────────────────── */
-    .stats-scroll-wrapper {
-      overflow-x: auto;
-      padding-bottom: var(--sp-2);
-      margin: 0 calc(-1 * var(--sp-5));
-      padding: 0 var(--sp-5);
-      scrollbar-width: none;
-    }
-    .stats-scroll-wrapper::-webkit-scrollbar { display: none; }
-
-    .stats-grid {
-      display: flex;
-      gap: var(--sp-4);
-      min-width: max-content;
-    }
-
-    .stat-card {
-      display: flex; flex-direction: column;
-      gap: var(--sp-2);
-      padding: var(--sp-5);
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      min-width: 152px;
-      transition: all var(--t-base);
-      animation: fadeInUp 0.4s ease both;
-      cursor: default;
-      position: relative;
-      overflow: hidden;
-    }
-    .stat-card::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand));
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform var(--t-base);
-    }
-    .stat-card:hover {
-      border-color: var(--color-border-strong);
-      background: var(--color-surface-hover);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-gold);
-    }
-    .stat-card:hover::after { transform: scaleX(1); }
-
-    .stat-icon { font-size: 1.5rem; }
-    .stat-value {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 700;
-      color: var(--color-brand);
-      line-height: 1;
-    }
-    .stat-label {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .stat-card:nth-child(1) { animation-delay: 0.05s; }
-    .stat-card:nth-child(2) { animation-delay: 0.10s; }
-    .stat-card:nth-child(3) { animation-delay: 0.15s; }
-    .stat-card:nth-child(4) { animation-delay: 0.20s; }
-    .stat-card:nth-child(5) { animation-delay: 0.25s; }
-    .stat-card:nth-child(6) { animation-delay: 0.30s; }
-    .stat-card:nth-child(7) { animation-delay: 0.35s; }
-    .stat-card:nth-child(8) { animation-delay: 0.40s; }
-
-    /* ─── Memory Section ─────────────────────────────────────────────── */
-    .memory-section {
-      animation: fadeIn 0.5s 0.2s ease both;
-    }
-    .memory-categories-grid {
-      display: grid;
-      gap: var(--sp-4);
-      grid-template-columns: 1fr;
-    }
-    @media (min-width: 640px) {
-      .memory-categories-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (min-width: 1024px) {
-      .memory-categories-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-
-    .memory-category-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-5);
-      transition: border-color var(--t-fast);
-    }
-    .memory-category-card:hover { border-color: var(--color-border-strong); }
-
-    .memory-cat-header {
-      display: flex; align-items: center; gap: var(--sp-2);
-      margin-bottom: var(--sp-3);
-    }
-    .memory-cat-icon { font-size: 1rem; }
-    .memory-cat-title {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-    }
-    .memory-cat-count {
-      margin-left: auto;
-      background: var(--color-brand-muted);
-      color: var(--color-brand);
-      font-size: var(--text-xs);
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-    }
-
-    .memory-chips {
-      display: flex; flex-wrap: wrap; gap: var(--sp-2);
-    }
-    .memory-chip {
-      display: inline-flex; align-items: center; gap: var(--sp-1);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      color: var(--color-text);
-      line-height: 1.4;
-      max-width: 100%;
-      word-break: break-word;
-      transition: all var(--t-fast);
-    }
-    .memory-chip:hover { border-color: var(--color-border-strong); background: var(--color-surface-hover); }
-    .memory-chip-delete {
-      display: flex; align-items: center; justify-content: center;
-      width: 14px; height: 14px;
-      border-radius: 50%;
-      color: var(--color-text-muted);
-      background: transparent;
-      flex-shrink: 0;
-      font-size: 10px;
-      line-height: 1;
-      transition: all var(--t-fast);
-    }
-    .memory-chip-delete:hover {
-      background: var(--color-error-bg);
-      color: var(--color-error);
-    }
-
-    .memory-empty {
-      text-align: center;
-      padding: var(--sp-10) var(--sp-6);
-      color: var(--color-text-muted);
-    }
-    .memory-empty .mascot { font-size: 3rem; margin-bottom: var(--sp-4); }
-    .memory-empty p { max-width: 40ch; margin: 0 auto; font-size: var(--text-sm); }
-
-    /* ─── Cases Section ──────────────────────────────────────────────── */
-    .cases-section { animation: fadeIn 0.5s 0.3s ease both; }
-
-    .cases-list {
-      display: flex; flex-direction: column;
-      gap: var(--sp-4);
-    }
-
-    .case-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-5);
-      transition: all var(--t-base);
-      position: relative;
-    }
-    .case-card:hover {
-      border-color: var(--color-border-strong);
-      box-shadow: var(--shadow-gold);
-      transform: translateY(-1px);
-    }
-    .case-card-top {
-      display: flex; align-items: flex-start;
-      justify-content: space-between;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-3);
-    }
-    .case-title-row {
-      display: flex; flex-direction: column; gap: var(--sp-1);
-      flex: 1; min-width: 0;
-    }
-    .case-badges {
-      display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
-      margin-bottom: var(--sp-1);
-    }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 2px 10px;
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .status-badge.ativo    { background: var(--color-success-bg); color: var(--color-success); }
-    .status-badge.concluido{ background: rgba(120,120,120,0.15);  color: #888; }
-    .status-badge.arquivado{ background: var(--color-warning-bg); color: var(--color-warning); }
-    .status-badge .status-dot {
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: currentColor;
-    }
-
-    .ai-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px;
-      background: rgba(106,158,196,0.12);
-      border: 1px solid rgba(106,158,196,0.25);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      color: var(--color-info);
-      font-weight: 500;
-    }
-
-    .case-title {
-      font-size: var(--text-md);
-      font-weight: 600;
-      color: var(--color-text-bright);
-    }
-    .case-meta {
-      display: flex; align-items: center; gap: var(--sp-4);
-      flex-wrap: wrap;
-    }
-    .case-meta-item {
-      display: flex; align-items: center; gap: var(--sp-1);
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-    }
-    .case-meta-item svg { flex-shrink: 0; }
-
-    .case-body {
-      margin-top: var(--sp-3);
-      padding-top: var(--sp-3);
-      border-top: 1px solid var(--color-divider);
-    }
-    .case-next-step {
-      display: flex; align-items: flex-start; gap: var(--sp-2);
-      padding: var(--sp-3);
-      background: rgba(196,162,101,0.06);
-      border: 1px solid rgba(196,162,101,0.12);
-      border-radius: var(--radius-md);
-      margin-bottom: var(--sp-3);
-    }
-    .case-next-step-icon { font-size: 0.875rem; flex-shrink: 0; margin-top: 2px; }
-    .case-next-step-label {
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 3px;
-    }
-    .case-next-step-text {
-      font-size: var(--text-sm);
-      color: var(--color-text);
-    }
-
-    .case-prazo {
-      display: inline-flex; align-items: center; gap: var(--sp-1);
-      padding: var(--sp-1) var(--sp-3);
-      background: var(--color-warning-bg);
-      border: 1px solid rgba(196,146,42,0.25);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      color: var(--color-warning);
-      font-weight: 500;
-    }
-
-    .case-actions {
-      display: flex; align-items: center; gap: var(--sp-2);
-      flex-shrink: 0;
-    }
-    .case-action-btn {
-      display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
-      color: var(--color-text-muted);
-      transition: all var(--t-fast);
-    }
-    .case-action-btn:hover { border-color: var(--color-border-strong); color: var(--color-text); }
-    .case-action-btn.danger:hover { border-color: var(--color-error); color: var(--color-error); background: var(--color-error-bg); }
-    .case-action-btn.success-action:hover { border-color: var(--color-success); color: var(--color-success); background: var(--color-success-bg); }
-
-    /* ─── Add Case Form ───────────────────────────────────────────────── */
-    .add-case-btn {
-      display: flex; align-items: center; justify-content: center; gap: var(--sp-2);
-      padding: var(--sp-4) var(--sp-5);
-      background: var(--color-surface-2);
-      border: 1px dashed var(--color-border-strong);
-      border-radius: var(--radius-lg);
-      color: var(--color-text-muted);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      transition: all var(--t-base);
-      width: 100%;
-    }
-    .add-case-btn:hover {
-      border-color: var(--color-brand);
-      color: var(--color-brand);
-      background: var(--color-brand-glow);
-    }
-
-    .case-form-wrap {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border-strong);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-5);
-      display: none;
-    }
-    .case-form-wrap.visible { display: block; animation: fadeInUp 0.3s ease; }
-    .case-form-title {
-      font-size: var(--text-md);
-      font-weight: 700;
-      color: var(--color-text-bright);
-      margin-bottom: var(--sp-5);
-    }
-    .form-grid {
-      display: grid;
-      gap: var(--sp-4);
-      grid-template-columns: 1fr;
-    }
-    @media (min-width: 640px) {
-      .form-grid { grid-template-columns: repeat(2, 1fr); }
-      .form-grid .col-span-2 { grid-column: span 2; }
-    }
-    .form-field {
-      display: flex; flex-direction: column; gap: var(--sp-2);
-    }
-    .form-label {
-      font-size: var(--text-sm);
-      font-weight: 600;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      padding: var(--sp-3) var(--sp-4);
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      color: var(--color-text);
-      font-size: var(--text-base);
-      transition: border-color var(--t-fast), box-shadow var(--t-fast);
-    }
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      outline: none;
-      border-color: var(--color-brand);
-      box-shadow: 0 0 0 3px rgba(196,162,101,0.12);
-    }
-    .form-input::placeholder, .form-textarea::placeholder { color: var(--color-text-faint); }
-    .form-select option { background: var(--color-surface-3); }
-    .form-textarea { resize: vertical; min-height: 80px; }
-    .form-actions {
-      display: flex; align-items: center; gap: var(--sp-3);
-      margin-top: var(--sp-5);
-      justify-content: flex-end;
-    }
-
-    /* ─── Buttons ────────────────────────────────────────────────────── */
-    .btn {
-      display: inline-flex; align-items: center; gap: var(--sp-2);
-      padding: var(--sp-3) var(--sp-5);
-      border-radius: var(--radius-md);
-      font-size: var(--text-sm);
-      font-weight: 600;
-      transition: all var(--t-fast);
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand));
-      color: #1a1200;
-      border: none;
-    }
-    .btn-primary:hover {
-      background: linear-gradient(135deg, var(--color-brand), #D4B275);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-gold);
-    }
-    .btn-secondary {
-      background: var(--color-surface-3);
-      color: var(--color-text-muted);
-      border: 1px solid var(--color-border);
-    }
-    .btn-secondary:hover {
-      border-color: var(--color-border-strong);
-      color: var(--color-text);
-    }
-    .btn-sm { padding: var(--sp-2) var(--sp-3); font-size: var(--text-xs); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
-    .btn.loading { pointer-events: none; }
-
-    /* ─── Summaries (Conversation History) ──────────────────────────── */
-    .summaries-section { animation: fadeIn 0.5s 0.4s ease both; }
-
-    .timeline {
-      display: flex; flex-direction: column;
-      gap: 0;
-      position: relative;
-    }
-    .timeline::before {
-      content: '';
-      position: absolute;
-      left: 20px;
-      top: 20px;
-      bottom: 20px;
-      width: 1px;
-      background: linear-gradient(180deg, var(--color-border-strong) 0%, transparent 100%);
-    }
-    @media (max-width: 640px) { .timeline::before { display: none; } }
-
-    .timeline-item {
-      display: flex; gap: var(--sp-4);
-      padding: var(--sp-4) 0;
-      border-bottom: 1px solid var(--color-divider);
-      text-decoration: none;
-      transition: background var(--t-fast);
-      border-radius: var(--radius-md);
-      padding-left: var(--sp-3);
-    }
-    .timeline-item:last-child { border-bottom: none; }
-    .timeline-item:hover { background: var(--color-brand-glow); }
-
-    .timeline-dot-wrap {
-      display: flex; flex-direction: column; align-items: center;
-      flex-shrink: 0;
-    }
-    .timeline-dot {
-      width: 40px; height: 40px;
-      border-radius: var(--radius-md);
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.25rem;
-      flex-shrink: 0;
-      z-index: 1;
-      position: relative;
-    }
-    @media (max-width: 640px) { .timeline-dot-wrap { display: none; } }
-
-    .timeline-content { flex: 1; min-width: 0; }
-    .timeline-header {
-      display: flex; align-items: flex-start;
-      justify-content: space-between;
-      gap: var(--sp-3);
-      margin-bottom: var(--sp-2);
-    }
-    .timeline-title {
-      font-size: var(--text-md);
-      font-weight: 600;
-      color: var(--color-text-bright);
-      flex: 1; min-width: 0;
-    }
-    .timeline-date {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .timeline-summary {
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-      margin-bottom: var(--sp-3);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .timeline-tags {
-      display: flex; flex-wrap: wrap; gap: var(--sp-2);
-      margin-bottom: var(--sp-2);
-    }
-    .timeline-tag {
-      padding: 2px 10px;
-      background: var(--color-brand-muted);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-full);
-      font-size: var(--text-xs);
-      color: var(--color-brand);
-      font-weight: 500;
-    }
-    .timeline-action-items {
-      display: flex; align-items: flex-start; gap: var(--sp-2);
-      margin-top: var(--sp-2);
-    }
-    .timeline-action-label {
-      font-size: var(--text-xs);
-      font-weight: 600;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      white-space: nowrap;
-      padding-top: 1px;
-    }
-    .timeline-action-list {
-      display: flex; flex-direction: column; gap: 4px;
-    }
-    .timeline-action-item {
-      font-size: var(--text-xs);
-      color: var(--color-text-muted);
-    }
-    .timeline-action-item::before {
-      content: '→ ';
-      color: var(--color-brand);
-    }
-
-    /* ─── Profile Section ────────────────────────────────────────────── */
-    .profile-section { animation: fadeIn 0.5s 0.5s ease both; }
-
-    .profile-card {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-6);
-      position: relative;
-      overflow: hidden;
-    }
-    .profile-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand), var(--color-brand-dark));
-    }
-    .profile-card-header {
-      display: flex; align-items: center; gap: var(--sp-4);
-      margin-bottom: var(--sp-6);
-    }
-    .profile-avatar {
-      width: 56px; height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand));
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.5rem;
-      flex-shrink: 0;
-    }
-    .profile-header-text { flex: 1; }
-    .profile-name {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--color-text-bright);
-    }
-    .profile-area {
-      font-size: var(--text-sm);
-      color: var(--color-brand);
-      font-weight: 500;
-    }
-    .profile-form-grid {
-      display: grid;
-      gap: var(--sp-4);
-      grid-template-columns: 1fr;
-    }
-    @media (min-width: 640px) {
-      .profile-form-grid { grid-template-columns: repeat(2, 1fr); }
-      .profile-form-grid .col-span-2 { grid-column: span 2; }
-    }
-    @media (min-width: 1024px) {
-      .profile-form-grid { grid-template-columns: repeat(3, 1fr); }
-      .profile-form-grid .col-span-3 { grid-column: span 3; }
-    }
-
-    .profile-save-row {
-      display: flex; align-items: center; gap: var(--sp-4);
-      margin-top: var(--sp-6);
-    }
-    .profile-save-msg {
-      font-size: var(--text-sm);
-      color: var(--color-success);
-      font-weight: 500;
-      opacity: 0;
-      transition: opacity var(--t-base);
-    }
-    .profile-save-msg.visible { opacity: 1; }
-
-    /* ─── Modal ──────────────────────────────────────────────────────── */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 200;
-      background: rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center;
-      padding: var(--sp-5);
-      opacity: 0; visibility: hidden;
-      transition: opacity var(--t-base), visibility var(--t-base);
-    }
-    .modal-overlay.visible {
-      opacity: 1; visibility: visible;
-    }
-    .modal {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border-strong);
-      border-radius: var(--radius-xl);
-      padding: var(--sp-6);
-      width: 100%;
-      max-width: 600px;
-      max-height: 90dvh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-lg);
-      transform: translateY(12px);
-      transition: transform var(--t-base);
-      position: relative;
-    }
-    .modal-overlay.visible .modal { transform: translateY(0); }
-    .modal::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, var(--color-brand-dark), var(--color-brand), var(--color-brand-dark));
-      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    }
-    .modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: var(--sp-4);
-      margin-bottom: var(--sp-6);
-    }
-    .modal-title {
-      font-size: var(--text-lg);
-      font-weight: 700;
-      color: var(--color-text-bright);
-    }
-    .modal-close {
-      display: flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px;
-      border-radius: var(--radius-md);
-      border: 1px solid var(--color-border);
-      color: var(--color-text-muted);
-      transition: all var(--t-fast);
-      flex-shrink: 0;
-    }
-    .modal-close:hover { border-color: var(--color-error); color: var(--color-error); }
-
-    /* ─── Toast ──────────────────────────────────────────────────────── */
-    #toast-container {
-      position: fixed; bottom: var(--sp-6); right: var(--sp-6);
-      z-index: 900;
-      display: flex; flex-direction: column; gap: var(--sp-3);
-      pointer-events: none;
-    }
-    .toast {
-      padding: var(--sp-3) var(--sp-5);
-      background: var(--color-surface-3);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      font-size: var(--text-sm);
-      color: var(--color-text);
-      box-shadow: var(--shadow-lg);
-      pointer-events: auto;
-      animation: fadeInUp 0.3s ease;
-      display: flex; align-items: center; gap: var(--sp-2);
-    }
-    .toast.success { border-color: var(--color-success); }
-    .toast.error   { border-color: var(--color-error); }
-
-    /* ─── Empty States ───────────────────────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: var(--sp-10) var(--sp-6);
-      color: var(--color-text-muted);
-    }
-    .empty-state .mascot { font-size: 2.5rem; margin-bottom: var(--sp-4); }
-    .empty-state .title  {
-      font-size: var(--text-md);
-      font-weight: 600;
-      color: var(--color-text);
-      margin-bottom: var(--sp-2);
-    }
-    .empty-state p { max-width: 40ch; margin: 0 auto; font-size: var(--text-sm); }
-
-    /* ─── Skeleton loader ────────────────────────────────────────────── */
-    .skeleton {
-      background: linear-gradient(
-        90deg,
-        var(--color-surface-3) 25%,
-        var(--color-surface-hover) 50%,
-        var(--color-surface-3) 75%
-      );
-      background-size: 600px 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: var(--radius-md);
-    }
-
-    /* ─── Error Banner ───────────────────────────────────────────────── */
-    .error-banner {
-      padding: var(--sp-4);
-      background: var(--color-error-bg);
-      border: 1px solid rgba(196,106,106,0.3);
-      border-radius: var(--radius-lg);
-      color: var(--color-error);
-      font-size: var(--text-sm);
-      display: none;
-    }
-    .error-banner.visible { display: block; }
-
-    /* ─── Misc Utility ───────────────────────────────────────────────── */
-    .text-gold  { color: var(--color-brand); }
-    .text-muted { color: var(--color-text-muted); }
-    .font-bold  { font-weight: 700; }
-    .mt-2 { margin-top: var(--sp-2); }
-    .mt-4 { margin-top: var(--sp-4); }
-    .divider {
-      height: 1px;
-      background: var(--color-divider);
-      margin: var(--sp-6) 0;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capi Când-IA — Dashboard de Uso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;
+  --gold:#daa520;--gold-dim:#b8860b;--gold-light:#ffd700;
+  --text:#e8e8e8;--text2:#aaa;--text3:#666;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;--purple:#a855f7;--orange:#f97316;
+  --radius:10px;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* Header */
+.header{background:var(--bg2);border-bottom:1px solid #222;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px)}
+.header-left{display:flex;align-items:center;gap:12px}
+.header h1{font-size:18px;font-weight:700;letter-spacing:-0.02em}
+.header h1 span{color:var(--gold)}
+.header-badge{background:var(--bg3);color:var(--text2);font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500}
+.header-right{display:flex;align-items:center;gap:12px}
+.refresh-btn{background:var(--bg3);color:var(--text2);border:1px solid #333;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.refresh-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--gold-dim)}
+.auto-refresh{font-size:11px;color:var(--text3)}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Layout */
+.container{max-width:1400px;margin:0 auto;padding:24px 32px}
+
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:32px}
+.kpi-card{background:var(--bg2);border:1px solid #222;border-radius:var(--radius);padding:20px;transition:border-color .2s}
+.kpi-card:hover{border-color:#333}
+.kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:8px}
+.kpi-value{font-size:28px;font-weight:700;letter-spacing:-0.03em;line-height:1}
+.kpi-value.gold{color:var(--gold)}
+.kpi-value.green{color:var(--green)}
+.kpi-sub{font-size:12px;color:var(--text3);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px}
+.chart-card{background:var(--bg2);border:1px solid #222;border-radius:var(--radius);padding:20px}
+.chart-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:16px;text-transform:uppercase;letter-spacing:0.04em}
+.chart-container{position:relative;height:260px}
+
+/* Tables */
+.table-card{background:var(--bg2);border:1px solid #222;border-radius:var(--radius);padding:20px;margin-bottom:24px}
+.table-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.table-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.04em}
+.table-search{background:var(--bg3);border:1px solid #333;border-radius:8px;padding:6px 12px;color:var(--text);font-size:12px;width:200px;outline:none}
+.table-search:focus{border-color:var(--gold-dim)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;padding:8px 12px;border-bottom:1px solid #222}
+tbody td{padding:10px 12px;font-size:13px;border-bottom:1px solid #1a1a1a;color:var(--text2)}
+tbody tr:hover{background:var(--bg3)}
+tbody tr:hover td{color:var(--text)}
+.user-name{font-weight:600;color:var(--text)}
+.user-email{font-size:11px;color:var(--text3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;text-transform:uppercase}
+.badge-paid{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-free{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-online{background:rgba(34,197,94,.2);color:var(--green);animation:pulse 2s infinite}
+.cost-bar{height:4px;border-radius:2px;background:var(--bg4);overflow:hidden;min-width:60px}
+.cost-bar-fill{height:100%;border-radius:2px;background:var(--gold);transition:width .5s ease}
+.sort-btn{cursor:pointer;user-select:none}
+.sort-btn:hover{color:var(--gold)}
+
+/* Online Users */
+.online-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:32px}
+.online-item{background:var(--bg3);border:1px solid #222;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px}
+.online-avatar{width:32px;height:32px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--gold)}
+.online-info{flex:1;min-width:0}
+.online-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.online-time{font-size:10px;color:var(--text3)}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
+.spinner{width:20px;height:20px;border:2px solid var(--bg4);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Tabs */
+.tab-bar{display:flex;gap:4px;margin-bottom:20px;background:var(--bg2);border:1px solid #222;border-radius:var(--radius);padding:4px;width:fit-content}
+.tab{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;transition:all .2s}
+.tab:hover{color:var(--text2)}
+.tab.active{background:var(--bg4);color:var(--gold)}
+
+/* Responsive */
+@media(max-width:900px){
+  .container{padding:16px}
+  .charts-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .header{padding:12px 16px}
+}
+@media(max-width:500px){
+  .kpi-grid{grid-template-columns:1fr}
+}
+
+/* Login */
+.login-overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:var(--bg2);border:1px solid #222;border-radius:12px;padding:40px;width:360px;text-align:center}
+.login-box h2{font-size:20px;margin-bottom:4px}
+.login-box h2 span{color:var(--gold)}
+.login-box p{font-size:13px;color:var(--text3);margin-bottom:24px}
+.login-input{width:100%;background:var(--bg3);border:1px solid #333;border-radius:8px;padding:12px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
+.login-input:focus{border-color:var(--gold-dim)}
+.login-btn{width:100%;background:var(--gold);color:#000;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s}
+.login-btn:hover{background:var(--gold-light)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px}
+</style>
 </head>
-
 <body>
 
-<!-- ─── Loading Overlay ────────────────────────────────────────────────── -->
-<div id="loading-overlay">
-  <div class="loading-logo"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-  <p class="loading-text">CAPI Când-IA Pro</p>
-  <p class="loading-sub">Carregando seu painel…</p>
-  <div class="spinner"></div>
-</div>
-
-<!-- ─── Toast Container ───────────────────────────────────────────────── -->
-<div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-
-<!-- ─── Edit Case Modal ───────────────────────────────────────────────── -->
-<div id="edit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 class="modal-title" id="modal-title">Editar Caso</h2>
-      <button class="modal-close" id="modal-close-btn" aria-label="Fechar">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-    <form id="edit-case-form">
-      <div class="form-grid">
-        <div class="form-field col-span-2">
-          <label class="form-label" for="edit-titulo">Título do Caso</label>
-          <input type="text" id="edit-titulo" name="titulo" class="form-input" placeholder="Ex: Processo Trabalhista - João Silva" required />
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="edit-cliente">Cliente</label>
-          <input type="text" id="edit-cliente" name="cliente" class="form-input" placeholder="Nome do cliente" />
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="edit-area">Área</label>
-          <input type="text" id="edit-area" name="area" class="form-input" placeholder="Ex: Direito do Trabalho" />
-        </div>
-        <div class="form-field col-span-2">
-          <label class="form-label" for="edit-detalhes">Detalhes</label>
-          <textarea id="edit-detalhes" name="detalhes" class="form-textarea" placeholder="Descreva os detalhes do caso…"></textarea>
-        </div>
-        <div class="form-field col-span-2">
-          <label class="form-label" for="edit-proximo-passo">Próximo Passo</label>
-          <input type="text" id="edit-proximo-passo" name="proximo_passo" class="form-input" placeholder="Ex: Enviar petição inicial" />
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="edit-prazo">Prazo</label>
-          <input type="date" id="edit-prazo" name="prazo" class="form-input" />
-        </div>
-        <div class="form-field">
-          <label class="form-label" for="edit-status">Status</label>
-          <select id="edit-status" name="status" class="form-select">
-            <option value="ativo">Ativo</option>
-            <option value="concluido">Concluído</option>
-            <option value="arquivado">Arquivado</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-actions">
-        <button type="button" id="modal-cancel-btn" class="btn btn-secondary">Cancelar</button>
-        <button type="submit" class="btn btn-primary">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Salvar Alterações
-        </button>
-      </div>
-    </form>
+<!-- Login -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <h2>Capi <span>Când-IA</span></h2>
+    <p>Dashboard de Uso em Tempo Real</p>
+    <input id="passInput" class="login-input" type="password" placeholder="Senha admin" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div id="loginError" class="login-error" style="display:none"></div>
   </div>
 </div>
 
-<!-- ─── Site Header ───────────────────────────────────────────────────── -->
-<header class="site-header">
-  <div class="header-inner">
-    <a href="/app" class="header-back" aria-label="Voltar ao chat">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 12H5M12 5l-7 7 7 7"/>
-      </svg>
-    </a>
-    <div class="header-logo">
-      <span class="header-logo-icon"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></span>
-      <div class="header-logo-text">
-        <span class="header-logo-title">Dashboard do Advogado</span>
-        <span class="header-logo-sub">CAPI Când-IA Pro</span>
-      </div>
+<!-- Dashboard -->
+<div id="app" style="display:none">
+  <header class="header">
+    <div class="header-left">
+      <h1>Capi <span>Când-IA</span> Dashboard</h1>
+      <span class="header-badge" id="totalUsersBadge">---</span>
     </div>
     <div class="header-right">
-      <p class="header-welcome" id="header-welcome-text">Olá, Advogado</p>
-      <div class="header-badge">
-        <span>⚖️</span>
-        <span>PRO</span>
+      <span class="auto-refresh" id="lastUpdate">---</span>
+      <button class="refresh-btn" onclick="loadAll()">Atualizar</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card"><div class="kpi-label">Usuarios totais</div><div class="kpi-value" id="kpiTotal">--</div><div class="kpi-sub" id="kpiTotalSub"></div></div>
+      <div class="kpi-card"><div class="kpi-label"><span class="online-dot"></span> Online agora</div><div class="kpi-value green" id="kpiOnline">--</div><div class="kpi-sub" id="kpiOnlineSub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Mensagens hoje</div><div class="kpi-value" id="kpiToday">--</div><div class="kpi-sub" id="kpiTodaySub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Custo IA (30 dias)</div><div class="kpi-value gold" id="kpiCost">--</div><div class="kpi-sub" id="kpiCostSub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Custo IA (hoje)</div><div class="kpi-value gold" id="kpiCostToday">--</div><div class="kpi-sub" id="kpiCostTodaySub"></div></div>
+      <div class="kpi-card"><div class="kpi-label">Conversas totais</div><div class="kpi-value" id="kpiConvs">--</div></div>
+    </div>
+
+    <!-- Online Users -->
+    <div class="table-card" id="onlineSection">
+      <div class="table-header">
+        <div class="table-title"><span class="online-dot"></span> Usuarios online agora <span id="onlineCount" style="color:var(--green)"></span></div>
+        <button class="refresh-btn" id="toggleOnline" onclick="toggleOnlineGrid()">Mostrar todos</button>
+      </div>
+      <div class="online-grid" id="onlineGrid" style="max-height:180px;overflow:hidden;transition:max-height .3s ease">
+        <div class="loading"><div class="spinner"></div>Carregando...</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Mensagens por dia (30 dias)</div>
+        <div class="chart-container"><canvas id="chartMsgDay"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Custo por feature</div>
+        <div class="chart-container"><canvas id="chartFeature"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Custo por modelo</div>
+        <div class="chart-container"><canvas id="chartModel"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Areas mais populares</div>
+        <div class="chart-container"><canvas id="chartAreas"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title">Uso por usuario</div>
+        <input class="table-search" id="userSearch" placeholder="Buscar usuario..." oninput="filterUsers()">
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th class="sort-btn" onclick="sortUsers('name')">Usuario</th>
+              <th class="sort-btn" onclick="sortUsers('messages')" style="text-align:right">Mensagens</th>
+              <th class="sort-btn" onclick="sortUsers('conversations')" style="text-align:right">Conversas</th>
+              <th class="sort-btn" onclick="sortUsers('cost')" style="text-align:right">Custo IA (US$)</th>
+              <th style="text-align:right">Custo Visual</th>
+              <th class="sort-btn" onclick="sortUsers('login')" style="text-align:right">Ultimo login</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="7" class="loading"><div class="spinner"></div>Carregando...</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
-</header>
+</div>
 
-<!-- ─── Main ──────────────────────────────────────────────────────────── -->
-<main>
-  <div class="page-wrapper">
-
-    <!-- Hero -->
-    <section class="hero-section">
-      <div class="hero-inner">
-        <div class="hero-top">
-          <div>
-            <h1 class="hero-greeting">
-              Olá, <span class="name-highlight" id="hero-name">Advogado</span>!
-            </h1>
-            <p class="hero-sub">Aqui está tudo que a Capi sabe sobre você — memórias, casos, conquistas e histórico em um só lugar.</p>
-            <div class="hero-meta" id="hero-meta">
-              <span class="hero-meta-item">
-                <span class="dot"></span>
-                <span id="hero-area">Carregando…</span>
-              </span>
-            </div>
-          </div>
-          <div class="hero-mascot" aria-hidden="true"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-        </div>
-
-        <!-- Badges row -->
-        <div class="hero-badges-row" id="hero-badges-row"></div>
-
-        <!-- Economy highlight strip -->
-        <div class="hero-economy-strip" id="hero-economy-strip">
-          <div class="hero-economy-item">
-            <span class="hero-economy-label">✅ Tarefas concluídas</span>
-            <span class="hero-economy-value" id="hero-tarefas-total">—</span>
-            <span class="hero-economy-sub" id="hero-tarefas-mes">este mês: —</span>
-          </div>
-          <div class="hero-economy-item">
-            <span class="hero-economy-label">📊 Produtividade vs Média</span>
-            <span class="hero-economy-value" id="hero-produtividade">—</span>
-            <span class="hero-economy-sub" id="hero-prod-sub">calculando…</span>
-          </div>
-          <div class="hero-economy-item">
-            <span class="hero-economy-label">🏆 Seu ranking</span>
-            <span class="hero-economy-value" id="hero-percentil">—</span>
-            <span class="hero-economy-sub" id="hero-ranking-pos">carregando…</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div class="main-content" id="main-content">
-
-      <!-- Error Banner -->
-      <div class="error-banner" id="error-banner">
-        Erro ao carregar dados. Por favor, recarregue a página ou tente novamente.
-      </div>
-
-      <!-- ── CAPITREINO CARD ── -->
-      <section aria-labelledby="capitreino-section-label" id="capitreinoCard">
-        <div style="background:linear-gradient(135deg,#1a1510 0%,#2a1f10 50%,#1a1510 100%);border:1px solid rgba(218,165,32,.25);border-radius:16px;padding:24px;margin-bottom:24px;position:relative;overflow:hidden">
-          <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;background:radial-gradient(circle,rgba(218,165,32,.1),transparent 70%);pointer-events:none"></div>
-          <div style="display:flex;align-items:flex-start;gap:16px">
-            <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,rgba(218,165,32,.2),rgba(184,134,11,.1));border:1px solid rgba(218,165,32,.3);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🏋️</div>
-            <div style="flex:1;min-width:0">
-              <h3 id="capitreino-section-label" style="font-size:17px;font-weight:700;color:#DAA520;margin:0 0 4px 0">CapiTreino — Treinador de Execução</h3>
-              <p style="font-size:13px;color:#AAA;margin:0 0 12px 0;line-height:1.5">Complete missões diárias, suba de nível e domine a advocacia</p>
-              <div id="capitreinoStats" style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
-                <span style="font-size:13px;color:#F5F5F5;font-weight:600"><span style="color:#DAA520" id="ctDashXp">--</span> XP</span>
-                <span style="font-size:13px;color:#F5F5F5;font-weight:600">🔥 <span id="ctDashStreak">--</span> streak</span>
-              </div>
-              <a href="/capitreino.html" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#DAA520,#B8860B);color:#1a1200;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;transition:all .3s ease" id="ctDashBtn">Iniciar Treino</a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ── 1. Economy Overview ── -->
-      <section aria-labelledby="economy-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">💎</div>
-            <h2 class="section-title" id="economy-section-label">Seu Impacto</h2>
-          </div>
-        </div>
-        <div class="economy-grid" id="economy-grid">
-          <div class="economy-card skeleton" style="height:200px"></div>
-          <div class="economy-card skeleton" style="height:200px"></div>
-          <div class="economy-card skeleton" style="height:200px"></div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 2. Monthly Evolution Chart ── -->
-      <section aria-labelledby="evolution-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">📈</div>
-            <h2 class="section-title" id="evolution-section-label">Evolução Mensal</h2>
-          </div>
-        </div>
-        <div class="chart-card" id="evolution-chart-card">
-          <div class="skeleton" style="height:220px; border-radius: 8px;"></div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 3. Tool Breakdown ── -->
-      <section aria-labelledby="tools-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">🛠</div>
-            <h2 class="section-title" id="tools-section-label">Uso das Ferramentas</h2>
-          </div>
-        </div>
-        <div id="tools-container">
-          <div class="tools-grid">
-            <div class="skeleton" style="height:60px; border-radius:12px;"></div>
-            <div class="skeleton" style="height:60px; border-radius:12px;"></div>
-            <div class="skeleton" style="height:60px; border-radius:12px;"></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 4. Badges/Conquistas ── -->
-      <section aria-labelledby="badges-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">🏅</div>
-            <h2 class="section-title" id="badges-section-label">
-              Conquistas
-              <span class="section-count" id="badges-count-label"></span>
-            </h2>
-          </div>
-        </div>
-        <div id="badges-container">
-          <div class="badges-grid">
-            <div class="skeleton" style="height:140px; border-radius:12px;"></div>
-            <div class="skeleton" style="height:140px; border-radius:12px;"></div>
-            <div class="skeleton" style="height:140px; border-radius:12px;"></div>
-            <div class="skeleton" style="height:140px; border-radius:12px;"></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 5. Calendário de Atividade ── -->
-      <section aria-labelledby="calendar-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">📅</div>
-            <h2 class="section-title" id="calendar-section-label">
-              Sua Consistência
-              <span class="section-count" id="calendar-subtitle"></span>
-            </h2>
-          </div>
-        </div>
-        <div class="calendar-card" id="calendar-container">
-          <div class="skeleton" style="height:120px; border-radius:12px;"></div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 6. Stats Grid ── -->
-      <section aria-labelledby="stats-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">📊</div>
-            <h2 class="section-title" id="stats-section-label">
-              Suas Métricas
-              <span class="section-count" id="stats-subtitle"></span>
-            </h2>
-          </div>
-        </div>
-        <div class="stats-scroll-wrapper">
-          <div class="stats-grid" id="stats-grid">
-            <div class="stat-card skeleton" style="height:100px"></div>
-            <div class="stat-card skeleton" style="height:100px"></div>
-            <div class="stat-card skeleton" style="height:100px"></div>
-            <div class="stat-card skeleton" style="height:100px"></div>
-            <div class="stat-card skeleton" style="height:100px"></div>
-            <div class="stat-card skeleton" style="height:100px"></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 6. Memories ── -->
-      <section class="memory-section" aria-labelledby="memory-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">🧠</div>
-            <h2 class="section-title" id="memory-section-label">
-              O que a Capi sabe sobre você
-              <span class="section-count" id="memory-count-label"></span>
-            </h2>
-          </div>
-        </div>
-        <div id="memory-container">
-          <div class="memory-categories-grid" id="memory-grid">
-            <div class="skeleton" style="height:120px; border-radius: 12px;"></div>
-            <div class="skeleton" style="height:120px; border-radius: 12px;"></div>
-            <div class="skeleton" style="height:120px; border-radius: 12px;"></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 7. Cases ── -->
-      <section class="cases-section" aria-labelledby="cases-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">📂</div>
-            <h2 class="section-title" id="cases-section-label">
-              Casos Ativos
-              <span class="section-count" id="cases-count-label"></span>
-            </h2>
-          </div>
-        </div>
-
-        <div id="cases-container">
-          <div class="cases-list" id="cases-list">
-            <div class="skeleton" style="height:120px; border-radius: 12px;"></div>
-            <div class="skeleton" style="height:120px; border-radius: 12px;"></div>
-          </div>
-        </div>
-
-        <!-- Add Case -->
-        <div style="margin-top: var(--sp-4);">
-          <button class="add-case-btn" id="add-case-toggle" aria-expanded="false">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Adicionar caso manualmente
-          </button>
-
-          <div class="case-form-wrap mt-4" id="add-case-form-wrap">
-            <p class="case-form-title">Novo Caso</p>
-            <form id="add-case-form">
-              <div class="form-grid">
-                <div class="form-field col-span-2">
-                  <label class="form-label" for="new-titulo">Título do Caso *</label>
-                  <input type="text" id="new-titulo" name="titulo" class="form-input" placeholder="Ex: Processo Trabalhista - João Silva" required />
-                </div>
-                <div class="form-field">
-                  <label class="form-label" for="new-cliente">Cliente</label>
-                  <input type="text" id="new-cliente" name="cliente" class="form-input" placeholder="Nome do cliente" />
-                </div>
-                <div class="form-field">
-                  <label class="form-label" for="new-area">Área do Direito</label>
-                  <input type="text" id="new-area" name="area" class="form-input" placeholder="Ex: Direito Trabalhista" />
-                </div>
-                <div class="form-field col-span-2">
-                  <label class="form-label" for="new-detalhes">Detalhes</label>
-                  <textarea id="new-detalhes" name="detalhes" class="form-textarea" placeholder="Descreva os detalhes relevantes do caso…"></textarea>
-                </div>
-                <div class="form-field col-span-2">
-                  <label class="form-label" for="new-proximo-passo">Próximo Passo</label>
-                  <input type="text" id="new-proximo-passo" name="proximo_passo" class="form-input" placeholder="Qual é a próxima ação necessária?" />
-                </div>
-                <div class="form-field">
-                  <label class="form-label" for="new-prazo">Prazo</label>
-                  <input type="date" id="new-prazo" name="prazo" class="form-input" />
-                </div>
-              </div>
-              <div class="form-actions">
-                <button type="button" class="btn btn-secondary" id="cancel-add-case">Cancelar</button>
-                <button type="submit" class="btn btn-primary" id="add-case-submit">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                  Adicionar Caso
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 8. Summaries ── -->
-      <section class="summaries-section" aria-labelledby="summaries-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">💬</div>
-            <h2 class="section-title" id="summaries-section-label">
-              Histórico de Conversas
-              <span class="section-count" id="summaries-count-label"></span>
-            </h2>
-          </div>
-        </div>
-        <div id="summaries-container">
-          <div class="timeline" id="summaries-list">
-            <div class="skeleton" style="height:80px; border-radius:12px; margin-bottom:8px;"></div>
-            <div class="skeleton" style="height:80px; border-radius:12px; margin-bottom:8px;"></div>
-            <div class="skeleton" style="height:80px; border-radius:12px;"></div>
-          </div>
-        </div>
-      </section>
-
-      <div class="divider"></div>
-
-      <!-- ── 9. Profile ── -->
-      <section class="profile-section" aria-labelledby="profile-section-label">
-        <div class="section-header">
-          <div class="section-title-group">
-            <div class="section-icon" aria-hidden="true">⚖️</div>
-            <h2 class="section-title" id="profile-section-label">Perfil Profissional</h2>
-          </div>
-        </div>
-        <div class="profile-card">
-          <div class="profile-card-header">
-            <div class="profile-avatar" aria-hidden="true">⚖️</div>
-            <div class="profile-header-text">
-              <p class="profile-name" id="profile-display-name">Carregando…</p>
-              <p class="profile-area" id="profile-display-area">–</p>
-            </div>
-          </div>
-          <form id="profile-form">
-            <div class="profile-form-grid">
-              <div class="form-field col-span-2">
-                <label class="form-label" for="profile-nome">Nome completo</label>
-                <input type="text" id="profile-nome" name="nome" class="form-input" placeholder="Dr. João da Silva" />
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-area">Área do Direito</label>
-                <select id="profile-area" name="area" class="form-select">
-                  <option value="">Selecione…</option>
-                  <option value="Família">Família</option>
-                  <option value="Previdenciário">Previdenciário</option>
-                  <option value="Trabalhista">Trabalhista</option>
-                  <option value="Criminal">Criminal</option>
-                  <option value="Consumidor">Consumidor</option>
-                  <option value="Civil">Civil</option>
-                  <option value="Empresarial">Empresarial</option>
-                  <option value="Tributário">Tributário</option>
-                  <option value="Imobiliário">Imobiliário</option>
-                  <option value="Digital">Digital</option>
-                  <option value="Administrativo">Administrativo</option>
-                  <option value="Ambiental">Ambiental</option>
-                  <option value="Bancário">Bancário</option>
-                  <option value="Saúde">Saúde</option>
-                  <option value="Eleitoral">Eleitoral</option>
-                  <option value="Militar">Militar</option>
-                  <option value="Agrário">Agrário</option>
-                  <option value="Internacional">Internacional</option>
-                  <option value="Desportivo">Desportivo</option>
-                  <option value="Marítimo">Marítimo</option>
-                  <option value="Generalista">Generalista</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-oab">OAB</label>
-                <input type="text" id="profile-oab" name="oab" class="form-input" placeholder="SP 123.456" />
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-escritorio">Escritório</label>
-                <input type="text" id="profile-escritorio" name="escritorio" class="form-input" placeholder="Silva & Associados" />
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-cidade">Cidade</label>
-                <input type="text" id="profile-cidade" name="cidade" class="form-input" placeholder="São Paulo" />
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-estado">Estado</label>
-                <select id="profile-estado" name="estado" class="form-select">
-                  <option value="">Selecione…</option>
-                  <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
-                  <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
-                  <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
-                  <option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
-                  <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option>
-                  <option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option>
-                  <option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option>
-                  <option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
-                  <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label class="form-label" for="profile-anos">Anos de Experiência</label>
-                <select id="profile-anos" name="anos_experiencia" class="form-select">
-                  <option value="">Selecione…</option>
-                  <option value="Menos de 1 ano">Menos de 1 ano</option>
-                  <option value="1-3 anos">1-3 anos</option>
-                  <option value="3-5 anos">3-5 anos</option>
-                  <option value="5-10 anos">5-10 anos</option>
-                  <option value="Mais de 10 anos">Mais de 10 anos</option>
-                </select>
-              </div>
-              <div class="form-field col-span-2">
-                <label class="form-label" for="profile-tom">Tom de Comunicação Preferido</label>
-                <select id="profile-tom" name="tom_preferido" class="form-select">
-                  <option value="">Selecione…</option>
-                  <option value="descontraido">Descontraído</option>
-                  <option value="equilibrado">Equilibrado</option>
-                  <option value="formal">Formal</option>
-                </select>
-              </div>
-              <div class="form-field col-span-2">
-                <label class="form-label" for="profile-especialidade2">Especialidade Secundária</label>
-                <input type="text" id="profile-especialidade2" name="especialidade_secundaria" class="form-input" placeholder="Ex: Direito Digital" />
-              </div>
-              <div class="form-field col-span-2">
-                <label class="form-label" for="profile-bio">Sobre Você</label>
-                <textarea id="profile-bio" name="bio" class="form-input" rows="3" placeholder="Breve descrição sobre sua atuação profissional…"></textarea>
-              </div>
-            </div>
-            <div class="profile-save-row">
-              <button type="submit" class="btn btn-primary" id="save-profile-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Salvar Perfil
-              </button>
-              <p class="profile-save-msg" id="profile-save-msg" role="status">✓ Salvo com sucesso!</p>
-            </div>
-          </form>
-        </div>
-      </section>
-
-    </div><!-- /.main-content -->
-  </div><!-- /.page-wrapper -->
-</main>
-
-<!-- ─── JavaScript ────────────────────────────────────────────────────── -->
 <script>
-(() => {
-  'use strict';
+const API = '';  // mesmo domínio
+let PASS = '';
+let allUsers = [];
+let aiByUser = {};
+let sortField = 'cost';
+let sortDir = 'desc';
+let charts = {};
 
-  /* ── Auth ──────────────────────────────────────────────────────── */
-  const token = localStorage.getItem('capi_token');
-  if (!token) {
-    window.location.href = '/login.html';
+function doLogin() {
+  PASS = document.getElementById('passInput').value;
+  fetch(`${API}/api/admin/stats`, { headers: { 'x-admin-password': PASS } })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(() => {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadAll();
+      setInterval(loadAll, 60000); // refresh every 60s
+    })
+    .catch(() => {
+      const el = document.getElementById('loginError');
+      el.style.display = 'block';
+      el.textContent = 'Senha incorreta';
+    });
+}
+
+function hdr() { return { 'x-admin-password': PASS }; }
+
+async function api(path) {
+  const r = await fetch(`${API}${path}`, { headers: hdr() });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+}
+
+async function loadAll() {
+  try {
+    const [stats, users, online, analytics, aiUsage30, aiUsage1] = await Promise.all([
+      api('/api/admin/stats'),
+      api('/api/admin/users'),
+      api('/api/admin/online'),
+      api('/api/admin/analytics'),
+      api('/api/admin/ai-usage?days=30'),
+      api('/api/admin/ai-usage?days=1'),
+    ]);
+    renderKPIs(stats, online, aiUsage30, aiUsage1);
+    renderOnline(online);
+    renderCharts(analytics, aiUsage30);
+    
+    // Merge AI cost data into users
+    aiByUser = {};
+    (aiUsage30.by_user || []).forEach(u => { aiByUser[u.user_id] = u; });
+    allUsers = users.map(u => ({
+      ...u,
+      ai_cost: (aiByUser[u.id]?.total_cost || 0),
+      ai_count: (aiByUser[u.id]?.count || 0)
+    }));
+    renderUsers();
+
+    document.getElementById('lastUpdate').textContent = 'Atualizado ' + new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('totalUsersBadge').textContent = stats.totalUsers + ' usuarios';
+  } catch(e) {
+    console.error('Load error:', e);
+  }
+}
+
+function renderKPIs(stats, online, ai30, ai1) {
+  document.getElementById('kpiTotal').textContent = stats.totalUsers.toLocaleString('pt-BR');
+  document.getElementById('kpiTotalSub').textContent = stats.activeUsers + ' ativos';
+  document.getElementById('kpiOnline').textContent = online.count;
+  const onlineNames = online.users.slice(0,5).map(u => u.name?.split(' ')[0]).join(', ');
+  document.getElementById('kpiOnlineSub').textContent = online.count > 0 ? (onlineNames + (online.count > 5 ? ' +' + (online.count-5) : '')) : 'Ninguem agora';
+  document.getElementById('kpiToday').textContent = stats.todayMessages.toLocaleString('pt-BR');
+  document.getElementById('kpiTodaySub').textContent = stats.totalMessages.toLocaleString('pt-BR') + ' total';
+  document.getElementById('kpiCost').textContent = 'US$ ' + ai30.total_cost_usd.toFixed(2);
+  document.getElementById('kpiCostSub').textContent = ai30.by_user?.length + ' usuarios usaram IA';
+  document.getElementById('kpiCostToday').textContent = 'US$ ' + ai1.total_cost_usd.toFixed(2);
+  document.getElementById('kpiCostTodaySub').textContent = ai1.by_user?.length + ' usuarios hoje';
+  document.getElementById('kpiConvs').textContent = stats.totalConversations.toLocaleString('pt-BR');
+}
+
+function renderOnline(online) {
+  const grid = document.getElementById('onlineGrid');
+  if (online.count === 0) {
+    grid.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px">Nenhum usuario online neste momento</div>';
     return;
   }
-
-  const API = {
-    headers: () => ({
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }),
-
-    async get(path) {
-      const r = await fetch(path, { headers: this.headers() });
-      if (r.status === 401) { window.location.href = '/login.html'; return null; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    },
-
-    async post(path, body) {
-      const r = await fetch(path, { method: 'POST', headers: this.headers(), body: JSON.stringify(body) });
-      if (r.status === 401) { window.location.href = '/login.html'; return null; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    },
-
-    async patch(path, body) {
-      const r = await fetch(path, { method: 'PATCH', headers: this.headers(), body: JSON.stringify(body) });
-      if (r.status === 401) { window.location.href = '/login.html'; return null; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    },
-
-    async put(path, body) {
-      const r = await fetch(path, { method: 'PUT', headers: this.headers(), body: JSON.stringify(body) });
-      if (r.status === 401) { window.location.href = '/login.html'; return null; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    },
-
-    async del(path) {
-      const r = await fetch(path, { method: 'DELETE', headers: this.headers() });
-      if (r.status === 401) { window.location.href = '/login.html'; return null; }
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return true;
-    }
-  };
-
-  /* ── Toast ─────────────────────────────────────────────────────── */
-  function toast(msg, type = 'info') {
-    const icons = { success: '✓', error: '✕', info: 'ℹ' };
-    const el = document.createElement('div');
-    el.className = `toast ${type}`;
-    el.innerHTML = `<span>${icons[type] || ''}</span><span>${msg}</span>`;
-    document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(8px)';
-      el.style.transition = 'all 0.3s ease';
-      setTimeout(() => el.remove(), 350);
-    }, 3500);
-  }
-
-  /* ── Helpers ────────────────────────────────────────────────────── */
-  function escHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    try {
-      return new Date(dateStr).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
-    } catch { return dateStr; }
-  }
-
-  function formatRelativeDate(dateStr) {
-    if (!dateStr) return '';
-    try {
-      const d = new Date(dateStr.includes('Z') || dateStr.includes('+') ? dateStr : dateStr + 'Z');
-      const now = new Date();
-      const diffMs = now - d;
-      const diffDays = Math.floor(diffMs / 86400000);
-      if (diffDays < 0) return 'Hoje';
-      if (diffDays === 0) return 'Hoje';
-      if (diffDays === 1) return 'Ontem';
-      if (diffDays < 7) return `${diffDays} dias atrás`;
-      if (diffDays < 30) return `${Math.floor(diffDays/7)} sem. atrás`;
-      return formatDate(dateStr);
-    } catch { return dateStr; }
-  }
-
-  function fmtNum(n) { return (n || 0).toLocaleString('pt-BR'); }
-  function fmtMoney(n) { return 'R$ ' + (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
-  function fmtHours(h) {
-    if (!h) return '0h';
-    if (h < 1) return Math.round(h * 60) + 'min';
-    return h.toFixed(1).replace('.', ',') + 'h';
-  }
-
-  function toneIcon(tone) {
-    const map = {
-      satisfeito: '😊', feliz: '😊',
-      frustrado: '😤', bravo: '😤',
-      neutro: '😐',
-      urgente: '🔴',
-      exploratório: '🔍', exploratorio: '🔍',
-      ansioso: '😟', triste: '😢',
-      animado: '🎉'
-    };
-    if (!tone) return '😐';
-    return map[tone.toLowerCase()] || '😐';
-  }
-
-  /* ── Animated counter ───────────────────────────────────────────── */
-  function animateCounter(el, targetVal, duration = 1200, formatter = (v) => v.toLocaleString('pt-BR')) {
-    const startTime = performance.now();
-    const startVal = 0;
-
-    function step(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = startVal + (targetVal - startVal) * eased;
-      el.textContent = formatter(current);
-      if (progress < 1) requestAnimationFrame(step);
-      else el.textContent = formatter(targetVal);
-    }
-
-    requestAnimationFrame(step);
-  }
-
-  /* ── Category config ────────────────────────────────────────────── */
-  const CATEGORIES = {
-    casos:        { label: 'Casos',        icon: '📋' },
-    clientes:     { label: 'Clientes',     icon: '👥' },
-    preferencias: { label: 'Preferências', icon: '⚙️' },
-    especialidade:{ label: 'Especialidade',icon: '🎯' },
-    escritorio:   { label: 'Escritório',   icon: '🏢' },
-    estilo:       { label: 'Estilo',       icon: '✍️' },
-    conquistas:   { label: 'Conquistas',   icon: '💪' },
-    metas:        { label: 'Metas',        icon: '🏆' },
-    desafios:     { label: 'Desafios',     icon: '⚡' },
-    networking:   { label: 'Networking',   icon: '🤝' },
-    geral:        { label: 'Geral',        icon: '🧠' },
-  };
-
-  /* ── Month labels ───────────────────────────────────────────────── */
-  const MONTH_LABELS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-
-  /* ── State ──────────────────────────────────────────────────────── */
-  let dashData = null;
-  let allMemories = [];
-  let allCases = [];
-  let editingCaseId = null;
-
-  /* ── Main load ──────────────────────────────────────────────────── */
-  async function loadDashboard() {
-    try {
-      dashData = await API.get('/api/dashboard');
-      if (!dashData) return;
-
-      renderHero(dashData.profile, dashData.stats);
-      renderEconomy(dashData.stats);
-      renderEvolution(dashData.evolucao || []);
-      renderToolBreakdown(dashData.uso_ferramentas || []);
-      renderBadges(dashData.badges || []);
-      renderCalendar(dashData.calendario || []);
-      renderStats(dashData.stats);
-      allMemories = buildMemoryList(dashData.memories);
-      renderMemories(allMemories);
-      allCases = dashData.cases || [];
-      renderCases(allCases);
-      renderSummaries(dashData.summaries || []);
-      renderProfile(dashData.profile || {});
-      loadCapiTreinoCard();
-
-    } catch (err) {
-      console.error(err);
-      document.getElementById('error-banner').classList.add('visible');
-    } finally {
-      document.getElementById('loading-overlay').classList.add('hidden');
-    }
-  }
-
-  /* ── CapiTreino Card ─────────────────────────────────────────────── */
-  async function loadCapiTreinoCard() {
-    try {
-      const data = await API.get('/api/capitreino/status');
-      if (!data) return;
-      const xpEl = document.getElementById('ctDashXp');
-      const streakEl = document.getElementById('ctDashStreak');
-      const btnEl = document.getElementById('ctDashBtn');
-      if (xpEl) xpEl.textContent = data.xp_total || 0;
-      if (streakEl) streakEl.textContent = data.streak_atual || 0;
-      if (btnEl && !data.trilha_ativa) btnEl.textContent = 'Comece agora!';
-    } catch (e) {
-      console.error('CapiTreino card error:', e);
-    }
-  }
-
-  /* ── Hero ───────────────────────────────────────────────────────── */
-  function renderHero(profile, stats) {
-    if (!profile) return;
-    let name = 'Advogado';
-    if (profile.nome) {
-      const parts = profile.nome.trim().split(/\s+/);
-      const prefixes = ['dr.','dra.','prof.','dr','dra','prof'];
-      name = parts.find(p => !prefixes.includes(p.toLowerCase())) || parts[0];
-    }
-    document.getElementById('hero-name').textContent = name;
-    document.getElementById('header-welcome-text').textContent = `Olá, ${name}`;
-
-    const parts = [];
-    if (profile.area) parts.push(profile.area.replace(/,\s*$/, ''));
-    if (profile.cidade && profile.estado) parts.push(`${profile.cidade} / ${profile.estado}`);
-    if (profile.oab) parts.push(`OAB ${profile.oab}`);
-    document.getElementById('hero-area').textContent = parts.length ? parts.join(' · ') : 'Perfil em construção';
-
-    if (stats) {
-      // Economy strip
-      const percentil = stats.percentil || 0;
-      const pos = stats.posicao_ranking || 0;
-      const total = stats.total_usuarios_ativos || 0;
-
-      const tarefasTotal = stats.tarefas_total || 0;
-      const tarefasMes = stats.tarefas_mes || 0;
-      const multiplicador = stats.multiplicador_produtividade || 0;
-
-      const heroTarefasTotal = document.getElementById('hero-tarefas-total');
-      const heroTarefasMes = document.getElementById('hero-tarefas-mes');
-      const heroProdutividade = document.getElementById('hero-produtividade');
-      const heroProdSub = document.getElementById('hero-prod-sub');
-      const heroPercentil = document.getElementById('hero-percentil');
-      const heroRankingPos = document.getElementById('hero-ranking-pos');
-
-      // Animate hero numbers
-      setTimeout(() => {
-        animateCounter(heroTarefasTotal, tarefasTotal, 1000, (v) => fmtNum(Math.round(v)));
-      }, 600);
-      heroTarefasMes.textContent = `este mês: ${fmtNum(tarefasMes)}`;
-
-      heroProdutividade.textContent = multiplicador > 0 ? `${multiplicador}x` : '—';
-      heroProdSub.textContent = multiplicador > 0
-        ? `${fmtNum(stats.minhas_mensagens_30d || 0)} vs ${fmtNum(stats.media_plataforma_30d || 0)} média`
-        : 'use mais para calcular';
-
-      heroPercentil.textContent = `Top ${percentil || 0}%`;
-      heroRankingPos.textContent = pos && total ? `#${fmtNum(pos)} de ${fmtNum(total)} advogados` : 'Calculando ranking…';
-
-      // Badges row
-      const badgesRow = document.getElementById('hero-badges-row');
-      const pills = [];
-      if (stats.streak > 0) {
-        pills.push(`<span class="hero-pill streak">🔥 ${stats.streak} dia${stats.streak !== 1 ? 's' : ''} seguidos</span>`);
-      }
-      if (stats.dias_como_membro) {
-        pills.push(`<span class="hero-pill member">⭐ Membro há ${fmtNum(stats.dias_como_membro)} ${stats.dias_como_membro === 1 ? 'dia' : 'dias'}</span>`);
-      } else if (stats.primeiro_uso) {
-        pills.push(`<span class="hero-pill member">⭐ Desde ${formatDate(stats.primeiro_uso)}</span>`);
-      }
-      badgesRow.innerHTML = pills.join('');
-    }
-  }
-
-  /* ── Economy Overview ───────────────────────────────────────────── */
-  function renderEconomy(stats) {
-    const grid = document.getElementById('economy-grid');
-    if (!stats) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div><p class="title">Dados indisponíveis</p><p>Continue usando a Capi para ver seu impacto aqui.</p></div>`;
-      return;
-    }
-
-    const tarefasTotal = stats.tarefas_total || 0;
-    const tarefasMes = stats.tarefas_mes || 0;
-    const multiplicador = stats.multiplicador_produtividade || 0;
-    const percentil = stats.percentil || 0;
-    const pos = stats.posicao_ranking || 0;
-    const total = stats.total_usuarios_ativos || 0;
-
-    grid.innerHTML = `
-      <div class="economy-card" style="animation-delay:0.1s">
-        <div class="economy-card-label">
-          <span class="economy-card-icon">📊</span>
-          Produtividade vs Média
-        </div>
-        <div class="economy-big-number" id="ec-produtividade">${multiplicador > 0 ? multiplicador + 'x' : '—'}</div>
-        <div class="economy-sub-row">
-          <span class="economy-sub-item">
-            <span class="economy-sub-dot"></span>
-            Você: <span class="economy-sub-value">${fmtNum(stats.minhas_mensagens_30d || 0)} interações</span>
-          </span>
-          <span class="economy-sub-item">
-            <span class="economy-sub-dot"></span>
-            Média: <span class="economy-sub-value">${fmtNum(stats.media_plataforma_30d || 0)} interações</span>
-          </span>
-        </div>
-        <div class="economy-sub-row" style="margin-top:var(--sp-2)">
-          <span class="economy-sub-item" style="font-size:0.75rem;opacity:0.7">
-            Últimos 30 dias entre ${fmtNum(total)} advogados
-          </span>
-        </div>
+  document.getElementById('onlineCount').textContent = '(' + online.count + ')';
+  grid.innerHTML = online.users.map(u => {
+    const initials = (u.name || u.email).split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const ago = timeAgo(u.lastSeen);
+    return `<div class="online-item">
+      <div class="online-avatar">${initials}</div>
+      <div class="online-info">
+        <div class="online-name">${u.name || u.email}</div>
+        <div class="online-time">${u.email} · ${ago}</div>
       </div>
-
-      <div class="economy-card" style="animation-delay:0.2s">
-        <div class="economy-card-label">
-          <span class="economy-card-icon">✅</span>
-          Tarefas Concluídas
-        </div>
-        <div class="economy-big-number" id="ec-tarefas-total">0</div>
-        <div class="economy-sub-row">
-          <span class="economy-sub-item">
-            <span class="economy-sub-dot"></span>
-            Este mês: <span class="economy-sub-value">${fmtNum(tarefasMes)}</span>
-          </span>
-          ${multiplicador > 0 ? `<span class="economy-sub-item">
-            <span class="economy-sub-dot"></span>
-            <span class="economy-sub-value" style="color:var(--color-success)">${multiplicador}x</span> mais que a média
-          </span>` : ''}
-        </div>
-      </div>
-
-      <div class="economy-card" style="animation-delay:0.3s">
-        <div class="economy-card-label">
-          <span class="economy-card-icon">🏆</span>
-          Seu Ranking
-        </div>
-        <div class="economy-big-number">Top <span id="ec-percentil">0</span>%</div>
-        <div class="ranking-visual">
-          <div class="ranking-bar-track">
-            <div class="ranking-bar-fill" id="ec-rank-bar" style="width:0%"></div>
-          </div>
-          <span class="ranking-percentile-label" id="ec-rank-label">–</span>
-        </div>
-        <div class="economy-sub-row" style="margin-top:var(--sp-3)">
-          ${pos && total ? `<span class="economy-sub-item">
-            <span class="economy-sub-dot"></span>
-            Posição <span class="economy-sub-value">#${fmtNum(pos)}</span> de ${fmtNum(total)}
-          </span>` : `<span class="economy-sub-item">Calculando posição…</span>`}
-        </div>
-      </div>
-    `;
-
-    // Animate numbers with slight delay after render
-    setTimeout(() => {
-      const ecTarefasEl = document.getElementById('ec-tarefas-total');
-      if (ecTarefasEl) animateCounter(ecTarefasEl, tarefasTotal, 1500, (v) => fmtNum(Math.round(v)));
-
-      const ecPercentilEl = document.getElementById('ec-percentil');
-      if (ecPercentilEl) animateCounter(ecPercentilEl, percentil, 1000, (v) => Math.round(v).toLocaleString('pt-BR'));
-
-      const rankBar = document.getElementById('ec-rank-bar');
-      const rankLabel = document.getElementById('ec-rank-label');
-      if (rankBar) {
-        setTimeout(() => {
-          rankBar.style.width = `${percentil}%`;
-        }, 200);
-      }
-      if (rankLabel) {
-        rankLabel.textContent = `${percentil}%`;
-      }
-    }, 400);
-  }
-
-  /* ── Evolution Chart ────────────────────────────────────────────── */
-  function renderEvolution(evolucao) {
-    const card = document.getElementById('evolution-chart-card');
-
-    if (!evolucao || evolucao.length === 0) {
-      card.innerHTML = `
-        <div class="empty-state">
-          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-          <p class="title">Dados em construção</p>
-          <p>Continue usando a Capi e sua evolução aparecerá aqui após algumas semanas.</p>
-        </div>
-      `;
-      return;
-    }
-
-    const data = evolucao.slice(-6); // last 6 months
-    const maxMensagens = Math.max(...data.map(d => d.mensagens || 0), 1);
-    const maxHoras = Math.max(...data.map(d => d.horas_economizadas || 0), 1);
-
-    const W = 600;
-    const H = 240;
-    const PADDING = { top: 20, right: 20, bottom: 60, left: 50 };
-    const chartW = W - PADDING.left - PADDING.right;
-    const chartH = H - PADDING.top - PADDING.bottom;
-    const barGroupW = chartW / data.length;
-    const barW = Math.min(barGroupW * 0.35, 28);
-    const gap = 4;
-
-    // Build SVG content
-    let svgContent = '';
-
-    // Grid lines
-    const gridLines = 4;
-    for (let i = 0; i <= gridLines; i++) {
-      const y = PADDING.top + (chartH / gridLines) * i;
-      const val = Math.round(maxMensagens - (maxMensagens / gridLines) * i);
-      svgContent += `
-        <line x1="${PADDING.left}" y1="${y}" x2="${W - PADDING.right}" y2="${y}"
-          stroke="rgba(196,162,101,0.08)" stroke-width="1"/>
-        <text x="${PADDING.left - 8}" y="${y + 4}" text-anchor="end"
-          font-size="10" fill="rgba(138,126,106,0.8)">${val}</text>
-      `;
-    }
-
-    // Bars and labels
-    data.forEach((d, i) => {
-      const x = PADDING.left + i * barGroupW + barGroupW / 2;
-      const msgs = d.mensagens || 0;
-      const horas = d.horas_economizadas || 0;
-
-      // Mensagens bar (gold)
-      const msgH = (msgs / maxMensagens) * chartH;
-      const msgY = PADDING.top + chartH - msgH;
-      const msgX = x - barW - gap / 2;
-
-      // Horas bar (green)
-      const horaH = (horas / maxHoras) * chartH;
-      const horaY = PADDING.top + chartH - horaH;
-      const horaX = x + gap / 2;
-
-      // Month label from "2025-11" format
-      let monthLabel = d.mes || '';
-      if (monthLabel.includes('-')) {
-        const parts = monthLabel.split('-');
-        const monthIdx = parseInt(parts[1], 10) - 1;
-        monthLabel = MONTH_LABELS[monthIdx] || d.mes;
-      }
-
-      svgContent += `
-        <g class="chart-bar-group" data-mes="${escHtml(d.mes)}" data-msgs="${msgs}" data-horas="${horas}">
-          <rect x="${msgX}" y="${msgY}" width="${barW}" height="${msgH}"
-            fill="url(#goldGrad)" rx="3" ry="3" style="transition:opacity 0.2s"/>
-          <rect x="${horaX}" y="${horaY}" width="${barW}" height="${horaH}"
-            fill="url(#greenGrad)" rx="3" ry="3" style="transition:opacity 0.2s"/>
-          <rect x="${msgX}" y="${PADDING.top}" width="${barW * 2 + gap}" height="${chartH}"
-            fill="transparent" class="chart-hover-zone" data-idx="${i}"/>
-          <text x="${x}" y="${H - PADDING.bottom + 18}" text-anchor="middle"
-            font-size="11" fill="rgba(138,126,106,0.9)" font-family="Inter,sans-serif">${monthLabel}</text>
-        </g>
-      `;
-    });
-
-    card.innerHTML = `
-      <div class="chart-legend">
-        <div class="chart-legend-item">
-          <span class="chart-legend-dot mensagens"></span>
-          Mensagens
-        </div>
-        <div class="chart-legend-item">
-          <span class="chart-legend-dot horas"></span>
-          Horas economizadas
-        </div>
-      </div>
-      <div class="chart-area">
-        <div class="chart-svg-wrap">
-          <svg width="100%" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#C4A265"/>
-                <stop offset="100%" stop-color="#8B6914"/>
-              </linearGradient>
-              <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#5A9E6B"/>
-                <stop offset="100%" stop-color="#3D6B4A"/>
-              </linearGradient>
-            </defs>
-            ${svgContent}
-          </svg>
-          <div class="chart-tooltip" id="chart-tooltip">
-            <div class="chart-tooltip-title" id="tt-title"></div>
-            <div class="chart-tooltip-row">
-              <span class="chart-tooltip-dot" style="background:#C4A265"></span>
-              <span id="tt-msgs"></span>
-            </div>
-            <div class="chart-tooltip-row">
-              <span class="chart-tooltip-dot" style="background:#5A9E6B"></span>
-              <span id="tt-horas"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Tooltip interaction
-    const svgEl = card.querySelector('svg');
-    const tooltip = document.getElementById('chart-tooltip');
-    const ttTitle = document.getElementById('tt-title');
-    const ttMsgs = document.getElementById('tt-msgs');
-    const ttHoras = document.getElementById('tt-horas');
-
-    card.querySelectorAll('.chart-hover-zone').forEach((zone, i) => {
-      const d = data[i];
-      if (!d) return;
-
-      let monthLabel = d.mes || '';
-      if (monthLabel.includes('-')) {
-        const parts = monthLabel.split('-');
-        const monthIdx = parseInt(parts[1], 10) - 1;
-        const year = parts[0];
-        monthLabel = `${MONTH_LABELS[monthIdx] || ''}/${year}`;
-      }
-
-      zone.addEventListener('mouseenter', (e) => {
-        ttTitle.textContent = monthLabel;
-        ttMsgs.textContent = `${fmtNum(d.mensagens || 0)} mensagens`;
-        ttHoras.textContent = `${fmtHours(d.horas_economizadas || 0)} economizadas`;
-        tooltip.classList.add('visible');
-      });
-
-      zone.addEventListener('mousemove', (e) => {
-        const wrap = card.querySelector('.chart-svg-wrap');
-        const rect = wrap.getBoundingClientRect();
-        let left = e.clientX - rect.left + 12;
-        let top = e.clientY - rect.top - 60;
-        if (left + 160 > rect.width) left = e.clientX - rect.left - 170;
-        if (top < 0) top = 8;
-        tooltip.style.left = `${left}px`;
-        tooltip.style.top = `${top}px`;
-      });
-
-      zone.addEventListener('mouseleave', () => {
-        tooltip.classList.remove('visible');
-      });
-    });
-  }
-
-  /* ── Tool Breakdown ─────────────────────────────────────────────── */
-  function renderToolBreakdown(tools) {
-    const container = document.getElementById('tools-container');
-
-    if (!tools || tools.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-          <p class="title">Nenhum dado de ferramentas ainda</p>
-          <p>Continue usando a Capi e veja quais ferramentas você mais utiliza.</p>
-        </div>
-      `;
-      return;
-    }
-
-    const sorted = [...tools].sort((a, b) => (b.count || 0) - (a.count || 0));
-    const totalCount = sorted.reduce((sum, t) => sum + (t.count || 0), 0);
-    const maxCount = sorted[0]?.count || 1;
-
-    const rows = sorted.map((t, i) => {
-      const pct = totalCount > 0 ? Math.round((t.count / totalCount) * 100) : 0;
-      const barPct = Math.round((t.count / maxCount) * 100);
-      const delay = (i * 0.08).toFixed(2);
-
-      return `
-        <div class="tool-row" style="animation-delay:${delay}s">
-          <div class="tool-emoji" aria-hidden="true">${escHtml(t.icone || '🔧')}</div>
-          <div class="tool-info">
-            <div class="tool-name-row">
-              <span class="tool-name">${escHtml(t.ferramenta)}</span>
-              <span class="tool-count"><strong>${fmtNum(t.count)}</strong> usos</span>
-            </div>
-            <div class="tool-bar-track">
-              <div class="tool-bar-fill" style="width:0%;--bar-delay:${delay}s" data-target="${barPct}"></div>
-            </div>
-          </div>
-          <span class="tool-pct">${pct}%</span>
-        </div>
-      `;
-    }).join('');
-
-    container.innerHTML = `<div class="tools-grid">${rows}</div>`;
-
-    // Animate bars after render
-    setTimeout(() => {
-      container.querySelectorAll('.tool-bar-fill').forEach(bar => {
-        const target = bar.dataset.target;
-        bar.style.width = `${target}%`;
-      });
-    }, 200);
-  }
-
-  /* ── Calendar ───────────────────────────────────────────────────── */
-  function renderCalendar(calendario) {
-    const container = document.getElementById('calendar-container');
-    const subtitle = document.getElementById('calendar-subtitle');
-
-    if (!calendario || calendario.length === 0) {
-      container.innerHTML = `
-        <div class="calendar-card">
-          <div class="empty-state">
-            <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-            <p class="title">Calendário em construção</p>
-            <p>Continue usando a Capi para ver sua consistência.</p>
-          </div>
-        </div>
-      `;
-      return;
-    }
-
-    const diasAtivos = calendario.filter(d => d.count > 0).length;
-    const totalInteracoes = calendario.reduce((s, d) => s + d.count, 0);
-    const melhorDia = calendario.reduce((best, d) => d.count > best.count ? d : best, { count: 0 });
-
-    subtitle.textContent = ` · ${diasAtivos} ${diasAtivos === 1 ? 'dia ativo' : 'dias ativos'} nos últimos 90`;
-
-    // Build calendar squares
-    const squares = calendario.map(d => {
-      const dateObj = new Date(d.dia + 'T12:00:00');
-      const dayStr = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      const weekday = dateObj.toLocaleDateString('pt-BR', { weekday: 'short' });
-      const tooltip = d.count > 0
-        ? `${dayStr} (${weekday}) — ${d.count} interaç${d.count !== 1 ? 'ões' : 'ão'}`
-        : `${dayStr} (${weekday}) — sem atividade`;
-      return `<div class="calendar-day" data-level="${d.nivel}" title="">
-        <div class="calendar-tooltip">${tooltip}</div>
-      </div>`;
-    }).join('');
-
-    container.innerHTML = `
-      <div class="calendar-card">
-        <div class="calendar-stats-row">
-          <div class="calendar-stat">
-            <span class="calendar-stat-value">${fmtNum(diasAtivos)}</span>
-            <span class="calendar-stat-label">Dias ativos</span>
-          </div>
-          <div class="calendar-stat">
-            <span class="calendar-stat-value">${fmtNum(totalInteracoes)}</span>
-            <span class="calendar-stat-label">Interações totais</span>
-          </div>
-          <div class="calendar-stat">
-            <span class="calendar-stat-value">${melhorDia.count > 0 ? fmtNum(melhorDia.count) : '—'}</span>
-            <span class="calendar-stat-label">Recorde num dia</span>
-          </div>
-        </div>
-        <div class="calendar-grid">
-          ${squares}
-        </div>
-        <div class="calendar-legend">
-          <span>Menos</span>
-          <div class="calendar-legend-squares">
-            <div class="calendar-legend-sq" style="background:var(--color-surface-3)"></div>
-            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.25)"></div>
-            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.45)"></div>
-            <div class="calendar-legend-sq" style="background:rgba(196,162,101,0.70)"></div>
-            <div class="calendar-legend-sq" style="background:var(--color-brand)"></div>
-          </div>
-          <span>Mais</span>
-        </div>
-      </div>
-    `;
-  }
-
-  /* ── Badges ─────────────────────────────────────────────────────── */
-  function renderBadges(badges) {
-    const container = document.getElementById('badges-container');
-    const countLabel = document.getElementById('badges-count-label');
-
-    if (!badges || badges.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-          <p class="title">Suas conquistas aparecerão aqui</p>
-          <p>Continue usando a Capi e desbloqueie badges exclusivos!</p>
-        </div>
-      `;
-      return;
-    }
-
-    const earned = badges.filter(b => b.conquistado);
-    countLabel.textContent = ` · ${earned.length}/${badges.length} conquistadas`;
-
-    // Sort: earned first, then unearned
-    const sorted = [...badges].sort((a, b) => {
-      if (a.conquistado && !b.conquistado) return -1;
-      if (!a.conquistado && b.conquistado) return 1;
-      return 0;
-    });
-
-    const cards = sorted.map((b, i) => {
-      const earnedClass = b.conquistado ? 'earned' : 'locked';
-      const delay = (i * 0.06).toFixed(2);
-      const dateHtml = b.conquistado && b.data
-        ? `<div class="badge-date">🗓 ${formatDate(b.data)}</div>`
-        : `<div class="badge-progress">Continue usando…</div>`;
-      const lockHtml = !b.conquistado
-        ? `<span class="badge-lock-overlay" aria-label="Não conquistado">🔒</span>`
-        : '';
-
-      return `
-        <div class="badge-card ${earnedClass}" style="animation-delay:${delay}s" title="${escHtml(b.descricao || '')}">
-          <div class="badge-icon-wrap">
-            <span class="badge-icon" aria-hidden="true">${escHtml(b.icone || '🏅')}</span>
-            ${lockHtml}
-          </div>
-          <div class="badge-title">${escHtml(b.titulo)}</div>
-          <div class="badge-desc">${escHtml(b.descricao || '')}</div>
-          ${dateHtml}
-        </div>
-      `;
-    }).join('');
-
-    container.innerHTML = `<div class="badges-grid">${cards}</div>`;
-  }
-
-  /* ── Stats ──────────────────────────────────────────────────────── */
-  function renderStats(stats) {
-    if (!stats) return;
-    const cards = [
-      { icon: '🔥', label: 'Streak de Dias',         value: fmtNum(stats.streak ?? 0),                  suffix: stats.streak === 1 ? 'dia' : 'dias' },
-      { icon: '📊', label: 'Mensagens Este Mês',     value: fmtNum(stats.mensagens_mes ?? 0) },
-      { icon: '💬', label: 'Total de Conversas',     value: fmtNum(stats.total_conversas ?? 0) },
-      { icon: '📝', label: 'Peças Salvas',            value: fmtNum(stats.pecas_salvas ?? 0) },
-      { icon: '🧠', label: 'Memórias Acumuladas',    value: fmtNum(stats.total_memorias ?? 0) },
-      { icon: '📂', label: 'Casos Ativos',            value: fmtNum(stats.total_casos_ativos ?? 0) },
-      { icon: '📅', label: 'Dias como Membro',       value: fmtNum(stats.dias_como_membro ?? 0),         suffix: (stats.dias_como_membro ?? 0) === 1 ? 'dia' : 'dias' },
-      { icon: '⚡', label: 'Média Diária',            value: fmtNum(stats.minutos_por_dia_media ?? 0),    suffix: 'min/dia' },
-    ];
-
-    const grid = document.getElementById('stats-grid');
-    grid.innerHTML = '';
-    cards.forEach((card, i) => {
-      const el = document.createElement('div');
-      el.className = 'stat-card';
-      el.style.animationDelay = `${0.05 * i}s`;
-      el.innerHTML = `
-        <div class="stat-icon" aria-hidden="true">${card.icon}</div>
-        <div class="stat-value">${card.value}${card.suffix ? ' <span style="font-size:var(--text-sm);color:var(--color-text-muted);font-weight:500;">' + card.suffix + '</span>' : ''}</div>
-        <div class="stat-label">${card.label}</div>
-      `;
-      grid.appendChild(el);
-    });
-  }
-
-  /* ── Memories ───────────────────────────────────────────────────── */
-  function buildMemoryList(memoriesObj) {
-    if (!memoriesObj) return [];
-    const list = [];
-    for (const [cat, items] of Object.entries(memoriesObj)) {
-      if (!Array.isArray(items)) continue;
-      items.forEach(item => {
-        if (item && (item.insight || item.texto || item.conteudo || item.valor || item.nome)) {
-          list.push({
-            id:      item.id || `${cat}_${Math.random()}`,
-            cat,
-            insight: item.insight || item.texto || item.conteudo || item.valor || item.nome || String(item),
-            score:   item.score,
-            date:    item.date || item.created_at
-          });
-        }
-      });
-    }
-    return list;
-  }
-
-  function renderMemories(memories) {
-    const grid = document.getElementById('memory-grid');
-    const countLabel = document.getElementById('memory-count-label');
-
-    if (!memories || memories.length === 0) {
-      grid.innerHTML = `
-        <div class="memory-empty" style="grid-column:1/-1">
-          <div class="mascot"><img src="/capi-mascot.jpeg" alt="Capi" class="capi-mascot-img"></div>
-          <p>A Capi ainda está te conhecendo! Continue conversando e ela vai aprender sobre você automaticamente.</p>
-        </div>
-      `;
-      countLabel.textContent = '';
-      return;
-    }
-
-    countLabel.textContent = ` · ${memories.length} memória${memories.length !== 1 ? 's' : ''}`;
-
-    const grouped = {};
-    memories.forEach(m => {
-      if (!grouped[m.cat]) grouped[m.cat] = [];
-      grouped[m.cat].push(m);
-    });
-
-    grid.innerHTML = '';
-    for (const [cat, items] of Object.entries(grouped)) {
-      const cfg = CATEGORIES[cat] || { label: cat, icon: '🧠' };
-      const card = document.createElement('div');
-      card.className = 'memory-category-card';
-      const chips = items.map(m => `
-        <span class="memory-chip" data-id="${escHtml(String(m.id))}">
-          <span>${escHtml(m.insight)}</span>
-          <button
-            class="memory-chip-delete"
-            aria-label="Excluir memória"
-            data-id="${escHtml(String(m.id))}"
-            title="Excluir esta memória"
-          >✕</button>
-        </span>
-      `).join('');
-
-      card.innerHTML = `
-        <div class="memory-cat-header">
-          <span class="memory-cat-icon" aria-hidden="true">${cfg.icon}</span>
-          <span class="memory-cat-title">${escHtml(cfg.label)}</span>
-          <span class="memory-cat-count">${items.length}</span>
-        </div>
-        <div class="memory-chips">${chips}</div>
-      `;
-
-      card.querySelectorAll('.memory-chip-delete').forEach(btn => {
-        btn.addEventListener('click', () => deleteMemory(btn.dataset.id));
-      });
-
-      grid.appendChild(card);
-    }
-  }
-
-  async function deleteMemory(id) {
-    if (!confirm('Excluir esta memória?')) return;
-    try {
-      await API.del(`/api/memories/${id}`);
-      allMemories = allMemories.filter(m => String(m.id) !== String(id));
-      renderMemories(allMemories);
-      toast('Memória excluída', 'success');
-    } catch {
-      toast('Erro ao excluir memória', 'error');
-    }
-  }
-
-  /* ── Cases ──────────────────────────────────────────────────────── */
-  function renderCases(cases) {
-    const list = document.getElementById('cases-list');
-    const countLabel = document.getElementById('cases-count-label');
-
-    const sorted = [...(cases || [])].sort((a, b) => {
-      const order = { ativo: 0, arquivado: 1, concluido: 2 };
-      return (order[a.status] ?? 1) - (order[b.status] ?? 1);
-    });
-
-    const activeCount = sorted.filter(c => c.status === 'ativo').length;
-    countLabel.textContent = activeCount > 0 ? ` · ${activeCount} ativo${activeCount !== 1 ? 's' : ''}` : '';
-
-    if (!sorted || sorted.length === 0) {
-      list.innerHTML = `
-        <div class="empty-state">
-          <div class="mascot">📂</div>
-          <p class="title">Nenhum caso registrado</p>
-          <p>Adicione um caso manualmente ou continue conversando com a Capi — ela detecta casos automaticamente.</p>
-        </div>
-      `;
-      return;
-    }
-
-    list.innerHTML = '';
-    sorted.forEach(c => {
-      const card = buildCaseCard(c);
-      list.appendChild(card);
-    });
-  }
-
-  function buildCaseCard(c) {
-    const statusLabels = { ativo: 'Ativo', concluido: 'Concluído', arquivado: 'Arquivado' };
-    const status = c.status || 'ativo';
-    const card = document.createElement('article');
-    card.className = 'case-card';
-    card.dataset.id = c.id;
-
-    const prazoHtml = c.prazo ? `
-      <span class="case-prazo">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Prazo: ${formatDate(c.prazo)}
-      </span>
-    ` : '';
-
-    const nextStepHtml = c.proximo_passo ? `
-      <div class="case-next-step">
-        <span class="case-next-step-icon">→</span>
-        <div>
-          <p class="case-next-step-label">Próximo Passo</p>
-          <p class="case-next-step-text">${escHtml(c.proximo_passo)}</p>
-        </div>
-      </div>
-    ` : '';
-
-    card.innerHTML = `
-      <div class="case-card-top">
-        <div class="case-title-row">
-          <div class="case-badges">
-            <span class="status-badge ${escHtml(status)}">
-              <span class="status-dot" aria-hidden="true"></span>
-              ${statusLabels[status] || status}
-            </span>
-            ${c.auto_detected ? '<span class="ai-badge">🤖 Detectado pela Capi</span>' : ''}
-          </div>
-          <h3 class="case-title">${escHtml(c.titulo)}</h3>
-          <div class="case-meta">
-            ${c.cliente ? `<span class="case-meta-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
-              ${escHtml(c.cliente)}
-            </span>` : ''}
-            ${c.area ? `<span class="case-meta-item">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-              ${escHtml(c.area)}
-            </span>` : ''}
-            ${c.created_at ? `<span class="case-meta-item">${formatRelativeDate(c.created_at)}</span>` : ''}
-          </div>
-        </div>
-        <div class="case-actions">
-          ${status === 'ativo' ? `
-            <button class="case-action-btn success-action" data-action="conclude" data-id="${c.id}" title="Marcar como concluído" aria-label="Marcar caso como concluído">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-          ` : ''}
-          <button class="case-action-btn" data-action="edit" data-id="${c.id}" title="Editar" aria-label="Editar caso">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </button>
-          <button class="case-action-btn danger" data-action="delete" data-id="${c.id}" title="Excluir" aria-label="Excluir caso">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
-          </button>
-        </div>
-      </div>
-      ${(c.proximo_passo || c.prazo) ? `
-        <div class="case-body">
-          ${nextStepHtml}
-          ${prazoHtml}
-        </div>
-      ` : ''}
-    `;
-
-    card.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const action = btn.dataset.action;
-        const id = btn.dataset.id;
-        if (action === 'delete') deleteCase(id);
-        if (action === 'edit')   openEditCase(id);
-        if (action === 'conclude') concludeCase(id);
-      });
-    });
-
-    return card;
-  }
-
-  async function deleteCase(id) {
-    if (!confirm('Excluir este caso permanentemente?')) return;
-    try {
-      await API.del(`/api/cases/${id}`);
-      allCases = allCases.filter(c => String(c.id) !== String(id));
-      const card = document.querySelector(`.case-card[data-id="${id}"]`);
-      if (card) {
-        card.style.transition = 'all 0.3s ease';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(-4px)';
-        setTimeout(() => renderCases(allCases), 300);
-      }
-      toast('Caso excluído', 'success');
-    } catch {
-      toast('Erro ao excluir caso', 'error');
-    }
-  }
-
-  async function concludeCase(id) {
-    try {
-      const updated = await API.patch(`/api/cases/${id}`, { status: 'concluido' });
-      if (updated) {
-        const idx = allCases.findIndex(c => String(c.id) === String(id));
-        if (idx !== -1) allCases[idx] = { ...allCases[idx], status: 'concluido' };
-        renderCases(allCases);
-        toast('Caso marcado como concluído! 🎉', 'success');
-      }
-    } catch {
-      toast('Erro ao atualizar caso', 'error');
-    }
-  }
-
-  function openEditCase(id) {
-    const c = allCases.find(c => String(c.id) === String(id));
-    if (!c) return;
-    editingCaseId = id;
-
-    document.getElementById('edit-titulo').value        = c.titulo        || '';
-    document.getElementById('edit-cliente').value       = c.cliente       || '';
-    document.getElementById('edit-area').value          = c.area          || '';
-    document.getElementById('edit-detalhes').value      = c.detalhes      || '';
-    document.getElementById('edit-proximo-passo').value = c.proximo_passo || '';
-    document.getElementById('edit-prazo').value         = c.prazo         ? c.prazo.split('T')[0] : '';
-    document.getElementById('edit-status').value        = c.status        || 'ativo';
-
-    document.getElementById('edit-modal').classList.add('visible');
-    document.getElementById('edit-titulo').focus();
-  }
-
-  function closeEditModal() {
-    document.getElementById('edit-modal').classList.remove('visible');
-    editingCaseId = null;
-  }
-
-  document.getElementById('edit-case-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    if (!editingCaseId) return;
-    const btn = e.target.querySelector('[type="submit"]');
-    btn.disabled = true;
-    btn.textContent = 'Salvando…';
-
-    const body = {
-      titulo:        document.getElementById('edit-titulo').value,
-      cliente:       document.getElementById('edit-cliente').value,
-      area:          document.getElementById('edit-area').value,
-      detalhes:      document.getElementById('edit-detalhes').value,
-      proximo_passo: document.getElementById('edit-proximo-passo').value,
-      prazo:         document.getElementById('edit-prazo').value || null,
-      status:        document.getElementById('edit-status').value,
-    };
-
-    try {
-      const updated = await API.patch(`/api/cases/${editingCaseId}`, body);
-      if (updated) {
-        const idx = allCases.findIndex(c => String(c.id) === String(editingCaseId));
-        if (idx !== -1) allCases[idx] = { ...allCases[idx], ...body };
-        renderCases(allCases);
-        closeEditModal();
-        toast('Caso atualizado com sucesso!', 'success');
-      }
-    } catch {
-      toast('Erro ao atualizar caso', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Salvar Alterações
-      `;
-    }
+    </div>`;
+  }).join('');
+}
+
+let onlineExpanded = false;
+function toggleOnlineGrid() {
+  const grid = document.getElementById('onlineGrid');
+  const btn = document.getElementById('toggleOnline');
+  onlineExpanded = !onlineExpanded;
+  grid.style.maxHeight = onlineExpanded ? '2000px' : '180px';
+  btn.textContent = onlineExpanded ? 'Recolher' : 'Mostrar todos';
+}
+
+function timeAgo(iso) {
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'agora';
+  if (s < 3600) return Math.floor(s/60) + 'min atras';
+  if (s < 86400) return Math.floor(s/3600) + 'h atras';
+  return Math.floor(s/86400) + 'd atras';
+}
+
+function renderCharts(analytics, ai30) {
+  // Messages per day
+  const msgData = (analytics.msgPerDay || []).reverse();
+  renderChart('chartMsgDay', 'bar', {
+    labels: msgData.map(d => d.day.substring(5)),
+    datasets: [{
+      data: msgData.map(d => d.count),
+      backgroundColor: 'rgba(218,165,32,0.4)',
+      borderColor: 'rgba(218,165,32,0.8)',
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
   });
 
-  document.getElementById('modal-close-btn').addEventListener('click', closeEditModal);
-  document.getElementById('modal-cancel-btn').addEventListener('click', closeEditModal);
-  document.getElementById('edit-modal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeEditModal();
-  });
+  // Cost by feature
+  const featureColors = ['#daa520','#f97316','#3b82f6','#22c55e','#a855f7','#ef4444','#06b6d4','#ec4899','#84cc16','#eab308'];
+  const features = (ai30.by_feature || []).slice(0, 8);
+  renderChart('chartFeature', 'doughnut', {
+    labels: features.map(f => f.feature),
+    datasets: [{
+      data: features.map(f => parseFloat(f.total_cost.toFixed(4))),
+      backgroundColor: featureColors.slice(0, features.length),
+      borderWidth: 0,
+    }]
+  }, { cutout: '60%' });
 
-  /* ── Add Case ───────────────────────────────────────────────────── */
-  const addToggle = document.getElementById('add-case-toggle');
-  const addFormWrap = document.getElementById('add-case-form-wrap');
+  // Cost by model
+  const models = (ai30.by_model || []).slice(0, 6);
+  renderChart('chartModel', 'bar', {
+    labels: models.map(m => m.model?.replace('gpt-','').replace('gemini-','gem-') || '?'),
+    datasets: [{
+      data: models.map(m => parseFloat(m.total_cost.toFixed(4))),
+      backgroundColor: models.map((_, i) => featureColors[i]),
+      borderWidth: 0,
+      borderRadius: 4,
+    }]
+  }, { indexAxis: 'y' });
 
-  addToggle.addEventListener('click', () => {
-    const open = addFormWrap.classList.contains('visible');
-    addFormWrap.classList.toggle('visible', !open);
-    addToggle.setAttribute('aria-expanded', String(!open));
-    if (!open) document.getElementById('new-titulo').focus();
-  });
+  // Top areas
+  const areas = (analytics.topAreas || []).slice(0, 8);
+  renderChart('chartAreas', 'bar', {
+    labels: areas.map(a => a.area),
+    datasets: [{
+      data: areas.map(a => a.count),
+      backgroundColor: 'rgba(218,165,32,0.3)',
+      borderColor: 'rgba(218,165,32,0.7)',
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
+  }, { indexAxis: 'y' });
+}
 
-  document.getElementById('cancel-add-case').addEventListener('click', () => {
-    addFormWrap.classList.remove('visible');
-    addToggle.setAttribute('aria-expanded', 'false');
-    document.getElementById('add-case-form').reset();
-  });
-
-  document.getElementById('add-case-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const btn = document.getElementById('add-case-submit');
-    btn.disabled = true;
-    btn.textContent = 'Adicionando…';
-
-    const body = {
-      titulo:        document.getElementById('new-titulo').value,
-      cliente:       document.getElementById('new-cliente').value,
-      area:          document.getElementById('new-area').value,
-      detalhes:      document.getElementById('new-detalhes').value,
-      proximo_passo: document.getElementById('new-proximo-passo').value,
-      prazo:         document.getElementById('new-prazo').value || null,
-    };
-
-    try {
-      const created = await API.post('/api/cases', body);
-      if (created) {
-        allCases.unshift(created);
-        renderCases(allCases);
-        e.target.reset();
-        addFormWrap.classList.remove('visible');
-        addToggle.setAttribute('aria-expanded', 'false');
-        toast('Caso adicionado com sucesso! 📂', 'success');
-      }
-    } catch {
-      toast('Erro ao adicionar caso', 'error');
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        Adicionar Caso
-      `;
+function renderChart(id, type, data, extra = {}) {
+  if (charts[id]) charts[id].destroy();
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: type === 'doughnut', position: 'right', labels: { color: '#aaa', font: { size: 11 }, padding: 8 } },
+      },
+      scales: type === 'doughnut' ? {} : {
+        x: { grid: { color: '#1a1a1a' }, ticks: { color: '#666', font: { size: 10 } } },
+        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#666', font: { size: 10 } } },
+      },
+      ...extra
     }
   });
+}
 
-  /* ── Summaries ──────────────────────────────────────────────────── */
-  function renderSummaries(summaries) {
-    const list = document.getElementById('summaries-list');
-    const countLabel = document.getElementById('summaries-count-label');
-
-    if (!summaries || summaries.length === 0) {
-      list.innerHTML = `
-        <div class="empty-state">
-          <div class="mascot">💬</div>
-          <p class="title">Resumos sendo gerados</p>
-          <p>A Capi resume automaticamente suas conversas mais longas. Continue usando e os resumos aparecerão aqui em breve.</p>
-        </div>
-      `;
-      countLabel.textContent = '';
-      return;
+function renderUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  let filtered = allUsers;
+  if (q) filtered = filtered.filter(u => (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q));
+  
+  // Sort
+  filtered.sort((a, b) => {
+    let va, vb;
+    switch(sortField) {
+      case 'name': va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase(); break;
+      case 'messages': va = a.total_messages; vb = b.total_messages; break;
+      case 'conversations': va = a.total_conversations; vb = b.total_conversations; break;
+      case 'cost': va = a.ai_cost; vb = b.ai_cost; break;
+      case 'login': va = a.last_login || ''; vb = b.last_login || ''; break;
+      default: va = a.ai_cost; vb = b.ai_cost;
     }
-
-    countLabel.textContent = ` · ${summaries.length} conversa${summaries.length !== 1 ? 's' : ''}`;
-    list.innerHTML = '';
-
-    summaries.slice(0, 20).forEach(s => {
-      const item = document.createElement('a');
-      item.className = 'timeline-item';
-      item.href = s.id ? `/?conv=${s.id}` : '/';
-
-      let actionItemsHtml = '';
-      if (s.action_items && s.action_items.length > 0) {
-        const items = Array.isArray(s.action_items) ? s.action_items : [s.action_items];
-        actionItemsHtml = `
-          <div class="timeline-action-items">
-            <span class="timeline-action-label">Ações:</span>
-            <div class="timeline-action-list">
-              ${items.slice(0,3).map(a => `<span class="timeline-action-item">${escHtml(String(a))}</span>`).join('')}
-            </div>
-          </div>
-        `;
-      }
-
-      let tagsHtml = '';
-      if (s.key_topics && s.key_topics.length > 0) {
-        const topics = Array.isArray(s.key_topics) ? s.key_topics : [s.key_topics];
-        tagsHtml = `<div class="timeline-tags">
-          ${topics.slice(0,5).map(t => `<span class="timeline-tag">${escHtml(String(t))}</span>`).join('')}
-        </div>`;
-      }
-
-      item.innerHTML = `
-        <div class="timeline-dot-wrap">
-          <div class="timeline-dot" title="${s.emotional_tone || 'neutro'}" aria-label="Tom: ${s.emotional_tone || 'neutro'}">
-            ${toneIcon(s.emotional_tone)}
-          </div>
-        </div>
-        <div class="timeline-content">
-          <div class="timeline-header">
-            <h3 class="timeline-title">${escHtml(s.conv_title || 'Conversa sem título')}</h3>
-            <span class="timeline-date">${formatRelativeDate(s.created_at)}</span>
-          </div>
-          ${s.summary ? `<p class="timeline-summary">${escHtml(s.summary)}</p>` : ''}
-          ${tagsHtml}
-          ${actionItemsHtml}
-        </div>
-      `;
-
-      list.appendChild(item);
-    });
-  }
-
-  /* ── Profile ────────────────────────────────────────────────────── */
-  function renderProfile(profile) {
-    document.getElementById('profile-display-name').textContent = profile.nome || 'Seu Nome';
-    document.getElementById('profile-display-area').textContent = (profile.area || '–').replace(/,\s*$/, '');
-
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-    setVal('profile-nome',      profile.nome);
-    setVal('profile-area',      profile.area);
-    setVal('profile-oab',       profile.oab);
-    setVal('profile-escritorio',profile.escritorio);
-    setVal('profile-cidade',    profile.cidade);
-    setVal('profile-estado',    profile.estado);
-    setVal('profile-anos',      profile.anos_experiencia);
-    setVal('profile-tom',       profile.tom_preferido);
-    setVal('profile-especialidade2', profile.especialidade_secundaria);
-    setVal('profile-bio',       profile.bio);
-  }
-
-  document.getElementById('profile-form').addEventListener('submit', async e => {
-    e.preventDefault();
-    const btn = document.getElementById('save-profile-btn');
-    btn.disabled = true;
-
-    const body = {
-      nome:             document.getElementById('profile-nome').value,
-      area:             document.getElementById('profile-area').value,
-      oab:              document.getElementById('profile-oab').value,
-      escritorio:       document.getElementById('profile-escritorio').value,
-      cidade:           document.getElementById('profile-cidade').value,
-      estado:           document.getElementById('profile-estado').value,
-      anos_experiencia: document.getElementById('profile-anos').value,
-      tom_preferido:    document.getElementById('profile-tom').value,
-      especialidade_secundaria: document.getElementById('profile-especialidade2').value,
-      bio:              document.getElementById('profile-bio').value,
-    };
-
-    try {
-      await API.put('/api/profile', body);
-      document.getElementById('profile-display-name').textContent = body.nome || 'Seu Nome';
-      document.getElementById('profile-display-area').textContent = body.area || '–';
-      const prefixes2 = ['dr.','dra.','prof.','dr','dra','prof'];
-      const savedParts = (body.nome || '').trim().split(/\s+/);
-      const savedName = savedParts.find(p => !prefixes2.includes(p.toLowerCase())) || savedParts[0] || 'Advogado';
-      document.getElementById('hero-name').textContent = savedName;
-      document.getElementById('header-welcome-text').textContent = `Olá, ${savedName}`;
-
-      const msg = document.getElementById('profile-save-msg');
-      msg.classList.add('visible');
-      setTimeout(() => msg.classList.remove('visible'), 3000);
-      toast('Perfil salvo com sucesso!', 'success');
-    } catch {
-      toast('Erro ao salvar perfil', 'error');
-    } finally {
-      btn.disabled = false;
-    }
+    if (sortDir === 'asc') return va > vb ? 1 : -1;
+    return va < vb ? 1 : -1;
   });
 
-  /* ── Keyboard ───────────────────────────────────────────────────── */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeEditModal();
-  });
+  const maxCost = Math.max(...filtered.map(u => u.ai_cost), 0.01);
+  const body = document.getElementById('usersBody');
+  
+  body.innerHTML = filtered.slice(0, 100).map(u => {
+    const costPct = Math.min((u.ai_cost / maxCost) * 100, 100);
+    const plan = u.plan_type === 'paid' ? '<span class="badge badge-paid">Pago</span>' 
+               : u.plan_type === 'gift' ? '<span class="badge badge-paid">Gift</span>'
+               : '<span class="badge badge-free">Free</span>';
+    const login = u.last_login ? timeAgo(u.last_login) : 'Nunca';
+    return `<tr>
+      <td><div class="user-name">${u.name || '(sem nome)'}</div><div class="user-email">${u.email}</div></td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${u.total_messages.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${u.total_conversations}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:${u.ai_cost > 1 ? 'var(--gold)' : 'var(--text2)'}">$${u.ai_cost.toFixed(3)}</td>
+      <td style="text-align:right"><div class="cost-bar"><div class="cost-bar-fill" style="width:${costPct}%"></div></div></td>
+      <td style="text-align:right;color:${login==='Nunca'?'var(--text3)':'var(--text2)'}">${login}</td>
+      <td>${plan}</td>
+    </tr>`;
+  }).join('');
+}
 
-  /* ── Init ───────────────────────────────────────────────────────── */
-  loadDashboard();
+function filterUsers() { renderUsers(); }
 
-})();
+function sortUsers(field) {
+  if (sortField === field) sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+  else { sortField = field; sortDir = 'desc'; }
+  renderUsers();
+}
+
+// Auto-focus password on load
+document.getElementById('passInput').focus();
 </script>
-
 </body>
 </html>
