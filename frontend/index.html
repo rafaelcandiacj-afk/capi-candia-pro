@@ -3983,7 +3983,13 @@ function toggleAreaChip(el){
   $('obNext2').disabled = !hasSelection;
   // Auto-scroll para o botão Próximo ficar visível no mobile
   if(hasSelection){
-    setTimeout(function(){ $('obNext2').scrollIntoView({behavior:'smooth',block:'nearest'}); },150);
+    setTimeout(function(){
+      var btn = $('obNext2');
+      var rect = btn.getBoundingClientRect();
+      if(rect.bottom > window.innerHeight){
+        btn.scrollIntoView({behavior:'smooth',block:'end'});
+      }
+    },150);
   }
 }
 function getSelectedAreas(){
@@ -4006,6 +4012,20 @@ function obNext(step) {
   const next = step + 1;
   $('obStep' + next).classList.remove('hidden');
   $('obDot' + next).classList.add('active');
+  // On mobile: collapse header to free space for chips + button
+  var logo = document.querySelector('.onboarding-logo');
+  var title = document.querySelector('.onboarding-title');
+  var sub = document.querySelector('.onboarding-sub');
+  if(logo) logo.style.display = 'none';
+  if(title) title.style.display = 'none';
+  if(sub) sub.style.display = 'none';
+  // Hide PWA banner if visible during onboarding
+  var pwaBanner = $('pwaInstallBanner');
+  if(pwaBanner) pwaBanner.style.display = 'none';
+  // Scroll step into view on mobile so button is always visible
+  setTimeout(function(){
+    $('obStep' + next).scrollIntoView({behavior:'smooth',block:'start'});
+  }, 200);
 }
 
 async function finishOnboarding() {
@@ -5325,6 +5345,8 @@ init();
   if(window.matchMedia('(display-mode: standalone)').matches) return;
   if(navigator.standalone) return;
   if(localStorage.getItem('pwa_banner_dismissed')) return;
+  // Não mostra durante o onboarding
+  if(document.getElementById('onboardingScreen') && !document.getElementById('onboardingScreen').classList.contains('hidden')) return;
 
   var banner = document.getElementById('pwaInstallBanner');
   var content = document.getElementById('pwaBannerContent');
