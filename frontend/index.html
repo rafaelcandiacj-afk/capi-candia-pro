@@ -2083,9 +2083,21 @@ async function sendMessage(){
     } else {
       msgErro = '⚠️ Ocorreu um erro. Tente enviar a mensagem novamente.';
     }
-    // Adiciona botão de retry na mensagem de erro
-    const retryBtn = `<br><button onclick="this.parentElement.parentElement.remove();$('chatInput').value='${convHistory.filter(m=>m.role==='user').pop()?.content?.replace(/'/g,"\\'").substring(0,200)||''}';sendMessage()" style="margin-top:8px;padding:6px 16px;background:var(--gold,#DAA520);color:#1a1200;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">Tentar novamente</button>`;
-    appendMessage('assistant', msgErro + retryBtn);
+    // Adiciona mensagem de erro e botão de retry (inserido via DOM para não ser escapado pelo formatMsg)
+    appendMessage('assistant', msgErro);
+    const lastBubble = document.querySelector('#chatMessages .message:last-child .message-bubble');
+    if (lastBubble) {
+      const retryBtnEl = document.createElement('button');
+      retryBtnEl.textContent = 'Tentar novamente';
+      retryBtnEl.style.cssText = 'display:block;margin-top:8px;padding:6px 16px;background:var(--gold,#DAA520);color:#1a1200;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px';
+      retryBtnEl.onclick = function() {
+        const lastUserContent = convHistory.filter(m=>m.role==='user').pop()?.content || '';
+        this.closest('.message').remove();
+        if($('chatInput')) $('chatInput').value = lastUserContent.substring(0,200);
+        sendMessage();
+      };
+      lastBubble.appendChild(retryBtnEl);
+    }
   }finally{
     // Limpa uploads SEMPRE após envio (sucesso ou erro) — evita reenvio acidental
     pendingUploadIds=[];pendingUploadNames=[];window._uploadMeta={};const fba=document.getElementById('fileBadgeArea');if(fba) fba.innerHTML='';

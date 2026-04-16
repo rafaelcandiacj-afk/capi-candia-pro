@@ -2435,7 +2435,15 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
       clearTimeout(timeout);
       data = await response.json();
       if (response.ok) break; // sucesso, sai do loop
-      if (attempt === 2) return res.status(502).json({ error: data.error?.message || 'Erro na OpenAI' });
+      if (attempt === 2) {
+        const errMsg = data.error?.message || 'Erro na OpenAI';
+        // Erro de quota/billing → mensagem amigável sem expor detalhes
+        if (errMsg.includes('quota') || errMsg.includes('billing') || errMsg.includes('insufficient') || response.status === 429) {
+          console.error('🚨 OpenAI quota exceeded:', errMsg);
+          return res.status(503).json({ error: 'A Capi está com alta demanda no momento. Estamos resolvendo — tente novamente em alguns minutos.' });
+        }
+        return res.status(502).json({ error: errMsg });
+      }
       console.log(`⚠️ Tentativa ${attempt} falhou, tentando novamente...`);
     } catch(fetchErr) {
       if (attempt === 2) return res.status(504).json({ error: 'A resposta está demorando mais que o normal. Tente uma pergunta mais curta ou envie novamente.' });
