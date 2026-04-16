@@ -1269,6 +1269,13 @@ document.addEventListener('touchmove', function(e){
       </div>
     </div>
 
+    <!-- BANNER UPGRADE ANUAL PRO -->
+    <div id="upgradeBanner" style="display:none;background:linear-gradient(135deg,#D4AF37 0%,#F4CE50 100%);color:#1a1a1a;padding:12px 20px;text-align:center;font-weight:600;align-items:center;justify-content:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,0.1);flex-shrink:0;flex-wrap:wrap">
+      <span style="font-size:.9rem">Desbloqueie o plano PRO: modelos avancados, mais uso diario, sem limites.</span>
+      <button id="upgradeBtn" onclick="handleUpgradeClick()" style="background:#1a1a1a;color:#D4AF37;padding:8px 18px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.85rem;white-space:nowrap;margin-left:8px">Migrar pro Anual PRO</button>
+      <button onclick="closeUpgradeBanner()" style="background:none;border:none;color:#1a1a1a;font-size:16px;cursor:pointer;padding:2px 6px;opacity:.6;margin-left:4px">&#10005;</button>
+    </div>
+
     <div id="chatMessages" class="chat-messages">
       <div id="welcomeScreen" class="chat-welcome">
         <img src="/capi-logo.png" alt="Capi" class="welcome-avatar">
@@ -1600,6 +1607,8 @@ async function checkSubscriptionStatus(){
     var res = await fetch('/api/subscription/status',{headers:{'Authorization':'Bearer '+token}});
     if(!res.ok) return;
     var data = await res.json();
+    // Check upgrade banner (before early returns for renewal logic)
+    checkUpgradeBanner(data);
     // Admins never see the banner
     if(data.is_admin) return;
     // Gift plans without expiration — no banner
@@ -1659,6 +1668,46 @@ async function checkSubscriptionStatus(){
     banner.classList.add('visible');
   }catch(e){
     console.warn('checkSubscriptionStatus error:', e);
+  }
+}
+
+// ── UPGRADE BANNER: mostrar para mensais pagantes (não-PRO) ──
+function checkUpgradeBanner(data){
+  try{
+    if(!data) return;
+    if(data.is_admin) return;
+    if(data.plan_type !== 'paid') return;
+    if(data.subscription_tier === 'pro') return;
+    if(sessionStorage.getItem('upgradeBannerClosed') === 'true') return;
+    var banner = document.getElementById('upgradeBanner');
+    if(banner) banner.style.display = 'flex';
+  }catch(e){ console.warn('checkUpgradeBanner error:', e); }
+}
+function closeUpgradeBanner(){
+  var b = document.getElementById('upgradeBanner');
+  if(b) b.style.display = 'none';
+  sessionStorage.setItem('upgradeBannerClosed','true');
+}
+async function handleUpgradeClick(){
+  try{
+    var btn = document.getElementById('upgradeBtn');
+    if(btn){ btn.textContent = 'Redirecionando...'; btn.disabled = true; }
+    var token = localStorage.getItem('capi_token');
+    var r = await fetch('/api/subscription/upgrade-to-annual',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+    });
+    var d = await r.json();
+    if(d.checkout_url){
+      window.location.href = d.checkout_url;
+    } else {
+      alert(d.error || 'Erro ao gerar link de upgrade');
+      if(btn){ btn.textContent = 'Migrar pro Anual PRO'; btn.disabled = false; }
+    }
+  }catch(e){
+    alert('Erro de conexão. Tente novamente.');
+    var btn = document.getElementById('upgradeBtn');
+    if(btn){ btn.textContent = 'Migrar pro Anual PRO'; btn.disabled = false; }
   }
 }
 
