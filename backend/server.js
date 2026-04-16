@@ -2988,6 +2988,28 @@ app.delete('/api/admin/knowledge/:id', adminMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+// ─── DEBUG: buscar texto nos knowledge chunks (TEMPORÁRIO) ──────
+app.get('/api/admin/knowledge/search-chunks', adminMiddleware, (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  if (!q) return res.json([]);
+  const chunks = db.prepare('SELECT kc.id, kc.content, kf.original_name, kf.id as file_id FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id').all();
+  const matches = chunks.filter(c => c.content.toLowerCase().includes(q));
+  res.json(matches.map(m => ({ id: m.id, file_id: m.file_id, file: m.original_name, snippet: m.content.substring(0, 800) })));
+});
+
+// ─── DEBUG: deletar chunks contaminados por IDs (TEMPORÁRIO) ──────
+app.post('/api/admin/knowledge/delete-chunks', adminMiddleware, (req, res) => {
+  const { chunk_ids } = req.body;
+  if (!chunk_ids || !Array.isArray(chunk_ids) || chunk_ids.length === 0) {
+    return res.status(400).json({ error: 'chunk_ids obrigatório (array de IDs)' });
+  }
+  const placeholders = chunk_ids.map(() => '?').join(',');
+  const result = db.prepare(`DELETE FROM knowledge_chunks WHERE id IN (${placeholders})`).run(...chunk_ids);
+  // Atualiza chunk_count nos arquivos afetados
+  const fileIds = db.prepare(`SELECT DISTINCT file_id FROM knowledge_chunks WHERE file_id IN (SELECT DISTINCT file_id FROM knowledge_files)`).all().map(r => r.file_id);
+  res.json({ success: true, deleted: result.changes });
+});
+
 // ─── INGESTÃO DOS ARQUIVOS EXISTENTES ─────────────────────────
 // Endpoint especial para processar arquivos que já estão no servidor
 app.post('/api/admin/knowledge/ingest-server-files', adminMiddleware, async (req, res) => {
@@ -6502,14 +6524,7 @@ Gere a peça jurídica COMPLETA agora.`;
   }
 });
 
-// ─── DEBUG: buscar texto nos knowledge chunks (TEMPORÁRIO) ──────
-app.get('/api/admin/knowledge/search-chunks', adminMiddleware, (req, res) => {
-  const q = (req.query.q || '').toLowerCase();
-  if (!q) return res.json([]);
-  const chunks = db.prepare('SELECT kc.id, kc.content, kf.original_name, kf.id as file_id FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id').all();
-  const matches = chunks.filter(c => c.content.toLowerCase().includes(q));
-  res.json(matches.map(m => ({ id: m.id, file_id: m.file_id, file: m.original_name, snippet: m.content.substring(0, 800) })));
-});
+// (endpoint search-chunks movido para antes do catch-all)
 
 // ─── GLOBAL ERROR HANDLER ────────────────────────────────────────
 app.use((err, req, res, next) => {
