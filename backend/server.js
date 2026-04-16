@@ -5366,6 +5366,12 @@ app.get('/', (req, res) => {
 // Serve arquivos estáticos da landing (imagens, etc)
 app.use('/landing', express.static(path.join(__dirname, '../frontend/landing')));
 
+// Landing V2 (A/B testing) — ANTES do express.static
+app.get('/landing-v2', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/landing-v2/index.html'));
+});
+app.use('/landing-v2', express.static(path.join(__dirname, '../frontend/landing-v2')));
+
 // Rota /app serve o sistema (login/chat)
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
