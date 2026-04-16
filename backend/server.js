@@ -655,29 +655,56 @@ db.exec(`
 `);
 
 // ─── SECURITY: RATE LIMITING & BRUTE FORCE PROTECTION ───────────
-
-// In-memory store for login attempts
-const loginAttempts = new Map();
+// Uses EMAIL as primary key (Railway proxy rotates IPs, so IP-only blocking fails).
+// Also tracks by IP/24 subnet as secondary defense.
+const loginAttempts = new Map(); // key: email or subnet, value: { count, firstAttempt, blockedUntil }
 const LOGIN_MAX_ATTEMPTS = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_BLOCK_DURATION_MS = 15 * 60 * 1000;
 
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+}
+
+function getSubnet(ip) {
+  // Extract /24 subnet (e.g., 167.82.142.118 -> 167.82.142)
+  const parts = (ip || '').split('.');
+  if (parts.length === 4) return parts.slice(0, 3).join('.');
+  return ip; // IPv6 or unknown, use full
+}
+
+function getLoginKeys(req) {
+  // Returns array of keys to check/record: [email, subnet]
+  const keys = [];
+  const email = req.body?.email?.toLowerCase();
+  if (email) keys.push(`email:${email}`);
+  const ip = getClientIp(req);
+  const subnet = getSubnet(ip);
+  if (subnet) keys.push(`subnet:${subnet}`);
+  return keys;
+}
+
 function loginRateLimiter(req, res, next) {
-  const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   const now = Date.now();
-  const record = loginAttempts.get(ip);
-
-  if (record && record.blockedUntil && now < record.blockedUntil) {
-    const remainingSec = Math.ceil((record.blockedUntil - now) / 1000);
-    console.log(`🚫 Login blocked for IP ${ip} — ${remainingSec}s remaining`);
-    try { db.prepare("INSERT INTO security_logs (event_type, ip, details) VALUES (?, ?, ?)").run('blocked_ip', ip, `Blocked login attempt, ${remainingSec}s remaining`); } catch(e) {}
-    return res.status(429).json({
-      error: `Muitas tentativas. Tente novamente em ${Math.ceil(remainingSec / 60)} minutos.`
-    });
-  }
-
-  if (record && (now - record.firstAttempt > LOGIN_WINDOW_MS)) {
-    loginAttempts.delete(ip);
+  const keys = getLoginKeys(req);
+  
+  for (const key of keys) {
+    const record = loginAttempts.get(key);
+    if (record && record.blockedUntil && now < record.blockedUntil) {
+      const remainingSec = Math.ceil((record.blockedUntil - now) / 1000);
+      const ip = getClientIp(req);
+      console.log(`🚫 Login blocked for key ${key} (IP ${ip}) — ${remainingSec}s remaining`);
+      try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('blocked_ip', ip, req.body?.email || '', `Key: ${key}, blocked — ${remainingSec}s remaining`); } catch(e) {}
+      return res.status(429).json({
+        error: `Muitas tentativas. Tente novamente em ${Math.ceil(remainingSec / 60)} minutos.`
+      });
+    }
+    // Cleanup expired records
+    if (record && (now - record.firstAttempt > LOGIN_WINDOW_MS)) {
+      loginAttempts.delete(key);
+    }
   }
 
   next();
@@ -685,29 +712,39 @@ function loginRateLimiter(req, res, next) {
 
 function recordFailedLogin(ip, email) {
   const now = Date.now();
-  const record = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
-  record.count++;
-
-  if (record.count >= LOGIN_MAX_ATTEMPTS) {
-    record.blockedUntil = now + LOGIN_BLOCK_DURATION_MS;
-    console.log(`🔒 IP ${ip} blocked after ${record.count} failed attempts`);
-    try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('blocked_ip', ip, email || '', `Blocked after ${record.count} failed attempts`); } catch(e) {}
+  const subnet = getSubnet(ip);
+  const keys = [];
+  if (email) keys.push(`email:${email.toLowerCase()}`);
+  if (subnet) keys.push(`subnet:${subnet}`);
+  
+  for (const key of keys) {
+    const record = loginAttempts.get(key) || { count: 0, firstAttempt: now };
+    record.count++;
+    
+    if (record.count >= LOGIN_MAX_ATTEMPTS) {
+      record.blockedUntil = now + LOGIN_BLOCK_DURATION_MS;
+      console.log(`🔒 Key ${key} BLOCKED after ${record.count} failed attempts`);
+      try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('blocked_ip', ip, email || '', `Key: ${key}, blocked after ${record.count} attempts`); } catch(e) {}
+    }
+    
+    loginAttempts.set(key, record);
   }
-
-  loginAttempts.set(ip, record);
-  try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('failed_login', ip, email || '', `Attempt ${record.count}/${LOGIN_MAX_ATTEMPTS}`); } catch(e) {}
+  
+  try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('failed_login', ip, email || '', `Attempt from subnet ${subnet}`); } catch(e) {}
 }
 
-function clearLoginAttempts(ip) {
-  loginAttempts.delete(ip);
+function clearLoginAttempts(ip, email) {
+  if (email) loginAttempts.delete(`email:${email.toLowerCase()}`);
+  const subnet = getSubnet(ip);
+  if (subnet) loginAttempts.delete(`subnet:${subnet}`);
 }
 
 // Cleanup login attempts every 30 minutes
 setInterval(() => {
   const now = Date.now();
-  for (const [ip, record] of loginAttempts) {
+  for (const [key, record] of loginAttempts) {
     if (now - record.firstAttempt > LOGIN_WINDOW_MS * 2) {
-      loginAttempts.delete(ip);
+      loginAttempts.delete(key);
     }
   }
 }, 30 * 60 * 1000);
@@ -1198,7 +1235,7 @@ app.use(cors({
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-password'],
   credentials: true
 }));
 
@@ -1224,7 +1261,7 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com; media-src 'self' blob:;");
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.elevenlabs.io; media-src 'self' blob:;");
   next();
 });
 
@@ -1466,7 +1503,7 @@ app.post('/api/register', loginRateLimiter, async (req, res) => {
 app.post('/api/login', loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Preencha todos os campos' });
-  const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const ip = getClientIp(req);
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
   if (!user) {
     recordFailedLogin(ip, email);
@@ -1478,7 +1515,7 @@ app.post('/api/login', loginRateLimiter, async (req, res) => {
     recordFailedLogin(ip, email);
     return res.status(401).json({ error: 'Email ou senha incorretos' });
   }
-  clearLoginAttempts(ip);
+  clearLoginAttempts(ip, email);
   db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
@@ -2535,8 +2572,31 @@ Se não houver caso concreto: {"found": false}` },
 // ─── ADMIN ────────────────────────────────────────────────────
 
 app.get('/api/admin/security-logs', adminMiddleware, (req, res) => {
-  const logs = db.prepare('SELECT * FROM security_logs ORDER BY created_at DESC LIMIT 100').all();
-  res.json({ logs });
+  try {
+    const logs = db.prepare('SELECT * FROM security_logs ORDER BY created_at DESC LIMIT 200').all();
+    res.json({ logs });
+  } catch(e) {
+    res.json({ logs: [] });
+  }
+});
+
+app.get('/api/admin/security-stats', adminMiddleware, (req, res) => {
+  try {
+    const total = db.prepare('SELECT COUNT(*) as count FROM security_logs').get();
+    const failed = db.prepare("SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'failed_login'").get();
+    const blocked = db.prepare("SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'blocked_ip'").get();
+    const rateLimited = db.prepare("SELECT COUNT(*) as count FROM security_logs WHERE event_type = 'rate_limited'").get();
+    const activeBlocks = loginAttempts.size;
+    res.json({ 
+      total: total.count,
+      failed_logins: failed.count,
+      blocked_ips: blocked.count,
+      rate_limited: rateLimited.count,
+      active_blocks: activeBlocks
+    });
+  } catch(e) {
+    res.json({ total: 0, failed_logins: 0, blocked_ips: 0, rate_limited: 0, active_blocks: 0 });
+  }
 });
 
 app.get('/api/admin/stats', adminMiddleware, (req, res) => {
