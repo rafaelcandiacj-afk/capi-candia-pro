@@ -1179,7 +1179,8 @@ document.addEventListener('touchmove', function(e){
       <div class="chat-toolbar desktop-toolbar" style="display:flex;gap:4px;align-items:center">
         <div class="chat-toolbar-wrap">
           <button class="teses-btn" onclick="openWizard()" style="font-weight:700;color:var(--gold);border-color:var(--gold)">Criar Peça</button>
-          <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
+          <a href="/meu-dashboard.html" class="teses-btn" style="background:rgba(218,165,32,0.1);border-color:var(--gold);color:var(--gold);font-weight:700;text-decoration:none">📊 Meu Dashboard</a>
+          <button class="teses-btn" onclick="window.location.href='/capitreino.html'" style="background:rgba(218,165,32,0.1);border-color:var(--gold);color:var(--gold);font-weight:700">🏋️ CapiTreino</button>
           <button class="teses-btn" onclick="openTesesModal()">Teses</button>
           <button class="teses-btn" onclick="window.location.href='/treinamento-audiencia.html'">Treinamento em Audiências</button>
           <button class="teses-btn nav-mais-btn" onclick="toggleNavMais(event)" id="navMaisBtn">Mais ▾</button>
@@ -1189,8 +1190,7 @@ document.addEventListener('touchmove', function(e){
             <button class="nav-mais-item" onclick="openGame();closeNavMais()">Desafio do Atendimento</button>
             <button class="nav-mais-item" onclick="openPrescricaoModal();closeNavMais()">Prescrição</button>
             <button class="nav-mais-item" onclick="openMinhasPecas();closeNavMais()">Minhas Peças</button>
-            <button class="nav-mais-item" onclick="window.location.href='/capitreino.html';closeNavMais()" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
-            <a href="/meu-dashboard.html" class="nav-mais-item" style="border-top:1px solid var(--border);font-weight:600;color:var(--gold);text-decoration:none;display:block">📊 Meu Dashboard</a>
+            <button class="nav-mais-item" onclick="window.location.href='/editor-peca.html';closeNavMais()">Petição</button>
           </div>
         </div>
         <div class="header-divider"></div>
@@ -1211,16 +1211,16 @@ document.addEventListener('touchmove', function(e){
     <!-- Mobile toolbar: linha separada com scroll horizontal -->
     <div class="mobile-toolbar">
       <button class="teses-btn" onclick="openWizard()" style="font-weight:700;color:var(--gold);border-color:var(--gold)">Criar Peça</button>
+      <a href="/meu-dashboard.html" class="teses-btn" style="background:rgba(218,165,32,0.1);border-color:var(--gold);color:var(--gold);font-weight:700;text-decoration:none">📊 Meu Dashboard</a>
+      <button class="teses-btn" onclick="window.location.href='/capitreino.html'" style="background:rgba(218,165,32,0.1);border-color:var(--gold);color:var(--gold);font-weight:700">🏋️ CapiTreino</button>
       <button class="teses-btn" onclick="openTesesModal()">Teses</button>
       <button class="teses-btn" onclick="openConteudoModal()">Conteúdo</button>
-      <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
       <button class="teses-btn" onclick="openCalculadoraModal()">Honorários</button>
       <button class="teses-btn" onclick="openGame()">Desafio do Atendimento</button>
       <button class="teses-btn" onclick="window.location.href='/treinamento-audiencia.html'">Treinamento em Audiências</button>
       <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
       <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
-      <button class="teses-btn" onclick="window.location.href='/capitreino.html'" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
-      <a href="/meu-dashboard.html" class="teses-btn" style="font-weight:600;text-decoration:none;color:inherit;display:block">📊 Dashboard</a>
+      <button class="teses-btn" onclick="window.location.href='/editor-peca.html'">Petição</button>
     </div>
     <!-- Dropdown menu mobile -->
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
