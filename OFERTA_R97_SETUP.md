@@ -7,78 +7,72 @@ A oferta antiga de R$47 continua funcionando normalmente - nada muda pra quem ja
 
 ## 1. O que ja foi feito no codigo
 
-- O sistema agora aceita dois "tiers" de assinatura: **Standard** (R$47) e **Pro** (R$97)
-- Quando alguem compra pelo checkout novo, o sistema automaticamente marca como tier "pro"
-- Os emails de notificacao (pra voce, Rafael) agora mostram qual tier a pessoa comprou
-- A oferta antiga continua funcionando 100% igual
+- O sistema agora aceita dois "tiers" de assinatura: **Standard** (R$47/R$397) e **Pro** (R$97/R$804)
+- **IMPORTANTE:** A deteccao do tier eh feita por **OFFER_ID** (ID da oferta na Guru), NAO por product_id nem nome do produto
+  - Motivo: As ofertas R$47 e R$97 estao dentro do **mesmo produto** "Capi Când-IA Pro — Mensal" (ID 1773774908)
+  - Idem: R$397 e R$804 estao dentro do **mesmo produto** "Capi Când-IA Pro — Anual" (ID 1773783918)
+  - Ou seja: product_id e nome do produto NAO diferenciam tier — ambos tem "Pro" no nome
+- **Fallback por valor da transacao:** Se o offer_id nao bater com nenhuma env var, o sistema detecta pelo valor:
+  - R$97,00-R$396,99 → pro mensal
+  - R$804,00+ → pro anual
+  - R$47 ou R$397 → standard (nao cai no fallback pro)
+- Os emails de notificacao (pra voce, Rafael) mostram o valor REAL do webhook, nao hardcoded
+- O webhook do PagarMe tambem foi atualizado (deteccao por valor da transacao)
 
 ---
 
 ## 2. O que voce precisa fazer na Guru (passo a passo)
 
-### Passo 1: Criar o produto MENSAL de R$97
+### Passo 1: Criar a OFERTA de R$97 (mensal)
+
+**NAO precisa criar produto novo!** A oferta fica dentro do produto existente "Capi Când-IA Pro — Mensal" (ID 1773774908).
 
 1. Entre no painel da Guru (clkdmg.site)
-2. Va em **Produtos** > **Criar novo produto**
-3. Nome do produto: `Capi Cand-IA Pro - Mensal` (IMPORTANTE: tem que ter a palavra "Pro" no nome!)
-4. Preco: **R$ 97,00**
-5. Recorrencia: **Mensal**
-6. Salve o produto
-7. **ANOTE o codigo do produto** (aparece na URL ou nas configuracoes do produto - eh um numero tipo `1234567890`)
+2. Va em **Produtos** > encontre "Capi Când-IA Pro — Mensal"
+3. Dentro do produto, crie uma **nova oferta** com preco **R$ 97,00**
+4. **ANOTE o ID da oferta** (offer_id) — eh um numero/string que aparece nas configuracoes da oferta
+5. O link do checkout mensal sera algo como: `https://clkdmg.site/subscribe/mensal-capi-candia-pro`
 
-### Passo 2: Criar o produto ANUAL de R$804
+### Passo 2: Criar a OFERTA de R$804 (anual)
 
-1. Va em **Produtos** > **Criar novo produto**
-2. Nome do produto: `Capi Cand-IA Pro - Anual` (IMPORTANTE: tem que ter a palavra "Pro" no nome!)
-3. Preco: **R$ 804,00**
-4. Recorrencia: **Anual**
-5. Salve o produto
-6. **ANOTE o codigo do produto**
+**NAO precisa criar produto novo!** A oferta fica dentro do produto existente "Capi Când-IA Pro — Anual" (ID 1773783918).
 
-### Passo 3: Criar as ofertas (checkouts)
+1. Dentro do produto "Capi Când-IA Pro — Anual", crie uma **nova oferta** com preco **R$ 804,00**
+2. **ANOTE o ID da oferta** (offer_id)
+3. O link do checkout anual sera algo como: `https://clkdmg.site/subscribe/anual-capi-candia-pro`
 
-1. Para cada produto, crie uma **oferta** (checkout page)
-2. O link do checkout mensal deve ser: `https://clkdmg.site/subscribe/mensal-capi-candia-pro`
-   - Se a Guru nao deixar escolher a URL, use qualquer URL que ela gerar - o importante eh o webhook
-3. O link do checkout anual deve ser: `https://clkdmg.site/subscribe/anual-capi-candia-pro`
-
-### Passo 4: Configurar o webhook
+### Passo 3: Verificar o webhook
 
 1. Va em **Configuracoes** > **Webhooks** (ou **Integracao** > **Webhooks**)
 2. Verifique se ja existe um webhook apontando para: `https://capicand-ia.com/api/webhook/guru`
-3. Se ja existe, **NAO precisa criar outro** - o mesmo webhook serve para os dois produtos (antigo e novo)
+3. Se ja existe, **NAO precisa criar outro** — o mesmo webhook serve para todas as ofertas
 4. Se nao existe, crie um novo webhook com:
    - **URL:** `https://capicand-ia.com/api/webhook/guru`
-   - **Eventos:** Marque todos estes:
-     - Assinatura ativada / Subscription activated
-     - Pagamento confirmado / Payment confirmed
-     - Assinatura cancelada / Subscription canceled
-     - Assinatura expirada / Subscription expired
+   - **Eventos:** Assinatura ativada, Pagamento confirmado, Assinatura cancelada, Assinatura expirada
    - **Formato:** JSON
-
-### Passo 5: Pegar os codigos dos produtos
-
-1. Va na pagina de cada produto que voce criou
-2. Copie o **codigo do produto** (product code/ID)
-3. Voce vai precisar desses codigos no proximo passo
 
 ---
 
 ## 3. Variaveis de ambiente no Railway
 
-Depois de criar os produtos na Guru, voce precisa adicionar 2 variaveis de ambiente no Railway:
+Depois de criar as ofertas na Guru, adicione as variaveis no Railway:
 
 1. Entre no Railway (railway.app)
 2. Clique no seu projeto (Capi Cand-IA)
-3. Va em **Variables** (ou **Variaveis**)
-4. Adicione estas duas variaveis:
+3. Va em **Variables**
+4. Adicione estas variaveis:
 
-| Nome da variavel | Valor (exemplo) | O que eh |
+| Nome da variavel | Valor | O que eh |
 |---|---|---|
-| `GURU_PRODUCT_ID_MONTHLY_97` | `(codigo do produto mensal que voce criou)` | Codigo do produto mensal R$97 na Guru |
-| `GURU_PRODUCT_ID_ANNUAL_97` | `(codigo do produto anual que voce criou)` | Codigo do produto anual R$804 na Guru |
+| `GURU_OFFER_ID_MONTHLY_97` | `(ID da oferta mensal R$97 que voce criou)` | Offer ID da oferta mensal R$97 na Guru |
+| `GURU_OFFER_ID_ANNUAL_804` | `(ID da oferta anual R$804 que voce criou)` | Offer ID da oferta anual R$804 na Guru |
 
-**IMPORTANTE:** Substitua os valores de exemplo pelo codigo REAL que a Guru deu pro produto.
+**Variaveis antigas (opcionais/deprecated):**
+
+| Nome da variavel | Valor | Status |
+|---|---|---|
+| `GURU_PRODUCT_ID_MONTHLY_97` | (codigo do produto) | DEPRECATED — NAO usado pra detectar tier |
+| `GURU_PRODUCT_ID_ANNUAL_97` | (codigo do produto) | DEPRECATED — NAO usado pra detectar tier |
 
 5. Clique em **Deploy** (ou espere o deploy automatico)
 
@@ -87,60 +81,67 @@ Depois de criar os produtos na Guru, voce precisa adicionar 2 variaveis de ambie
 ## 4. Configuracao do Resend (email)
 
 **NAO precisa mudar nada no Resend.** Os emails ja estao configurados e funcionam para qualquer oferta.
-O dominio `capicand-ia.com` ja esta verificado e os templates de email sao os mesmos.
+O email de notificacao ao Rafael mostra o valor REAL da transacao (vindo do webhook).
 
 ---
 
 ## 5. Como testar antes de ir ao ar
 
-### Teste rapido (sem gastar dinheiro):
+### Teste unitario (sem servidor):
 
-1. Use a conta de teste: `teste_qa_final@teste.com` (senha: `teste2026QA`, ID: 644)
-2. No painel admin, voce pode simular uma ativacao manual:
-   - Va em Admin > Usuarios
-   - Encontre o usuario de teste
-   - Use "Dar acesso" com tipo "paid"
-3. Verifique se o campo `subscription_tier` aparece como `pro` ou `standard`
+```bash
+node backend/test-webhook-r97.js
+```
+
+Deve mostrar 34 testes passando, incluindo os cenarios criticos:
+- R$47 com produto "Pro" → tier = standard (NAO vira pro!)
+- R$97 com offer_id correto → tier = pro
+- R$397 com produto "Pro Anual" → tier = standard
+- R$804 com offer_id correto → tier = pro
+- Fallback por valor sem offer_id configurado
 
 ### Teste real com webhook:
 
-1. Faca uma compra de teste no checkout novo (use um cartao de teste se a Guru permitir)
-2. Verifique nos logs do Railway se apareceu:
-   - `Webhook Guru: active` (ou `paid`)
-   - `Guru tier detectado: pro`
+1. Faca uma compra de teste no checkout novo
+2. Verifique nos logs do Railway:
+   - `Guru tier detectado: pro (source: offer_id, ...)`
    - `Guru: plano ativado para [email]: tier=pro`
-3. Verifique se voce (Rafael) recebeu o email de notificacao com o badge "PRO"
-4. Verifique se o usuario de teste recebeu o email de boas-vindas
-
-### Para ver os logs no Railway:
-
-1. Entre no Railway
-2. Clique no seu projeto
-3. Va em **Deployments** > clique no deploy mais recente
-4. Va em **Logs**
-5. Procure por "Webhook Guru" ou "tier detectado"
+3. Verifique se voce recebeu o email de notificacao com badge "PRO" e valor correto
+4. Verifique se o usuario recebeu o email de boas-vindas
 
 ---
 
 ## 6. Checklist final
 
-- [ ] Produto mensal R$97 criado na Guru
-- [ ] Produto anual R$804 criado na Guru
-- [ ] Webhook configurado apontando para `https://capicand-ia.com/api/webhook/guru`
-- [ ] Codigo do produto mensal anotado
-- [ ] Codigo do produto anual anotado
-- [ ] Variavel `GURU_PRODUCT_ID_MONTHLY_97` adicionada no Railway
-- [ ] Variavel `GURU_PRODUCT_ID_ANNUAL_97` adicionada no Railway
+- [ ] Oferta mensal R$97 criada na Guru (dentro do produto existente)
+- [ ] Oferta anual R$804 criada na Guru (dentro do produto existente)
+- [ ] Offer ID da oferta mensal anotado
+- [ ] Offer ID da oferta anual anotado
+- [ ] Variavel `GURU_OFFER_ID_MONTHLY_97` adicionada no Railway
+- [ ] Variavel `GURU_OFFER_ID_ANNUAL_804` adicionada no Railway
 - [ ] Deploy feito no Railway
-- [ ] Teste com compra real (ou simulada) funcionou
-- [ ] Email de notificacao pro Rafael chegou com badge PRO
+- [ ] `node backend/test-webhook-r97.js` — 34 testes passando
+- [ ] Teste com compra real funcionou
+- [ ] Email de notificacao pro Rafael chegou com badge PRO e valor correto
 - [ ] Email de boas-vindas pro cliente chegou
 
 ---
 
-## 7. Observacoes que notei
+## 7. Racional tecnico
 
-- O arquivo `backend/server.js` eh muito grande (340KB, 5000+ linhas). Idealmente deveria ser separado em modulos (routes, middleware, services), mas isso nao eh urgente.
-- A API key do Resend esta hardcoded como fallback no codigo (linha 3733). Ela deveria estar APENAS na variavel de ambiente `RESEND_API_KEY`. Nao eh um problema de seguranca imediato porque o repositorio provavelmente eh privado, mas eh bom remover o fallback no futuro.
-- O webhook do PagarMe tambem foi atualizado para detectar o tier "pro" (caso voce use PagarMe no futuro para a oferta nova).
-- Os emails de renovacao/vencimento (aqueles que avisam 7 dias antes, 3 dias antes, etc.) apontam para os checkouts da oferta PRO por padrao (as URLs `mensal-capi-candia-pro` e `anual-capi-candia-pro`). Isso esta correto porque sao os checkouts mais recentes, mas se voce quiser que cada tier receba o link do SEU checkout, avise que a gente ajusta.
+### Por que offer_id e nao product_id?
+
+Na Guru, um **produto** pode ter multiplas **ofertas** com precos diferentes. No nosso caso:
+- Produto "Capi Când-IA Pro — Mensal" (1773774908) tem oferta R$47 (standard) E oferta R$97 (pro)
+- Produto "Capi Când-IA Pro — Anual" (1773783918) tem oferta R$397 (standard) E oferta R$804 (pro)
+
+Se usassemos product_id, todos os assinantes de R$47 seriam classificados como "pro" — um bug critico.
+
+### Ordem de precedencia na deteccao:
+1. **offer_id** (env var) — fonte principal e mais confiavel
+2. **valor da transacao** — fallback de seguranca (R$97-R$396 → pro mensal, R$804+ → pro anual)
+3. **Tudo mais** → standard
+
+### Observacoes
+- O arquivo `backend/server.js` eh muito grande (340KB, 5000+ linhas). Idealmente deveria ser separado em modulos.
+- A API key do Resend tem fallback hardcoded no codigo — deveria estar apenas na env var.
