@@ -259,7 +259,7 @@ h1,h2,h3,h4{font-family:'Rajdhani',sans-serif;font-weight:700}
     } catch(e) { return dateStr; }
   }
 
-  var token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+  var token = localStorage.getItem('capi_token') || localStorage.getItem('jwt_token') || localStorage.getItem('token');
   if (!token) { window.location.href = '/app'; return; }
 
   fetch('/api/dashboard', { headers: { 'Authorization': 'Bearer ' + token } })
