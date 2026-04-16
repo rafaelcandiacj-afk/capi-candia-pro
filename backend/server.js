@@ -6502,6 +6502,15 @@ Gere a peça jurídica COMPLETA agora.`;
   }
 });
 
+// ─── DEBUG: buscar texto nos knowledge chunks (TEMPORÁRIO) ──────
+app.get('/api/admin/knowledge/search-chunks', adminMiddleware, (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  if (!q) return res.json([]);
+  const chunks = db.prepare('SELECT kc.id, kc.content, kf.original_name, kf.id as file_id FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id').all();
+  const matches = chunks.filter(c => c.content.toLowerCase().includes(q));
+  res.json(matches.map(m => ({ id: m.id, file_id: m.file_id, file: m.original_name, snippet: m.content.substring(0, 800) })));
+});
+
 // ─── GLOBAL ERROR HANDLER ────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
