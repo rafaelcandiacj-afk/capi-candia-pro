@@ -3658,10 +3658,28 @@ function gerarTese(){
   const canal=document.getElementById('tese_canal').value;
   if(!area){showToast('Selecione a área do Direito');return;}
   closeTesesModal();
-  // Monta o prompt e envia como mensagem
-  let prompt=`Gere uma tese jurídica completa para ${area}`;
-  if(publico) prompt+=` focada em ${publico}`;
-  prompt+=`. Canal de divulgação: ${canal}. Use o formato completo com categoria, subcategoria, copy para Meta Ads, palavras-chave Google Ads e script WhatsApp.`;
+
+  let prompt;
+  if (canal === 'Geral') {
+    // Modo tese técnica
+    prompt = `Busque na base de conhecimento do Rafael Cândia as melhores teses jurídicas escaláveis para ${area}`;
+    if(publico) prompt += ` focadas em ${publico}`;
+    prompt += `.\n\nPara cada tese encontrada, apresente:\n1. Nome/título da tese\n2. Fundamento legal (artigos de lei)\n3. Jurisprudência favorável\n4. Perfil ideal de cliente\n5. Potencial de escala (volume de casos)\n6. Valor médio de causa\n7. Estratégia de captação resumida\n\nBusque DIRETAMENTE na base de 300+ teses do Rafael — não invente teses genéricas.`;
+  } else {
+    // Modo conteúdo para marketing
+    prompt = `Busque na base de conhecimento do Rafael Cândia uma tese jurídica escalável para ${area}`;
+    if(publico) prompt += ` focada em ${publico}`;
+    prompt += ` e crie conteúdo para ${canal}.\n\nUse o formato completo:\n📚 Categoria: [Área]\n🏷️ Subcategoria: [Tema]\n⚖️ Tese: [Da base do Rafael]\n👥 Público-alvo: [Perfil]\n🎯 Ideia de Reels/Carrossel: [Ideia educativa]\n📝 Legenda educativa: [Texto informativo, sem captação direta]\n#️⃣ Hashtags: [5-8 relevantes]`;
+    if (canal === 'WhatsApp') {
+      prompt += `\n💬 Script de atendimento: [Para quem JÁ entrou em contato]`;
+    }
+    if (canal === 'Instagram' || canal === 'Google Ads') {
+      prompt += `\n🔑 Palavras-chave: [Para ${canal}]`;
+    }
+    prompt += `\n\n⚠️ Todo conteúdo deve seguir o Provimento 205/2021 da OAB. Conteúdo EDUCATIVO, sem captação direta.`;
+    prompt += `\n\nBusque DIRETAMENTE na base de 300+ teses do Rafael — não invente teses genéricas.`;
+  }
+
   if($('chatInput')) $('chatInput').value=prompt;
   if($('sendBtn')) $('sendBtn').disabled=false;
   sendMessage();
@@ -4358,42 +4376,12 @@ function gerarPacoteCompleto() {
   if (!area) { showToast('Selecione a área do Direito'); return; }
   closeTesesModal();
 
-  const prompt = `🚀 PACOTE COMPLETO DE TESE — ${area}
+  let prompt = `PACOTE COMPLETO DE TESE — Busque na base de 300+ teses do Rafael Cândia as 3 melhores teses escaláveis para ${area}`;
+  if (publico) prompt += ` focadas em ${publico}`;
+  prompt += `.\n\nPara CADA tese, entregue:\n\n1. ⚖️ TESE JURÍDICA COMPLETA:\n   - Fundamento legal detalhado\n   - Jurisprudência favorável\n   - Argumentação pronta para petição\n\n2. 📱 CONTEÚDO PARA ${canal.toUpperCase()}:\n   - Ideia de Reels/Carrossel educativo\n   - Legenda educativa (Provimento 205/2021)\n   - Hashtags estratégicas\n\n3. 💬 SCRIPT DE ATENDIMENTO:\n   - Para quem JÁ entrou em contato\n   - Linguagem profissional\n\n4. 🎯 ESTRATÉGIA DE CAPTAÇÃO:\n   - Perfil do cliente ideal\n   - Onde encontrar esses clientes\n   - Valor médio de causa\n\nBusque DIRETAMENTE na base de teses do Rafael — não invente teses genéricas.`;
 
-Gere um pacote completo e pronto para usar, no estilo Rafael Cândia:
-${publico ? '👥 Público-alvo: ' + publico : ''}
-📱 Canal principal: ${canal}
-
-ENTREGUE EXATAMENTE NESTE FORMATO:
-
-⚖️ **TESE JURÍDICA**
-[tese completa com fundamentação legal]
-
-🎬 **ROTEIRO DE VÍDEO 60 SEGUNDOS**
-[gancho + desenvolvimento + CTA, linha por linha]
-
-📝 **3 VARIAÇÕES DE COPY**
-Agressiva: [copy direto e impactante]
-Educativa: [copy informativo e didático]
-Storytelling: [copy com narrativa]
-
-🖼️ **SUGESTÃO DE CRIATIVO**
-[descrição da imagem/arte para o designer ou IA]
-
-📅 **ESTRATÉGIA DE DISTRIBUIÇÃO**
-[melhor dia, horário, frequência e formato por plataforma]
-
-💬 **GUIA DE COMENTÁRIOS**
-[como responder os 3 tipos de comentário mais comuns para gerar leads]
-
-📊 **PASSO A PASSO META ADS**
-[objetivo, público, orçamento sugerido, CPC esperado]
-
-📱 **FUNIL DE ATENDIMENTO**
-[como converter visualizações em consultas — passo a passo no WhatsApp]`;
-
-  if($('chatInput')) $('chatInput').value = prompt;
-  if($('sendBtn')) $('sendBtn').disabled = false;
+  if ($('chatInput')) $('chatInput').value = prompt;
+  if ($('sendBtn')) $('sendBtn').disabled = false;
   sendMessage();
 }
 

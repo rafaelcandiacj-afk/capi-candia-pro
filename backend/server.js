@@ -2342,7 +2342,7 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
   const lastMsgLower = lastMsgContent.toLowerCase();
   // Petição e tese precisam de mais tokens (são peças completas)
   const isPeticao = lastMsgContent.includes('CONSTRUTOR DE PETI') || lastMsgContent.includes('Petição Inicial') || lastMsgContent.includes('petição completa') || lastMsgContent.includes('peça jurídica completa') || lastMsgLower.includes('petição') || lastMsgLower.includes('peticao') || lastMsgLower.includes('inicial') || lastMsgLower.includes('contestação') || lastMsgLower.includes('contestacao') || lastMsgLower.includes('recurso') || lastMsgLower.includes('embargos') || lastMsgLower.includes('mandado de segurança') || lastMsgLower.includes('habeas corpus') || lastMsgLower.includes('agravo') || lastMsgLower.includes('apelação') || lastMsgLower.includes('apelacao') || lastMsgLower.includes('impugnação') || lastMsgLower.includes('réplica') || lastMsgLower.includes('replica') || lastMsgLower.includes('contrarrazões') || lastMsgLower.includes('contrarrazoes');
-  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese') || lastMsgLower.includes('argumentação') || lastMsgLower.includes('argumentacao') || lastMsgLower.includes('fundamentação') || lastMsgLower.includes('fundamentacao');
+  const isTese = lastMsgContent.includes('PACOTE COMPLETO DE TESE') || lastMsgLower.includes('tese jurídica') || lastMsgLower.includes('tese juridica') || lastMsgLower.includes('teses jurídicas') || lastMsgLower.includes('teses juridicas') || lastMsgLower.includes('teses escaláveis') || lastMsgLower.includes('teses escalaveis') || lastMsgLower.includes('montar tese') || lastMsgLower.includes('elaborar tese') || lastMsgLower.includes('construir tese') || lastMsgLower.includes('gere uma tese') || lastMsgLower.includes('gerar tese');
   const temDocumento = allUploadIds.length > 0 || docCtx.length > 100;
   // Premium: petições sem corte, teses completas, análise profunda
   const maxTok = isPeticao ? 32000 : isTese ? 16000 : temDocumento ? 8000 : 2500;
@@ -2399,7 +2399,7 @@ O ponto é: explicar o Direito do cliente ao juiz atrelado aos fatos, e NÃO ens
 - Ao final, inclua o rodapé de assinatura:${_rodape || '\n\n[Cidade/UF], [DATA].\n[Nome do Advogado]\nOAB/[Estado] Nº [Número]'}`;
   } else if (isTese) {
     // Verifica se é pedido de conteúdo para redes (aí pode usar o formato com reels)
-    const isConteudo = /instagram|reels|carrossel|post|conte[úu]do|legenda|hashtag|redes/i.test(currentMsg);
+    const isConteudo = /instagram|reels|carrossel|post|conte[úu]do|legenda|hashtag|redes/i.test(lastMsgLower);
     if (isConteudo) {
       formatoCtx = `\n\n📱 MODO CONTEÚDO PARA REDES ATIVADO: O usuário quer conteúdo para redes sociais. Use o formato completo com Reels, hashtags e scripts.`;
     } else {
