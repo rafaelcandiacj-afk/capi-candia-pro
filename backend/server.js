@@ -2833,7 +2833,7 @@ app.get('/api/admin/users', adminMiddleware, (req, res) => {
   const users = db.prepare(`
     SELECT u.id, u.name, u.email, u.active, u.created_at, u.last_login,
            u.plan_type, u.plan_expires_at, u.plan_activated_at, u.pagarme_subscription_id,
-           u.welcome_email_sent,
+           u.welcome_email_sent, u.subscription_tier,
            COUNT(DISTINCT c.id) as total_conversations,
            COUNT(m.id) as total_messages
     FROM users u
@@ -3665,6 +3665,8 @@ try { db.prepare("ALTER TABLE user_profiles ADD COLUMN bio TEXT").run(); } catch
 // ─── MIGRATION: campos premium upgrade ─────
 try { db.exec(`ALTER TABLE users ADD COLUMN cancel_at_period_end INTEGER DEFAULT 0`); } catch(e) {}
 try { db.exec(`ALTER TABLE users ADD COLUMN accepted_terms_at TEXT`); } catch(e) {}
+// subscription_tier: 'standard' (R$47) ou 'pro' (R$97) — null = standard (legado)
+try { db.exec(`ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT NULL`); } catch(e) {}
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
@@ -3828,6 +3830,10 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
       const isAnnual = itemName.includes('anual') || itemName.includes('annual') || itemName.includes('ano');
       const subscriptionId = data?.id || data?.subscription?.id || data?.charge?.id;
 
+      // Detectar tier: pro (R$97/R$804) ou standard (R$47/R$397)
+      const isPagarMePro = itemName.includes('pro') || itemName.includes('r$ 97') || itemName.includes('r$97') || itemName.includes('r$ 804') || itemName.includes('r$804');
+      const pagarmeSubscriptionTier = isPagarMePro ? 'pro' : 'standard';
+
       if (email) {
         let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
 
@@ -3860,11 +3866,12 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
               plan_expires_at = ?,
               plan_activated_at = datetime('now'),
               pagarme_subscription_id = ?,
+              subscription_tier = ?,
               active = 1
             WHERE id = ?
-          `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
+          `).run(expiresAt.toISOString(), subscriptionId || null, pagarmeSubscriptionTier, user.id);
 
-          console.log(`✅ Plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
+          console.log(`✅ Plano ativado para ${email}: tier=${pagarmeSubscriptionTier}, ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
 
           // Enviar email de boas-vindas em background
           setImmediate(() => sendWelcomeEmail(email, user.name));
@@ -3892,7 +3899,13 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
 // ─── WEBHOOK GURU (Digital Manager Guru) ───────────────────
 // Formato diferente do PagarMe — campos: subscriber.email, last_status, product.offer.name, charged_every_days
 // Códigos dos produtos da IA no Guru — APENAS estes disparam cadastro
+// Oferta Standard (R$47/mês, R$397/ano) — legado
 const GURU_IA_PRODUCT_CODES = ['1773774908', '1773783918']; // Mensal e Anual
+// Oferta Pro (R$97/mês, R$804/ano) — nova oferta paralela
+const GURU_PRO_MONTHLY_CODE = process.env.GURU_PRODUCT_ID_MONTHLY_97 || '';
+const GURU_PRO_ANNUAL_CODE = process.env.GURU_PRODUCT_ID_ANNUAL_97 || '';
+const GURU_PRO_PRODUCT_CODES = [GURU_PRO_MONTHLY_CODE, GURU_PRO_ANNUAL_CODE].filter(Boolean);
+const ALL_GURU_IA_PRODUCT_CODES = [...GURU_IA_PRODUCT_CODES, ...GURU_PRO_PRODUCT_CODES].filter(Boolean);
 
 app.post('/api/webhook/guru', express.json(), (req, res) => {
   try {
@@ -3902,16 +3915,25 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
     // ── FILTRO DE PRODUTO: só processa se for a IA ──────────────
     const productCode = String(body?.product?.code || body?.product?.id || '');
     const productName = (body?.product?.name || body?.product?.offer?.name || '').toLowerCase();
-    const isIAProduct = GURU_IA_PRODUCT_CODES.includes(productCode) ||
+    const isIAProduct = ALL_GURU_IA_PRODUCT_CODES.includes(productCode) ||
                         productName.includes('capi când') ||
                         productName.includes('capi cand') ||
                         productName.includes('capi-ia') ||
-                        productName.includes('capi ia');
+                        productName.includes('capi ia') ||
+                        productName.includes('capi candia pro');
 
     if (!isIAProduct) {
       console.log(`⚠️ Webhook Guru ignorado — produto não é a IA (código: ${productCode}, nome: ${productName})`);
       return res.status(200).json({ ok: true, skipped: true });
     }
+
+    // ── DETECTAR TIER: 'pro' (R$97/R$804) ou 'standard' (R$47/R$397) ──
+    const isProTier = GURU_PRO_PRODUCT_CODES.includes(productCode) ||
+                      productName.includes('pro') ||
+                      productName.includes('r$ 97') || productName.includes('r$97') ||
+                      productName.includes('r$ 804') || productName.includes('r$804');
+    const subscriptionTier = isProTier ? 'pro' : 'standard';
+    console.log(`📋 Guru tier detectado: ${subscriptionTier} (código: ${productCode}, nome: ${productName})`);
     // ────────────────────────────────────────────────────────────
 
     // Eventos de ativação/pagamento
@@ -3972,19 +3994,24 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
             plan_expires_at = ?,
             plan_activated_at = datetime('now'),
             pagarme_subscription_id = ?,
+            subscription_tier = ?,
             active = 1
           WHERE id = ?
-        `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
+        `).run(expiresAt.toISOString(), subscriptionId || null, subscriptionTier, user.id);
 
-        console.log(`✅ Guru: plano ativado para ${email}: ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
+        console.log(`✅ Guru: plano ativado para ${email}: tier=${subscriptionTier}, ${isAnnual ? 'anual' : 'mensal'}, expira ${expiresAt.toISOString()}`);
 
         // 🎉 Notifica Rafael a cada nova venda
-        const planoLabel = isAnnual ? 'Anual — R$ 397' : 'Mensal — R$ 47';
+        const planoLabel = subscriptionTier === 'pro'
+          ? (isAnnual ? 'PRO Anual — R$ 804' : 'PRO Mensal — R$ 97')
+          : (isAnnual ? 'Anual — R$ 397' : 'Mensal — R$ 47');
+        const tierBadge = subscriptionTier === 'pro' ? ' <span style="background:#ff6b00;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">PRO</span>' : '';
         const notifHtml = `<div style="font-family:Arial,sans-serif;padding:24px;background:#0a0a0a;color:#eee;border-radius:8px;max-width:500px">
-          <h2 style="color:#ffd700;margin:0 0 16px">🎉 Nova venda! Capi Când-IA Pro</h2>
+          <h2 style="color:#ffd700;margin:0 0 16px">🎉 Nova venda! Capi Când-IA Pro${tierBadge}</h2>
           <p><strong>Nome:</strong> ${customerName}</p>
           <p><strong>Email:</strong> ${email}</p>
           <p><strong>Plano:</strong> ${planoLabel}</p>
+          <p><strong>Tier:</strong> ${subscriptionTier === 'pro' ? 'PRO (R$97/R$804)' : 'Standard (R$47/R$397)'}</p>
           <p><strong>Hora:</strong> ${new Date().toLocaleString('pt-BR',{timeZone:'America/Campo_Grande'})}</p>
         </div>`;
         sendEmail('rafaelcandia.cj@gmail.com', `🎉 +1 assinante! ${customerName} — ${planoLabel}`, notifHtml).catch(e => {});
@@ -4006,7 +4033,7 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
 
 // ─── ROTA: Status do plano do usuário ───────────────────────
 app.get('/api/subscription/status', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, subscription_tier FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   const access = hasActiveAccess({ ...user, email: req.user.email });
   // Calcular days_remaining
@@ -4022,6 +4049,7 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
   const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
   res.json({
     plan_type: user.plan_type || 'free',
+    subscription_tier: user.subscription_tier || 'standard',
     plan_expires_at: user.plan_expires_at,
     plan_activated_at: user.plan_activated_at,
     has_access: access !== false,
@@ -4106,18 +4134,20 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
 // ─── PREMIUM UPGRADE: SUBSCRIPTION DETAILS ──────────────────
 app.get('/api/subscription/details', authMiddleware, (req, res) => {
   try {
-    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, cancel_at_period_end, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, cancel_at_period_end, created_at, subscription_tier FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
     const planType = user.plan_type || 'free';
+    const tier = user.subscription_tier || 'standard';
+    const tierLabel = tier === 'pro' ? ' Pro' : '';
     let planName = 'Gratuito';
     if (planType === 'paid') {
       // Detectar se mensal ou anual baseado na diferença entre activated_at e expires_at
       if (user.plan_activated_at && user.plan_expires_at) {
         const diffDays = Math.round((new Date(user.plan_expires_at) - new Date(user.plan_activated_at)) / (1000*60*60*24));
-        planName = diffDays > 60 ? 'Anual' : 'Mensal';
+        planName = (diffDays > 60 ? 'Anual' : 'Mensal') + tierLabel;
       } else {
-        planName = 'Mensal';
+        planName = 'Mensal' + tierLabel;
       }
     } else if (planType === 'gift') {
       planName = 'Presente';
@@ -4140,6 +4170,7 @@ app.get('/api/subscription/details', authMiddleware, (req, res) => {
 
     res.json({
       plan_type: planType,
+      subscription_tier: tier,
       plan_name: planName,
       plan_expires_at: user.plan_expires_at,
       plan_activated_at: user.plan_activated_at,
