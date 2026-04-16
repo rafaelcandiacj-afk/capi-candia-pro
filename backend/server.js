@@ -5350,6 +5350,11 @@ app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
+// Meu Dashboard (dashboard pessoal do aluno)
+app.get('/meu-dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/meu-dashboard.html'));
+});
+
 // Editor de Peça Jurídica
 app.get('/editor-peca.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/editor-peca.html'));

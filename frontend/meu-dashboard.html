@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Dashboard | Capi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0a;--bg2:#141414;--bg3:#1e1e1e;
+  --gold:#DAA520;--green:#2ecc71;
+  --text:#e0e0e0;--text2:#888;
+  --border:#222;--radius:12px;
+}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+h1,h2,h3,h4{font-family:'Rajdhani',sans-serif;font-weight:700}
+
+/* Header */
+.dash-header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:16px 24px;display:flex;align-items:center;gap:16px;
+  position:sticky;top:0;z-index:100;
+}
+.dash-header .back-btn{
+  background:none;border:1px solid var(--border);color:var(--text2);
+  border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px;
+  font-family:'DM Sans',sans-serif;transition:all .2s;
+}
+.dash-header .back-btn:hover{border-color:var(--gold);color:var(--gold)}
+.dash-header h1{font-size:1.4rem;color:var(--gold);flex:1}
+.dash-header .user-name{color:var(--text2);font-size:.9rem}
+
+/* Container */
+.dash-container{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+
+/* Stats Grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;position:relative;overflow:hidden;transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--gold)}
+.stat-card .stat-icon{font-size:1.6rem;margin-bottom:8px}
+.stat-card .stat-value{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;color:#fff;line-height:1}
+.stat-card .stat-label{color:var(--text2);font-size:.85rem;margin-top:4px}
+.stat-card .stat-sub{color:var(--green);font-size:.8rem;margin-top:6px}
+.stat-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold),var(--green));opacity:.6;
+}
+
+/* Level Progress */
+.level-section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;margin-bottom:24px;
+}
+.level-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.level-header h2{font-size:1.3rem;color:var(--gold)}
+.level-badge{
+  background:linear-gradient(135deg,#1a1a0a,#2a2a0a);border:1px solid var(--gold);
+  border-radius:20px;padding:6px 16px;font-size:.9rem;color:var(--gold);font-weight:600;
+}
+.progress-container{background:var(--bg);border-radius:10px;height:24px;overflow:hidden;position:relative}
+.progress-bar{
+  height:100%;border-radius:10px;transition:width .8s ease;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+  position:relative;min-width:2%;
+}
+.progress-bar::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.15) 50%,transparent 100%);
+  animation:shimmerBar 2s infinite;
+}
+@keyframes shimmerBar{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.progress-labels{display:flex;justify-content:space-between;margin-top:8px;font-size:.8rem;color:var(--text2)}
+
+/* Two-column layout */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.section-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;
+}
+.section-card h3{font-size:1.1rem;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.case-item,.summary-item{
+  background:var(--bg3);border-radius:8px;padding:14px;margin-bottom:10px;
+  border-left:3px solid var(--green);transition:border-color .2s;
+}
+.case-item:hover,.summary-item:hover{border-left-color:var(--gold)}
+.case-item:last-child,.summary-item:last-child{margin-bottom:0}
+.case-title{font-weight:600;color:#fff;font-size:.95rem;margin-bottom:4px}
+.case-meta{color:var(--text2);font-size:.8rem;display:flex;gap:8px;flex-wrap:wrap}
+.case-meta span{display:inline-flex;align-items:center;gap:3px}
+.case-step{color:var(--green);font-size:.82rem;margin-top:6px}
+.summary-title{font-weight:600;color:#fff;font-size:.92rem;margin-bottom:4px}
+.summary-topics{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.topic-tag{
+  background:rgba(218,165,32,.12);color:var(--gold);font-size:.72rem;
+  padding:3px 8px;border-radius:6px;border:1px solid rgba(218,165,32,.2);
+}
+.summary-date{color:var(--text2);font-size:.75rem;margin-top:6px}
+
+/* Memories */
+.memories-section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;margin-bottom:24px;
+}
+.memories-section h3{font-size:1.1rem;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.memory-group{margin-bottom:12px}
+.memory-group:last-child{margin-bottom:0}
+.memory-group-header{
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg3);border-radius:8px;padding:12px 14px;
+  font-weight:600;font-size:.9rem;color:var(--text);transition:background .2s;user-select:none;
+}
+.memory-group-header:hover{background:#252525}
+.memory-group-header .arrow{transition:transform .2s;color:var(--text2)}
+.memory-group.open .arrow{transform:rotate(90deg)}
+.memory-group-body{
+  max-height:0;overflow:hidden;transition:max-height .3s ease;
+  padding:0 14px;
+}
+.memory-group.open .memory-group-body{max-height:600px;padding:10px 14px}
+.memory-item{
+  color:var(--text2);font-size:.85rem;padding:6px 0;
+  border-bottom:1px solid var(--border);line-height:1.4;
+}
+.memory-item:last-child{border-bottom:none}
+.memory-count{
+  background:rgba(46,204,113,.15);color:var(--green);font-size:.72rem;
+  padding:2px 8px;border-radius:10px;
+}
+
+/* Subscription */
+.sub-section{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px;text-align:center;
+}
+.sub-section h3{font-size:1.1rem;color:var(--gold);margin-bottom:12px}
+.sub-plan{
+  font-family:'Rajdhani',sans-serif;font-size:1.6rem;font-weight:700;
+  color:var(--green);text-transform:capitalize;
+}
+.sub-expires{color:var(--text2);font-size:.85rem;margin-top:6px}
+
+/* Shimmer / Skeleton loading */
+.skeleton{position:relative;overflow:hidden;background:var(--bg3) !important;border-color:transparent !important;color:transparent !important}
+.skeleton *{color:transparent !important;border-color:transparent !important}
+.skeleton::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%);
+  animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+
+/* Empty state */
+.empty-state{color:var(--text2);font-size:.85rem;text-align:center;padding:24px 0}
+
+/* Responsive */
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .two-col{grid-template-columns:1fr}
+  .dash-header h1{font-size:1.1rem}
+  .dash-container{padding:16px 12px 40px}
+  .stat-card .stat-value{font-size:1.6rem}
+}
+@media(max-width:400px){
+  .stats-grid{grid-template-columns:1fr}
+  .dash-header{padding:12px 14px;gap:10px}
+}
+</style>
+</head>
+<body>
+
+<header class="dash-header">
+  <button class="back-btn" onclick="window.location.href='/app'">&#8592; Voltar</button>
+  <h1>Meu Dashboard</h1>
+  <span class="user-name" id="userName"></span>
+</header>
+
+<main class="dash-container">
+
+  <!-- Stats Grid -->
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card skeleton"><div class="stat-icon">&nbsp;</div><div class="stat-value">&nbsp;</div><div class="stat-label">&nbsp;</div></div>
+    <div class="stat-card skeleton"><div class="stat-icon">&nbsp;</div><div class="stat-value">&nbsp;</div><div class="stat-label">&nbsp;</div></div>
+    <div class="stat-card skeleton"><div class="stat-icon">&nbsp;</div><div class="stat-value">&nbsp;</div><div class="stat-label">&nbsp;</div></div>
+    <div class="stat-card skeleton"><div class="stat-icon">&nbsp;</div><div class="stat-value">&nbsp;</div><div class="stat-label">&nbsp;</div></div>
+  </div>
+
+  <!-- Level Progress -->
+  <div class="level-section skeleton" id="levelSection">
+    <div class="level-header"><h2>&nbsp;</h2></div>
+    <div class="progress-container"><div class="progress-bar" style="width:0%"></div></div>
+    <div class="progress-labels"><span>&nbsp;</span><span>&nbsp;</span></div>
+  </div>
+
+  <!-- Cases + Summaries -->
+  <div class="two-col">
+    <div class="section-card skeleton" id="casesSection" style="min-height:160px">
+      <h3>&nbsp;</h3>
+    </div>
+    <div class="section-card skeleton" id="summariesSection" style="min-height:160px">
+      <h3>&nbsp;</h3>
+    </div>
+  </div>
+
+  <!-- Memories -->
+  <div class="memories-section skeleton" id="memoriesSection" style="min-height:120px">
+    <h3>&nbsp;</h3>
+  </div>
+
+  <!-- Subscription -->
+  <div class="sub-section skeleton" id="subSection" style="min-height:80px">
+    <h3>&nbsp;</h3>
+  </div>
+
+</main>
+
+<script>
+(function(){
+  const LEVELS = [
+    { name: 'CapiBaby', emoji: '\uD83C\uDF7C', min: 0, max: 299 },
+    { name: 'CapiAprendiz', emoji: '\uD83D\uDCDA', min: 300, max: 999 },
+    { name: 'CapiAdvogado', emoji: '\u2696\uFE0F', min: 1000, max: 2499 },
+    { name: 'CapiEstrategista', emoji: '\uD83E\uDDE0', min: 2500, max: 4999 },
+    { name: 'Capit\u00E3o', emoji: '\uD83C\uDF96\uFE0F', min: 5000, max: 9999 },
+    { name: 'CapiMestre', emoji: '\uD83D\uDC51', min: 10000, max: 19999 },
+    { name: 'CapiLenda', emoji: '\uD83C\uDFC6', min: 20000, max: Infinity }
+  ];
+
+  function getLevelInfo(xp) {
+    xp = xp || 0;
+    for (var i = LEVELS.length - 1; i >= 0; i--) {
+      if (xp >= LEVELS[i].min) {
+        var lvl = LEVELS[i];
+        var next = LEVELS[i + 1];
+        var progress = next ? ((xp - lvl.min) / (next.min - lvl.min)) * 100 : 100;
+        return { level: i + 1, name: lvl.name, emoji: lvl.emoji, progress: Math.min(progress, 100), xpCurrent: xp - lvl.min, xpNeeded: next ? next.min - lvl.min : 0, nextName: next ? next.name + ' ' + next.emoji : null };
+      }
+    }
+    return { level: 1, name: LEVELS[0].name, emoji: LEVELS[0].emoji, progress: 0, xpCurrent: 0, xpNeeded: LEVELS[1].min, nextName: LEVELS[1].name + ' ' + LEVELS[1].emoji };
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      var d = new Date(dateStr);
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch(e) { return dateStr; }
+  }
+
+  var token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+  if (!token) { window.location.href = '/app'; return; }
+
+  fetch('/api/dashboard', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(function(r) { if (!r.ok) throw new Error('Unauthorized'); return r.json(); })
+    .then(function(data) { render(data); })
+    .catch(function() { window.location.href = '/app'; });
+
+  function render(data) {
+    var stats = data.stats || {};
+    var profile = data.profile || {};
+    var cases = data.cases || [];
+    var summaries = data.summaries || [];
+    var memories = data.memories || {};
+    var sub = data.subscription || {};
+
+    // User name
+    document.getElementById('userName').textContent = profile.nome ? esc(profile.nome) : '';
+
+    // Stats
+    var grid = document.getElementById('statsGrid');
+    grid.innerHTML = [
+      cardHTML('\uD83D\uDCAC', formatNum(stats.totalMensagens || 0), 'Mensagens', (stats.mensagensMes || 0) + ' este m\u00EAs'),
+      cardHTML('\uD83D\uDD25', (stats.streak || stats.streak_atual || 0) + ' dias', 'Streak', 'Recorde: ' + (stats.streak_max || 0) + ' dias'),
+      cardHTML('\u2B50', formatNum(stats.xp_total || 0), 'XP Total', 'N\u00EDvel ' + (stats.nivel || 1)),
+      cardHTML('\uD83D\uDCC4', formatNum(stats.pecasSalvas || 0), 'Pe\u00E7as Salvas', (stats.favoritosSalvos || 0) + ' favoritos')
+    ].join('');
+
+    // Level
+    var xp = stats.xp_total || 0;
+    var info = getLevelInfo(xp);
+    var lvlEl = document.getElementById('levelSection');
+    lvlEl.className = 'level-section';
+    lvlEl.innerHTML =
+      '<div class="level-header">' +
+        '<h2>' + info.emoji + ' ' + esc(info.name) + ' &mdash; N\u00EDvel ' + info.level + '</h2>' +
+        '<span class="level-badge">' + formatNum(xp) + ' XP</span>' +
+      '</div>' +
+      '<div class="progress-container"><div class="progress-bar" style="width:' + info.progress.toFixed(1) + '%"></div></div>' +
+      '<div class="progress-labels">' +
+        '<span>' + formatNum(info.xpCurrent) + ' / ' + (info.xpNeeded ? formatNum(info.xpNeeded) : 'MAX') + ' XP</span>' +
+        (info.nextName ? '<span>Pr\u00F3ximo: ' + esc(info.nextName) + '</span>' : '<span>N\u00EDvel m\u00E1ximo!</span>') +
+      '</div>';
+
+    // Cases
+    var casesEl = document.getElementById('casesSection');
+    casesEl.className = 'section-card';
+    if (cases.length === 0) {
+      casesEl.innerHTML = '<h3>\uD83D\uDCC1 Casos Ativos</h3><div class="empty-state">Nenhum caso ativo no momento.</div>';
+    } else {
+      var casesHTML = '<h3>\uD83D\uDCC1 Casos Ativos</h3>';
+      cases.forEach(function(c) {
+        casesHTML += '<div class="case-item">' +
+          '<div class="case-title">' + esc(c.titulo || 'Sem t\u00EDtulo') + '</div>' +
+          '<div class="case-meta">' +
+            (c.cliente ? '<span>\uD83D\uDC64 ' + esc(c.cliente) + '</span>' : '') +
+            (c.area ? '<span>\uD83D\uDCCC ' + esc(c.area) + '</span>' : '') +
+            (c.status ? '<span>\u25CF ' + esc(c.status) + '</span>' : '') +
+            (c.prazo ? '<span>\uD83D\uDCC5 ' + esc(c.prazo) + '</span>' : '') +
+          '</div>' +
+          (c.proximo_passo ? '<div class="case-step">\u25B6 ' + esc(c.proximo_passo) + '</div>' : '') +
+        '</div>';
+      });
+      casesEl.innerHTML = casesHTML;
+    }
+
+    // Summaries
+    var sumEl = document.getElementById('summariesSection');
+    sumEl.className = 'section-card';
+    if (summaries.length === 0) {
+      sumEl.innerHTML = '<h3>\uD83D\uDCDD Resumos Recentes</h3><div class="empty-state">Nenhum resumo dispon\u00EDvel ainda.</div>';
+    } else {
+      var sumHTML = '<h3>\uD83D\uDCDD Resumos Recentes</h3>';
+      summaries.slice(0, 5).forEach(function(s) {
+        var topics = [];
+        try { topics = typeof s.topics === 'string' ? JSON.parse(s.topics) : (s.topics || []); } catch(e) { topics = []; }
+        sumHTML += '<div class="summary-item">' +
+          '<div class="summary-title">' + esc(s.conv_title || 'Conversa') + '</div>' +
+          (s.key_insights ? '<div style="color:var(--text2);font-size:.82rem;margin-top:2px">' + esc(s.key_insights) + '</div>' : '') +
+          (topics.length ? '<div class="summary-topics">' + topics.map(function(t){ return '<span class="topic-tag">' + esc(t) + '</span>'; }).join('') + '</div>' : '') +
+          '<div class="summary-date">' + formatDate(s.created_at) + '</div>' +
+        '</div>';
+      });
+      sumEl.innerHTML = sumHTML;
+    }
+
+    // Memories
+    var memEl = document.getElementById('memoriesSection');
+    memEl.className = 'memories-section';
+    var memKeys = Object.keys(memories);
+    if (memKeys.length === 0) {
+      memEl.innerHTML = '<h3>\uD83E\uDDE0 Mem\u00F3rias da Capi</h3><div class="empty-state">A Capi ainda n\u00E3o tem mem\u00F3rias sobre voc\u00EA.</div>';
+    } else {
+      var memHTML = '<h3>\uD83E\uDDE0 Mem\u00F3rias da Capi</h3>';
+      var catLabels = { casos: '\uD83D\uDCC1 Casos', preferencias: '\u2699\uFE0F Prefer\u00EAncias', contexto: '\uD83D\uDCCB Contexto', relacionamento: '\uD83E\uDD1D Relacionamento', historico: '\uD83D\uDCC6 Hist\u00F3rico' };
+      memKeys.forEach(function(key) {
+        var items = memories[key];
+        if (!items || !items.length) return;
+        var label = catLabels[key] || ('\uD83D\uDCCC ' + key.charAt(0).toUpperCase() + key.slice(1));
+        memHTML += '<div class="memory-group" onclick="this.classList.toggle(\'open\')">' +
+          '<div class="memory-group-header"><span>' + label + '</span><div style="display:flex;align-items:center;gap:8px"><span class="memory-count">' + items.length + '</span><span class="arrow">\u25B6</span></div></div>' +
+          '<div class="memory-group-body">';
+        items.forEach(function(m) {
+          var text = typeof m === 'string' ? m : (m.content || m.texto || m.text || JSON.stringify(m));
+          memHTML += '<div class="memory-item">' + esc(text) + '</div>';
+        });
+        memHTML += '</div></div>';
+      });
+      memEl.innerHTML = memHTML;
+    }
+
+    // Subscription
+    var subEl = document.getElementById('subSection');
+    subEl.className = 'sub-section';
+    var plan = sub.plan_type || 'free';
+    var expires = sub.plan_expires_at;
+    subEl.innerHTML = '<h3>\uD83D\uDCB3 Minha Assinatura</h3>' +
+      '<div class="sub-plan">' + esc(plan) + '</div>' +
+      (expires ? '<div class="sub-expires">V\u00E1lida at\u00E9 ' + formatDate(expires) + '</div>' : '');
+  }
+
+  function cardHTML(icon, value, label, sub) {
+    return '<div class="stat-card">' +
+      '<div class="stat-icon">' + icon + '</div>' +
+      '<div class="stat-value">' + esc(String(value)) + '</div>' +
+      '<div class="stat-label">' + esc(label) + '</div>' +
+      (sub ? '<div class="stat-sub">' + esc(sub) + '</div>' : '') +
+    '</div>';
+  }
+
+  function formatNum(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return String(n);
+  }
+})();
+</script>
+</body>
+</html>
