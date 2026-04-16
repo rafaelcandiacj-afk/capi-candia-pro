@@ -1158,7 +1158,7 @@ document.addEventListener('touchmove', function(e){
           <div class="user-email-s" id="sidebarEmail">—</div>
         </div>
 
-        <button class="btn-logout" onclick="window.location.href='/meu-dashboard.html'" title="Dashboard" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">📊</button>
+        <a href="/meu-dashboard.html" title="Dashboard" class="btn-logout" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border);text-decoration:none;color:inherit">📊</a>
         <button class="btn-logout" onclick="toggleDarkMode()" title="Modo escuro" id="darkModeBtnSidebar" style="margin-right:4px;font-size:.7rem;padding:4px 8px;border-radius:6px;border:1px solid var(--border)">🌙 Escuro</button>
         <button class="btn-logout" onclick="logout()" title="Sair">✕</button>
       </div>
@@ -1190,7 +1190,7 @@ document.addEventListener('touchmove', function(e){
             <button class="nav-mais-item" onclick="openPrescricaoModal();closeNavMais()">Prescrição</button>
             <button class="nav-mais-item" onclick="openMinhasPecas();closeNavMais()">Minhas Peças</button>
             <button class="nav-mais-item" onclick="window.location.href='/capitreino.html';closeNavMais()" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
-            <button class="nav-mais-item" onclick="window.location.href='/meu-dashboard.html';closeNavMais()" style="border-top:1px solid var(--border);font-weight:600;color:var(--gold)">📊 Meu Dashboard</button>
+            <a href="/meu-dashboard.html" class="nav-mais-item" style="border-top:1px solid var(--border);font-weight:600;color:var(--gold);text-decoration:none;display:block">📊 Meu Dashboard</a>
           </div>
         </div>
         <div class="header-divider"></div>
@@ -1220,11 +1220,11 @@ document.addEventListener('touchmove', function(e){
       <button class="teses-btn" onclick="openPrescricaoModal()">Prescrição</button>
       <button class="teses-btn" onclick="openMinhasPecas()">Minhas Peças</button>
       <button class="teses-btn" onclick="window.location.href='/capitreino.html'" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
-      <button class="teses-btn" onclick="window.location.href='/meu-dashboard.html'" style="font-weight:600">📊 Dashboard</button>
+      <a href="/meu-dashboard.html" class="teses-btn" style="font-weight:600;text-decoration:none;color:inherit;display:block">📊 Dashboard</a>
     </div>
     <!-- Dropdown menu mobile -->
     <div class="mobile-menu-dropdown" id="mobileMenuDropdown">
-      <button class="mobile-menu-item" onclick="window.location.href='/meu-dashboard.html';closeMobileMenu()" style="font-weight:600;color:#b8860b">📊 Meu Dashboard</button>
+      <a href="/meu-dashboard.html" class="mobile-menu-item" style="font-weight:600;color:#b8860b;text-decoration:none;display:block" onclick="closeMobileMenu()">📊 Meu Dashboard</a>
       <button class="mobile-menu-item" onclick="window.location.href='/capitreino.html';closeMobileMenu()" style="font-weight:600;color:#DAA520">🏋️ CapiTreino</button>
       <button class="mobile-menu-item" onclick="openProfileModal();closeMobileMenu()">Meu Perfil</button>
       <button class="mobile-menu-item" onclick="newConversation();closeMobileMenu()">Nova Conversa</button>
