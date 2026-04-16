@@ -3810,6 +3810,113 @@ app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req
   }
 });
 
+// ─── GURU API: HELPERS PARA CANCELAMENTO E BUSCA ────────────
+async function cancelGuruSubscription(subscriptionId, reason = 'Upgrade para Anual PRO') {
+  try {
+    const token = process.env.GURU_API_TOKEN;
+    if (!token) {
+      console.error('[cancelGuruSubscription] GURU_API_TOKEN não configurado');
+      return { ok: false, error: 'GURU_API_TOKEN not set' };
+    }
+    const r = await fetch(`https://digitalmanager.guru/api/v2/subscriptions/${subscriptionId}/cancel`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        cancel_at_cycle_end: false,
+        comment: reason
+      })
+    });
+    const text = await r.text();
+    if (!r.ok) {
+      console.error(`[cancelGuruSubscription] FAILED ${subscriptionId}: ${r.status} ${text}`);
+      return { ok: false, status: r.status, body: text };
+    }
+    console.log(`[cancelGuruSubscription] OK ${subscriptionId}`);
+    return { ok: true, body: text };
+  } catch (e) {
+    console.error('[cancelGuruSubscription] EXCEPTION', e);
+    return { ok: false, error: e.message };
+  }
+}
+
+async function findActiveMonthlySubscription(email) {
+  try {
+    const token = process.env.GURU_API_TOKEN;
+    if (!token) {
+      console.error('[findActiveMonthlySubscription] GURU_API_TOKEN não configurado');
+      return null;
+    }
+    const r = await fetch(`https://digitalmanager.guru/api/v2/subscriptions?contact_email=${encodeURIComponent(email)}&last_status=active&limit=20`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!r.ok) {
+      console.error(`[findActiveMonthlySubscription] HTTP ${r.status} for ${email}`);
+      return null;
+    }
+    const data = await r.json();
+    const subs = data.data || data || [];
+    const monthly = (Array.isArray(subs) ? subs : []).find(s =>
+      s.last_status === 'active' &&
+      s.charged_every_days && parseInt(s.charged_every_days) <= 60 &&
+      String(s.product?.marketplace_id || s.product?.code || '') === '1773774908' &&
+      (s.contact?.email || s.subscriber?.email || '').toLowerCase() === email.toLowerCase()
+    );
+    if (monthly) {
+      console.log(`[findActiveMonthlySubscription] Found monthly sub ${monthly.id} for ${email}`);
+    } else {
+      console.log(`[findActiveMonthlySubscription] No active monthly sub found for ${email} (checked ${(Array.isArray(subs) ? subs : []).length} subs)`);
+    }
+    return monthly || null;
+  } catch (e) {
+    console.error('[findActiveMonthlySubscription] error', e);
+    return null;
+  }
+}
+
+async function notifyRafael(subject, htmlBody) {
+  try {
+    await sendEmail('rafaelcandia.cj@gmail.com', subject, htmlBody);
+    console.log(`[notifyRafael] Email sent: ${subject}`);
+  } catch (e) {
+    console.error(`[notifyRafael] Failed to send: ${subject}`, e.message);
+  }
+}
+
+async function sendUpgradeWelcomeEmail(toEmail, toName) {
+  try {
+    const firstName = (toName || toEmail.split('@')[0]).split(' ')[0];
+    const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
+      <div style="text-align:center;margin-bottom:32px">
+        <h1 style="font-size:28px;color:#ffd700;margin:0">Capi Când-IA Pro</h1>
+        <p style="color:#aaa;font-size:13px;margin-top:6px">A IA treinada com o método Cândia</p>
+      </div>
+      <p style="font-size:16px">Olá, <strong>${firstName}</strong>! 🎉</p>
+      <p style="font-size:15px;line-height:1.7;color:#ccc">Seu plano foi atualizado para o <strong style="color:#ffd700">Anual PRO</strong>! Obrigado pela confiança em investir na sua advocacia com a Capi Când-IA Pro.</p>
+      <div style="background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:20px;margin:24px 0">
+        <p style="color:#ffd700;font-weight:bold;margin:0 0 12px">O que muda no seu plano PRO:</p>
+        <ul style="color:#ccc;font-size:14px;line-height:2;margin:0;padding-left:20px">
+          <li>✅ Acesso completo por 12 meses</li>
+          <li>✅ Modelos avançados de IA</li>
+          <li>✅ Limites expandidos de uso diário</li>
+          <li>✅ Todas as funcionalidades PRO desbloqueadas</li>
+        </ul>
+      </div>
+      <div style="text-align:center;margin:32px 0">
+        <a href="https://capicand-ia.com/app" style="background:#ffd700;color:#000;padding:18px 48px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:17px;display:inline-block">Acessar a plataforma</a>
+      </div>
+      <hr style="border:none;border-top:1px solid #333;margin:24px 0">
+      <p style="font-size:14px;color:#ccc">Bons estudos!<br><strong style="color:#ffd700">Rafael Cândia</strong></p>
+    </div>`;
+    await sendEmail(toEmail, `🎉 Plano atualizado pro Anual PRO, ${firstName}!`, html);
+    console.log(`[sendUpgradeWelcomeEmail] Sent to ${toEmail}`);
+  } catch (e) {
+    console.error('[sendUpgradeWelcomeEmail] Error:', e.message);
+  }
+}
+
 // ─── WEBHOOK GURU (Digital Manager Guru) ───────────────────
 // Formato diferente do PagarMe — campos: subscriber.email, last_status, product.offer.name, charged_every_days
 // Códigos dos produtos da IA no Guru — APENAS estes disparam cadastro
@@ -3827,7 +3934,7 @@ const GURU_PRO_ANNUAL_CODE = process.env.GURU_PRODUCT_ID_ANNUAL_97 || '';
 const GURU_PRO_PRODUCT_CODES = [GURU_PRO_MONTHLY_CODE, GURU_PRO_ANNUAL_CODE].filter(Boolean);
 const ALL_GURU_IA_PRODUCT_CODES = [...GURU_IA_PRODUCT_CODES, ...GURU_PRO_PRODUCT_CODES].filter(Boolean);
 
-app.post('/api/webhook/guru', express.json(), (req, res) => {
+app.post('/api/webhook/guru', express.json(), async (req, res) => {
   try {
     const body = req.body;
     console.log('📨 Webhook Guru:', body?.last_status, body?.subscriber?.email, '| produto:', body?.product?.code);
@@ -3909,6 +4016,63 @@ app.post('/api/webhook/guru', express.json(), (req, res) => {
     if (ACTIVE_STATUSES.includes(status)) {
       let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
+      // ── UPGRADE DETECTION: R$804 anual de email que já é paid ──
+      const isAnnualProOffer = offerId === GURU_OFFER_ID_ANNUAL_804 || transactionValue >= 80400;
+      if (isAnnualProOffer && user && user.plan_type === 'paid' && user.subscription_tier !== 'pro') {
+        console.log(`[webhook] UPGRADE detected for ${email} (current tier: ${user.subscription_tier})`);
+
+        // Idempotência: se já é pro, não processar de novo
+        const alreadyPro = user.subscription_tier === 'pro';
+        if (!alreadyPro) {
+          // 1) Cancelar mensal antiga via API Guru
+          const monthlyToCancel = await findActiveMonthlySubscription(email);
+          let cancelResult = { ok: false, error: 'no monthly found' };
+          if (monthlyToCancel) {
+            cancelResult = await cancelGuruSubscription(monthlyToCancel.id, `Upgrade para Anual PRO (user ${email})`);
+            console.log(`[webhook] Cancel monthly result:`, JSON.stringify(cancelResult));
+          }
+
+          // 2) Atualizar tier pra pro no DB (mesmo se cancelamento falhou)
+          const expiresAt = new Date();
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+          db.prepare(`
+            UPDATE users SET
+              plan_type = 'paid',
+              plan_expires_at = ?,
+              plan_activated_at = datetime('now'),
+              pagarme_subscription_id = ?,
+              subscription_tier = 'pro',
+              active = 1
+            WHERE id = ?
+          `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
+          console.log(`[webhook] Upgrade complete: ${email} → pro, expires ${expiresAt.toISOString()}`);
+
+          // 3) Notificar Rafael sobre o upgrade
+          const upgradeNotifHtml = `<div style="font-family:Arial,sans-serif;padding:24px;background:#0a0a0a;color:#eee;border-radius:8px;max-width:500px">
+            <h2 style="color:#ffd700;margin:0 0 16px">🎉 Upgrade automático!</h2>
+            <p><strong>Aluno:</strong> ${customerName} (${email})</p>
+            <p><strong>De:</strong> Mensal → <strong style="color:#ffd700">Anual PRO</strong></p>
+            <p>${monthlyToCancel
+              ? `<strong>Mensal cancelada:</strong> ${cancelResult.ok ? '✅ OK' : '❌ FALHOU — cancelar manual!'} (sub: ${monthlyToCancel.id})`
+              : '<strong>⚠️ Mensal não encontrada na Guru</strong> — pode já estar cancelada, verificar.'}</p>
+            ${!cancelResult.ok ? '<p style="color:#ff4444;font-weight:bold">⚠️ AÇÃO NECESSÁRIA: Cancelar a mensal manualmente no painel Guru!</p>' : ''}
+            <p><strong>Hora:</strong> ${new Date().toLocaleString('pt-BR',{timeZone:'America/Campo_Grande'})}</p>
+          </div>`;
+          await notifyRafael(
+            monthlyToCancel && cancelResult.ok
+              ? `🎉 Upgrade automático: ${email}`
+              : `⚠️ Upgrade ${email} — verificar cancelamento mensal`,
+            upgradeNotifHtml
+          );
+
+          // 4) Enviar email de upgrade (não welcome novo)
+          await sendUpgradeWelcomeEmail(email, user.name);
+        }
+
+        return res.status(200).json({ ok: true, action: 'upgrade' });
+      }
+
+      // ── FLUXO NORMAL: compra nova ──────────────────────────────
       // Criar usuário se não existir
       if (!user) {
         const tempPass = require('crypto').randomBytes(8).toString('hex');
@@ -4004,6 +4168,22 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
     checkout_annual_url: CHECKOUT_ANNUAL,
     redirect_url: access === false ? 'https://capicand-ia.com#planos' : null
   });
+});
+
+// ─── ROTA: Upgrade para Anual PRO (retorna checkout URL) ─────
+app.post('/api/subscription/upgrade-to-annual', authMiddleware, (req, res) => {
+  try {
+    const user = db.prepare('SELECT email, plan_type, subscription_tier FROM users WHERE id = ?').get(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
+    if (user.plan_type !== 'paid') return res.status(400).json({ error: 'Apenas assinantes pagantes podem fazer upgrade' });
+    if (user.subscription_tier === 'pro') return res.status(400).json({ error: 'Você já é PRO' });
+    const checkoutUrl = `https://clkdmg.site/subscribe/anual-capi-candia-pro-804?email=${encodeURIComponent(user.email)}`;
+    console.log(`[upgrade-to-annual] ${user.email} → checkout URL generated`);
+    res.json({ checkout_url: checkoutUrl });
+  } catch (e) {
+    console.error('[upgrade-to-annual] Error:', e.message);
+    res.status(500).json({ error: 'Erro interno' });
+  }
 });
 
 // ─── ADMIN: dar/revogar acesso manual ────────────────────────
