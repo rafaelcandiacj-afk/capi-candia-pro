@@ -2997,6 +2997,27 @@ app.get('/api/admin/knowledge/search-chunks', adminMiddleware, (req, res) => {
   res.json(matches.map(m => ({ id: m.id, file_id: m.file_id, file: m.original_name, snippet: m.content.substring(0, 800) })));
 });
 
+// ─── DEBUG: buscar texto em TODAS as mensagens (TEMPORÁRIO) ──────
+app.get('/api/admin/debug/search-messages', adminMiddleware, (req, res) => {
+  const q = (req.query.q || '').toLowerCase();
+  if (!q) return res.json([]);
+  const msgs = db.prepare(`
+    SELECT m.id, m.conversation_id, m.user_id, m.role, m.content, m.created_at,
+           u.name as user_name, u.email as user_email
+    FROM messages m
+    JOIN users u ON u.id = m.user_id
+    WHERE LOWER(m.content) LIKE ?
+    ORDER BY m.created_at DESC
+    LIMIT 50
+  `).all(`%${q}%`);
+  res.json(msgs.map(m => ({
+    id: m.id, conv_id: m.conversation_id, user_id: m.user_id,
+    role: m.role, user_name: m.user_name, user_email: m.user_email,
+    created_at: m.created_at,
+    snippet: m.content.substring(0, 500)
+  })));
+});
+
 // ─── DEBUG: deletar chunks contaminados por IDs (TEMPORÁRIO) ──────
 app.post('/api/admin/knowledge/delete-chunks', adminMiddleware, (req, res) => {
   const { chunk_ids } = req.body;
