@@ -1580,6 +1580,10 @@ function showChat(user){
     sendHeartbeat();
     window._heartbeatInterval = setInterval(sendHeartbeat, 60000);
   }
+  // Onboarding tour (after UI is ready)
+  if(!localStorage.getItem('capi_onboarding_done')){
+    setTimeout(function(){ if(typeof startOnboardingTour==='function') startOnboardingTour(); }, 1500);
+  }
 }
 
 // ── SUBSCRIPTION RENEWAL BANNER ──────────────────────────────
@@ -5846,6 +5850,139 @@ init();
       banner.style.display = 'block';
     }, 2000);
   }
+})();
+</script>
+
+<!-- ONBOARDING TOUR -->
+<style>
+#onboarding-tour-overlay{position:fixed;inset:0;z-index:99999;pointer-events:none;opacity:0;transition:opacity .4s}
+#onboarding-tour-overlay.active{opacity:1;pointer-events:auto}
+.tour-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.85)}
+.tour-spotlight{position:absolute;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.85);z-index:1;transition:all .4s ease}
+.tour-tooltip{position:absolute;z-index:2;background:var(--bg2,#0a110a);border:1.5px solid #00e676;border-radius:14px;padding:24px 22px 20px;max-width:360px;width:90vw;box-shadow:0 8px 40px rgba(0,230,118,.15);transition:all .4s ease;animation:tour-pop .35s ease}
+@keyframes tour-pop{0%{transform:scale(.92);opacity:0}100%{transform:scale(1);opacity:1}}
+.tour-tooltip h3{font-family:'Rajdhani',sans-serif;font-size:1.15rem;font-weight:700;color:#00e676;margin:0 0 10px;letter-spacing:.04em}
+.tour-tooltip p{font-size:.88rem;color:#a5d6a7;line-height:1.6;margin:0 0 18px}
+.tour-tooltip .tour-btns{display:flex;gap:10px;align-items:center}
+.tour-tooltip .tour-next{padding:9px 24px;background:linear-gradient(135deg,#00c853,#00e676);border:none;border-radius:8px;color:#050a05;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:.88rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.tour-tooltip .tour-next:hover{box-shadow:0 0 16px rgba(0,230,118,.4)}
+.tour-tooltip .tour-skip{background:none;border:none;color:#4caf50;font-size:.8rem;cursor:pointer;padding:6px 10px;opacity:.7;transition:opacity .2s}
+.tour-tooltip .tour-skip:hover{opacity:1}
+.tour-dots{display:flex;gap:6px;margin-left:auto;align-items:center}
+.tour-dots span{width:8px;height:8px;border-radius:50%;background:rgba(0,230,118,.2);transition:all .3s}
+.tour-dots span.active{background:#00e676;box-shadow:0 0 6px rgba(0,230,118,.5)}
+.tour-center-card{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2}
+@media(max-width:600px){.tour-tooltip{max-width:92vw;padding:18px 16px 16px}.tour-tooltip h3{font-size:1rem}.tour-tooltip p{font-size:.82rem}}
+</style>
+<div id="onboarding-tour-overlay">
+  <div class="tour-backdrop" id="tourBackdrop"></div>
+</div>
+<script>
+(function(){
+  var tourSteps=[
+    {type:'center',title:'Bem-vindo \u00e0 Capi! \uD83E\uDDAB',text:'Eu sou a Capi, sua assistente jur\u00eddica com intelig\u00eancia artificial. Vou te ajudar com honor\u00e1rios, teses, peti\u00e7\u00f5es e muito mais. Deixa eu te mostrar o que posso fazer!'},
+    {type:'element',selector:'.chat-input-area',title:'Chat Principal \uD83D\uDCAC',text:'Aqui \u00e9 onde a m\u00e1gica acontece. Me pergunte qualquer coisa jur\u00eddica \u2014 honor\u00e1rios, teses, prazos, estrat\u00e9gias. Eu lembro de tudo que conversamos!'},
+    {type:'element',selector:'.desktop-toolbar .chat-toolbar-wrap, .mobile-toolbar',title:'Ferramentas \uD83D\uDEE0\uFE0F',text:'Essas s\u00e3o suas ferramentas especializadas. Gerador de Teses, Construtor de Peti\u00e7\u00f5es, Calculadora de Honor\u00e1rios, e muito mais \u2014 tudo com IA.'},
+    {type:'element',selector:'a[href*="capitreino"], button[onclick*="capitreino"]',title:'CapiTreino \uD83C\uDFCB\uFE0F',text:'Aqui voc\u00ea evolui como advogado! Miss\u00f5es di\u00e1rias, ranking contra outros advogados, conquistas e XP. \u00c9 gamifica\u00e7\u00e3o jur\u00eddica de verdade.'},
+    {type:'center',title:'Pronto para come\u00e7ar! \uD83D\uDE80',text:'Tudo pronto! Comece mandando uma mensagem. Dica: experimente "Quais s\u00e3o os honor\u00e1rios m\u00ednimos para uma a\u00e7\u00e3o trabalhista em SP?" \u2014 e veja a Capi em a\u00e7\u00e3o.'}
+  ];
+  var currentStep=0;
+  var overlay=document.getElementById('onboarding-tour-overlay');
+
+  function buildDots(){
+    var html='<div class="tour-dots">';
+    for(var i=0;i<tourSteps.length;i++) html+='<span'+(i===currentStep?' class="active"':'')+' ></span>';
+    html+='</div>';
+    return html;
+  }
+
+  function endTour(){
+    overlay.classList.remove('active');
+    localStorage.setItem('capi_onboarding_done','true');
+    setTimeout(function(){
+      var sl=overlay.querySelector('.tour-spotlight');
+      if(sl) sl.remove();
+      var tt=overlay.querySelector('.tour-tooltip');
+      if(tt) tt.remove();
+    },400);
+  }
+
+  function showStep(idx){
+    currentStep=idx;
+    var step=tourSteps[idx];
+    var isLast=idx===tourSteps.length-1;
+    var btnLabel=isLast?'Vamos l\u00e1!':'Pr\u00f3ximo';
+
+    // Clean old
+    var oldSl=overlay.querySelector('.tour-spotlight');
+    if(oldSl) oldSl.remove();
+    var oldTt=overlay.querySelector('.tour-tooltip');
+    if(oldTt) oldTt.remove();
+
+    if(step.type==='center'){
+      // Centered card, no spotlight
+      var tt=document.createElement('div');
+      tt.className='tour-tooltip tour-center-card';
+      tt.innerHTML='<h3>'+step.title+'</h3><p>'+step.text+'</p><div class="tour-btns">'+(isLast?'':'<button class="tour-skip" onclick="arguments[0].stopPropagation()">Pular</button>')+'<button class="tour-next">'+btnLabel+'</button>'+buildDots()+'</div>';
+      overlay.appendChild(tt);
+      tt.querySelector('.tour-next').onclick=function(){isLast?endTour():showStep(idx+1);};
+      var skipBtn=tt.querySelector('.tour-skip');
+      if(skipBtn) skipBtn.onclick=endTour;
+    } else {
+      // Element spotlight
+      var selectors=step.selector.split(',');
+      var el=null;
+      for(var s=0;s<selectors.length;s++){
+        el=document.querySelector(selectors[s].trim());
+        if(el&&el.offsetParent!==null) break;
+        el=null;
+      }
+      if(!el){
+        // Fallback to center if element not found
+        tourSteps[idx]={type:'center',title:step.title,text:step.text};
+        showStep(idx);
+        return;
+      }
+      var rect=el.getBoundingClientRect();
+      var pad=8;
+
+      var sl=document.createElement('div');
+      sl.className='tour-spotlight';
+      sl.style.top=(rect.top-pad)+'px';
+      sl.style.left=(rect.left-pad)+'px';
+      sl.style.width=(rect.width+pad*2)+'px';
+      sl.style.height=(rect.height+pad*2)+'px';
+      overlay.appendChild(sl);
+
+      var tt=document.createElement('div');
+      tt.className='tour-tooltip';
+      tt.innerHTML='<h3>'+step.title+'</h3><p>'+step.text+'</p><div class="tour-btns"><button class="tour-skip" onclick="arguments[0].stopPropagation()">Pular</button><button class="tour-next">'+btnLabel+'</button>'+buildDots()+'</div>';
+
+      // Position tooltip
+      var ttTop=rect.bottom+pad+12;
+      var ttLeft=Math.max(12,Math.min(rect.left,window.innerWidth-380));
+      if(ttTop+200>window.innerHeight){
+        ttTop=Math.max(12,rect.top-pad-200);
+      }
+      tt.style.top=ttTop+'px';
+      tt.style.left=ttLeft+'px';
+      overlay.appendChild(tt);
+
+      // Adjust if overflowing
+      var ttRect=tt.getBoundingClientRect();
+      if(ttRect.right>window.innerWidth-10) tt.style.left=Math.max(10,window.innerWidth-ttRect.width-10)+'px';
+      if(ttRect.bottom>window.innerHeight-10) tt.style.top=Math.max(10,window.innerHeight-ttRect.height-10)+'px';
+
+      tt.querySelector('.tour-next').onclick=function(){isLast?endTour():showStep(idx+1);};
+      tt.querySelector('.tour-skip').onclick=endTour;
+    }
+  }
+
+  window.startOnboardingTour=function(){
+    if(localStorage.getItem('capi_onboarding_done')) return;
+    overlay.classList.add('active');
+    showStep(0);
+  };
 })();
 </script>
 

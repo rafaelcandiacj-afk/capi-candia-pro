@@ -159,6 +159,7 @@
     <button class="tab-btn" onclick="switchTab('prompt')">Prompt do agente</button>
     <button class="tab-btn" onclick="switchTab('analytics')">📊 Analytics</button>
     <button class="tab-btn" onclick="switchTab('notifications')">🔔 Notificações</button>
+    <button class="tab-btn" onclick="switchTab('security')">🛡️ Segurança</button>
   </div>
 
   <div class="content">
@@ -359,6 +360,28 @@
       <div id="notifList"><div style="color:var(--text-muted);text-align:center;padding:40px">Carregando...</div></div>
     </div>
 
+    <!-- SECURITY -->
+    <div id="tab-security" class="tab-panel">
+      <div class="section-header">
+        <div class="section-title">🛡️ Painel de <span class="hl">segurança</span></div>
+        <button class="btn-sm" onclick="loadSecurityData()">↻ Atualizar</button>
+      </div>
+      <div class="stats-grid" id="securityStatsGrid">
+        <div class="stat-card"><div class="stat-label">Total de eventos</div><div class="stat-value" id="sec-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">Logins falhados</div><div class="stat-value" id="sec-failed" style="color:var(--yellow)">—</div></div>
+        <div class="stat-card"><div class="stat-label">IPs bloqueados</div><div class="stat-value" id="sec-blocked" style="color:var(--red)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Rate limited</div><div class="stat-value" id="sec-rate" style="color:#ff9800">—</div></div>
+        <div class="stat-card"><div class="stat-label">Bloqueios ativos</div><div class="stat-value" id="sec-active" style="color:var(--red)">—</div></div>
+      </div>
+      <div class="section-header"><div class="section-title">Últimos <span class="hl">200 eventos</span></div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tipo</th><th>IP</th><th>Email</th><th>Detalhes</th><th>Data/Hora</th></tr></thead>
+          <tbody id="securityLogsBody"><tr class="loading-row"><td colspan="5">Carregando...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -418,7 +441,7 @@ function doLogout() {
 
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach((b, i) => {
-    const tabs = ['overview', 'knowledge', 'users', 'prompt', 'analytics', 'notifications'];
+    const tabs = ['overview', 'knowledge', 'users', 'prompt', 'analytics', 'notifications', 'security'];
     b.classList.toggle('active', tabs[i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -429,6 +452,7 @@ function switchTab(tab) {
   if (tab === 'knowledge') loadKnowledge();
   if (tab === 'analytics') loadAnalytics();
   if (tab === 'notifications') loadNotifications();
+  if (tab === 'security') loadSecurityData();
 }
 
 
@@ -971,6 +995,48 @@ async function viewConvMessages(convId, title) {
 }
 
 function closeUserConvsModal() { document.getElementById('userConvsModal').style.display = 'none'; }
+
+// ── SECURITY PANEL ──────────────────────────────────────────
+async function loadSecurityData() {
+  const h = { 'x-admin-password': adminPassword };
+  try {
+    const [statsRes, logsRes] = await Promise.all([
+      fetch('/api/admin/security-stats', { headers: h }),
+      fetch('/api/admin/security-logs', { headers: h })
+    ]);
+    if (statsRes.ok) {
+      const s = await statsRes.json();
+      document.getElementById('sec-total').textContent = fmtNum(s.total);
+      document.getElementById('sec-failed').textContent = fmtNum(s.failed_logins);
+      document.getElementById('sec-blocked').textContent = fmtNum(s.blocked_ips);
+      document.getElementById('sec-rate').textContent = fmtNum(s.rate_limited);
+      document.getElementById('sec-active').textContent = s.active_blocks;
+    }
+    if (logsRes.ok) {
+      const d = await logsRes.json();
+      const tbody = document.getElementById('securityLogsBody');
+      if (!d.logs || d.logs.length === 0) {
+        tbody.innerHTML = '<tr class="loading-row"><td colspan="5">Nenhum evento registrado</td></tr>';
+        return;
+      }
+      const badgeMap = {
+        'failed_login': '<span class="badge" style="background:var(--yellow-dim);color:var(--yellow);border:1px solid rgba(255,215,64,.3)">failed_login</span>',
+        'blocked_ip': '<span class="badge" style="background:var(--red-dim);color:var(--red);border:1px solid rgba(239,83,80,.3)">blocked_ip</span>',
+        'rate_limited': '<span class="badge" style="background:rgba(255,152,0,.12);color:#ff9800;border:1px solid rgba(255,152,0,.3)">rate_limited</span>',
+        'suspicious': '<span class="badge" style="background:rgba(156,39,176,.12);color:#ce93d8;border:1px solid rgba(156,39,176,.3)">suspicious</span>'
+      };
+      tbody.innerHTML = d.logs.map(l => `<tr>
+        <td>${badgeMap[l.event_type] || '<span class="badge badge-active">' + esc(l.event_type) + '</span>'}</td>
+        <td style="font-family:monospace;font-size:.78rem">${esc(l.ip || '—')}</td>
+        <td>${esc(l.email || '—')}</td>
+        <td style="font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(l.details || '—')}</td>
+        <td style="font-size:.78rem;white-space:nowrap">${fmtDate(l.created_at)}</td>
+      </tr>`).join('');
+    }
+  } catch(e) {
+    console.error('Erro ao carregar dados de segurança:', e);
+  }
+}
 
 document.getElementById('adminPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 </script>

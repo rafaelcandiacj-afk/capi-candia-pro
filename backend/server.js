@@ -1223,6 +1223,72 @@ Seu lema: "Capivara que anda em bando não vira comida de onça."`;
   }
 })();
 
+// ─── DAILY BACKUP ──────────────────────────────────────────────
+const BACKUP_DIR = path.join(path.dirname(DB_PATH), 'backups');
+try { fs.mkdirSync(BACKUP_DIR, { recursive: true }); } catch(e) {}
+
+async function performBackup() {
+  try {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const backupPath = path.join(BACKUP_DIR, `capi-backup-${timestamp}.db`);
+    await db.backup(backupPath);
+    console.log(`✅ Backup criado: ${backupPath}`);
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('capi-backup-') && f.endsWith('.db'))
+      .sort()
+      .reverse();
+    for (let i = 7; i < files.length; i++) {
+      fs.unlinkSync(path.join(BACKUP_DIR, files[i]));
+      console.log(`🗑️ Backup antigo removido: ${files[i]}`);
+    }
+  } catch(e) {
+    console.error('⚠️ Erro no backup:', e.message);
+  }
+}
+
+setInterval(performBackup, 24 * 60 * 60 * 1000);
+setTimeout(performBackup, 30 * 1000);
+
+// ─── RESPONSE CACHE ──────────────────────────────────────────
+const responseCache = new Map();
+const CACHE_MAX_SIZE = 200;
+const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
+
+function getCachedResponse(key) {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    responseCache.delete(key);
+    return null;
+  }
+  entry.hits++;
+  return entry.response;
+}
+
+function setCachedResponse(key, response) {
+  if (responseCache.size >= CACHE_MAX_SIZE) {
+    const oldest = [...responseCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
+    if (oldest) responseCache.delete(oldest[0]);
+  }
+  responseCache.set(key, { response, timestamp: Date.now(), hits: 0 });
+}
+
+function generateCacheKey(text) {
+  const normalized = text.toLowerCase().trim().replace(/\s+/g, ' ');
+  const honMatch = normalized.match(/honor[aá]rios?\s+(?:m[ií]nimos?\s+)?(?:(?:em|para|no|na|do|da)\s+)?(\w+)/);
+  if (honMatch) return 'honorarios:' + honMatch[1];
+  const prescMatch = normalized.match(/prescri[çc][ãa]o?\s+(?:(?:de|do|da|para)\s+)?(\w+)/);
+  if (prescMatch) return 'prescricao:' + prescMatch[1];
+  return null;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of responseCache) {
+    if (now - entry.timestamp > CACHE_TTL) responseCache.delete(key);
+  }
+}, 60 * 60 * 1000);
+
 // ─── CORS (hardened) ────────────────────────────────────────────
 app.use(cors({
   origin: function(origin, callback) {
@@ -1267,6 +1333,22 @@ app.use((req, res, next) => {
 
 // ─── API RATE LIMITER (200 req/min per user) ────────────────────
 app.use('/api', apiRateLimiter);
+
+// ─── HEALTH CHECK (public, no auth) ────────────────────────────
+app.get('/api/health', (req, res) => {
+  try {
+    const dbCheck = db.prepare('SELECT COUNT(*) as c FROM users').get();
+    res.json({
+      status: 'ok',
+      uptime: process.uptime(),
+      users: dbCheck.c,
+      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      timestamp: new Date().toISOString()
+    });
+  } catch(e) {
+    res.status(503).json({ status: 'error', error: e.message });
+  }
+});
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -1537,7 +1619,17 @@ setInterval(() => {
   db.prepare('DELETE FROM reset_tokens WHERE expires_at < ?').run(Date.now());
 }, 60 * 60 * 1000);
 
-// Email de reativação — usuários pagos inativos há 7 dias
+// Coluna para 2o email de reativação (10 dias)
+try { db.prepare('ALTER TABLE users ADD COLUMN reativacao_2_enviada TEXT').run(); } catch(e) {}
+
+const REATIVACAO_NIVEIS = [
+  { nivel: 1, nome: 'CapiBaby' }, { nivel: 2, nome: 'CapiAprendiz' },
+  { nivel: 3, nome: 'CapiAdvogado' }, { nivel: 4, nome: 'CapiEstrategista' },
+  { nivel: 5, nome: 'CapiMestre' }, { nivel: 6, nome: 'CapiLenda' },
+  { nivel: 7, nome: 'CapiSupremo' }
+];
+
+// Email de reativação — usuários pagos inativos há 7 dias (personalizado)
 setInterval(async () => {
   try {
     const sete_dias_atras = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
@@ -1551,27 +1643,80 @@ setInterval(async () => {
 
     for (const user of inativos) {
       const nome = user.name ? user.name.split(' ')[0] : 'Advogado';
+      let progress = null;
+      try {
+        progress = db.prepare(`
+          SELECT xp_total, nivel, streak_atual, streak_max, liga_xp_semana,
+            (SELECT COUNT(*) FROM messages WHERE user_id = u.id AND role = 'user') as total_msgs,
+            (SELECT COUNT(*) FROM conversations WHERE user_id = u.id) as total_convs
+          FROM users u WHERE u.id = ?
+        `).get(user.id);
+      } catch(e) {}
+      const nivelInfo = REATIVACAO_NIVEIS.find(n => n.nivel === (progress?.nivel || 1)) || REATIVACAO_NIVEIS[0];
+      const xp = progress?.xp_total || 0;
+      const totalMsgs = progress?.total_msgs || 0;
+      const streakMax = progress?.streak_max || 0;
+      const streakText = streakMax > 0
+        ? `Seu recorde de sequ\u00eancia era <strong>${streakMax} dias</strong>. Bora bater esse recorde?`
+        : 'Que tal come\u00e7ar uma sequ\u00eancia de treinos di\u00e1rios?';
+
       const html = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
-          <h2 style="color:#b8860b;text-align:center">Oi, ${nome}! A Capi sentiu sua falta. 👋</h2>
-          <p style="color:#ccc;font-size:15px;line-height:1.6">Faz alguns dias que você não passa por aqui. Enquanto isso, a Capi continua prontinha pra te ajudar com honorários, teses jurídicas, petições e muito mais.</p>
-          <p style="color:#ccc;font-size:15px;line-height:1.6">Que tal dar uma olhada no que tem de novo?</p>
-          <div style="text-align:center;margin:32px 0">
-            <a href="https://capicand-ia.com/app" style="background:#b8860b;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">⚖️ Voltar para a Capi</a>
+          <h2 style="color:#b8860b;text-align:center">Oi, ${nome}! A Capi sentiu sua falta. \uD83D\uDC4B</h2>
+          <p style="color:#ccc;font-size:15px;line-height:1.6">Voc\u00ea j\u00e1 trocou <strong style="color:#00e676">${totalMsgs} mensagens</strong> comigo e tem <strong style="color:#ffd740">${xp} XP</strong> acumulados.</p>
+          <p style="color:#ccc;font-size:15px;line-height:1.6">Seu n\u00edvel atual: <strong style="color:#b8860b">${nivelInfo.nome}</strong> (N\u00edvel ${progress?.nivel || 1})</p>
+          <p style="color:#ccc;font-size:15px;line-height:1.6">${streakText}</p>
+          <p style="color:#ffd740;font-size:15px;font-weight:bold;text-align:center;margin:20px 0">Voc\u00ea tem 3 miss\u00f5es di\u00e1rias te esperando no CapiTreino!</p>
+          <div style="text-align:center;margin:28px 0;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+            <a href="https://capicand-ia.com/app" style="background:#b8860b;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px">\u2696\uFE0F Voltar para a Capi</a>
+            <a href="https://capicand-ia.com/capitreino.html" style="background:#DAA520;color:#000;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px">\uD83C\uDFCB\uFE0F Ir para o CapiTreino</a>
           </div>
-          <p style="font-size:12px;color:#555;text-align:center">Capi Când-IA Pro &mdash; Sua assistente jurídica com IA</p>
+          <p style="font-size:12px;color:#555;text-align:center">Capi C\u00e2nd-IA Pro &mdash; Sua assistente jur\u00eddica com IA</p>
         </div>
       `;
       try {
-        await sendEmail(user.email, `${nome}, a Capi sentiu sua falta! 👋`, html);
+        await sendEmail(user.email, `${nome}, a Capi sentiu sua falta! \uD83D\uDC4B`, html);
         db.prepare('UPDATE users SET reativacao_enviada = ? WHERE id = ?').run(new Date().toISOString(), user.id);
-        console.log(`✅ Email reativacao enviado para: ${user.email}`);
+        console.log(`\u2705 Email reativacao personalizado enviado para: ${user.email}`);
       } catch(e) {
-        console.error(`⚠️ Erro email reativacao ${user.email}:`, e.message);
+        console.error(`\u26A0\uFE0F Erro email reativacao ${user.email}:`, e.message);
+      }
+    }
+
+    // 2o tier: "última chamada" após 10 dias de inatividade
+    const dez_dias_atras = new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString();
+    const inativos2 = db.prepare(`
+      SELECT id, name, email FROM users
+      WHERE plan = 'paid'
+      AND active = 1
+      AND (last_login IS NULL OR last_login < ?)
+      AND reativacao_enviada IS NOT NULL
+      AND (reativacao_2_enviada IS NULL OR reativacao_2_enviada < ?)
+    `).all(dez_dias_atras, dez_dias_atras);
+
+    for (const user of inativos2) {
+      const nome = user.name ? user.name.split(' ')[0] : 'Advogado';
+      const html2 = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#e8f5e9;padding:40px 32px;border-radius:12px">
+          <h2 style="color:#ef5350;text-align:center">Faz 10 dias que a gente n\u00e3o conversa...</h2>
+          <p style="color:#ccc;font-size:16px;line-height:1.7;text-align:center">T\u00e1 tudo bem, ${nome}? A Capi t\u00e1 aqui prontinha.</p>
+          <p style="color:#aaa;font-size:14px;line-height:1.6;text-align:center">Seus dados, miss\u00f5es e progresso continuam salvos. \u00c9 s\u00f3 voltar.</p>
+          <div style="text-align:center;margin:28px 0">
+            <a href="https://capicand-ia.com/app" style="background:#ef5350;color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">\uD83D\uDC4B Voltar agora</a>
+          </div>
+          <p style="font-size:12px;color:#555;text-align:center">Capi C\u00e2nd-IA Pro &mdash; Sua assistente jur\u00eddica com IA</p>
+        </div>
+      `;
+      try {
+        await sendEmail(user.email, `${nome}, \u00faltima chamada da Capi...`, html2);
+        db.prepare('UPDATE users SET reativacao_2_enviada = ? WHERE id = ?').run(new Date().toISOString(), user.id);
+        console.log(`\u2705 Email reativacao 2 (10d) enviado para: ${user.email}`);
+      } catch(e) {
+        console.error(`\u26A0\uFE0F Erro email reativacao 2 ${user.email}:`, e.message);
       }
     }
   } catch(e) {
-    console.error('⚠️ Erro no job de reativacao:', e.message);
+    console.error('\u26A0\uFE0F Erro no job de reativacao:', e.message);
   }
 }, 24 * 60 * 60 * 1000); // Roda 1x por dia
 
@@ -1949,6 +2094,32 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   const { messages, conversation_id, upload_id, upload_ids, project_id } = req.body;
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
+
+  // ── RESPONSE CACHE CHECK ──
+  const lastUserMsgForCache = messages.filter(m => m.role === 'user').pop()?.content || '';
+  const cacheKey = generateCacheKey(lastUserMsgForCache);
+  if (cacheKey) {
+    const cachedReply = getCachedResponse(cacheKey);
+    if (cachedReply) {
+      console.log(`📦 Cache hit: ${cacheKey}`);
+      const userId = req.user.id;
+      let convId = conversation_id;
+      if (!convId) {
+        const firstUserMsg = messages.find(m => m.role === 'user');
+        const title = firstUserMsg ? firstUserMsg.content.substring(0, 60) : 'Nova conversa';
+        const conv = project_id
+          ? db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(userId, title, project_id)
+          : db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
+        convId = conv.lastInsertRowid;
+      } else {
+        db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(convId);
+      }
+      const lastMsg = messages[messages.length - 1];
+      db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'user', lastMsg.content, 0);
+      db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'assistant', cachedReply, 0);
+      return res.json({ reply: cachedReply, tokens: 0, conversation_id: convId, suggestions: [], cached: true });
+    }
+  }
 
   const systemPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get()?.value || '';
   
@@ -2357,6 +2528,11 @@ Retorne APENAS um JSON array de 4 strings.` },
       console.error('Erro ao gerar sugestões:', e.message);
     }
 
+    // Cache response for cacheable queries
+    if (cacheKey && reply) {
+      setCachedResponse(cacheKey, reply);
+    }
+
     res.json({ reply, tokens, conversation_id: convId, suggestions });
 
     // Log AI usage for chat
@@ -2597,6 +2773,40 @@ app.get('/api/admin/security-stats', adminMiddleware, (req, res) => {
   } catch(e) {
     res.json({ total: 0, failed_logins: 0, blocked_ips: 0, rate_limited: 0, active_blocks: 0 });
   }
+});
+
+// ─── ADMIN: BACKUPS ─────────────────────────────────────────────
+app.get('/api/admin/backups', adminMiddleware, (req, res) => {
+  try {
+    const files = fs.readdirSync(BACKUP_DIR)
+      .filter(f => f.startsWith('capi-backup-') && f.endsWith('.db'))
+      .sort()
+      .reverse()
+      .map(f => ({
+        name: f,
+        size: fs.statSync(path.join(BACKUP_DIR, f)).size,
+        created: f.replace('capi-backup-', '').replace('.db', '')
+      }));
+    res.json({ backups: files, backup_dir: BACKUP_DIR });
+  } catch(e) {
+    res.json({ backups: [], error: e.message });
+  }
+});
+
+app.post('/api/admin/backup-now', adminMiddleware, async (req, res) => {
+  try {
+    await performBackup();
+    res.json({ ok: true, message: 'Backup realizado com sucesso!' });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/admin/cache-stats', adminMiddleware, (req, res) => {
+  const entries = [...responseCache.entries()].map(([key, val]) => ({
+    key, hits: val.hits, age_min: Math.round((Date.now() - val.timestamp) / 60000)
+  }));
+  res.json({ size: responseCache.size, max: CACHE_MAX_SIZE, entries });
 });
 
 app.get('/api/admin/stats', adminMiddleware, (req, res) => {
