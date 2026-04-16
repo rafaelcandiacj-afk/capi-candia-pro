@@ -1249,45 +1249,7 @@ async function performBackup() {
 setInterval(performBackup, 24 * 60 * 60 * 1000);
 setTimeout(performBackup, 30 * 1000);
 
-// ─── RESPONSE CACHE ──────────────────────────────────────────
-const responseCache = new Map();
-const CACHE_MAX_SIZE = 200;
-const CACHE_TTL = 4 * 60 * 60 * 1000; // 4 hours
-
-function getCachedResponse(key) {
-  const entry = responseCache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.timestamp > CACHE_TTL) {
-    responseCache.delete(key);
-    return null;
-  }
-  entry.hits++;
-  return entry.response;
-}
-
-function setCachedResponse(key, response) {
-  if (responseCache.size >= CACHE_MAX_SIZE) {
-    const oldest = [...responseCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp)[0];
-    if (oldest) responseCache.delete(oldest[0]);
-  }
-  responseCache.set(key, { response, timestamp: Date.now(), hits: 0 });
-}
-
-function generateCacheKey(text) {
-  const normalized = text.toLowerCase().trim().replace(/\s+/g, ' ');
-  const honMatch = normalized.match(/honor[aá]rios?\s+(?:m[ií]nimos?\s+)?(?:(?:em|para|no|na|do|da)\s+)?(\w+)/);
-  if (honMatch) return 'honorarios:' + honMatch[1];
-  const prescMatch = normalized.match(/prescri[çc][ãa]o?\s+(?:(?:de|do|da|para)\s+)?(\w+)/);
-  if (prescMatch) return 'prescricao:' + prescMatch[1];
-  return null;
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of responseCache) {
-    if (now - entry.timestamp > CACHE_TTL) responseCache.delete(key);
-  }
-}, 60 * 60 * 1000);
+// ─── RESPONSE CACHE (REMOVED — data privacy risk) ──────────────────
 
 // ─── CORS (hardened) ────────────────────────────────────────────
 app.use(cors({
@@ -2095,31 +2057,7 @@ app.post('/api/chat', authMiddleware, async (req, res) => {
   if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Mensagens inválidas' });
   if (!OPENAI_API_KEY) return res.status(500).json({ error: 'API key não configurada' });
 
-  // ── RESPONSE CACHE CHECK ──
-  const lastUserMsgForCache = messages.filter(m => m.role === 'user').pop()?.content || '';
-  const cacheKey = generateCacheKey(lastUserMsgForCache);
-  if (cacheKey) {
-    const cachedReply = getCachedResponse(cacheKey);
-    if (cachedReply) {
-      console.log(`📦 Cache hit: ${cacheKey}`);
-      const userId = req.user.id;
-      let convId = conversation_id;
-      if (!convId) {
-        const firstUserMsg = messages.find(m => m.role === 'user');
-        const title = firstUserMsg ? firstUserMsg.content.substring(0, 60) : 'Nova conversa';
-        const conv = project_id
-          ? db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(userId, title, project_id)
-          : db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
-        convId = conv.lastInsertRowid;
-      } else {
-        db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(convId);
-      }
-      const lastMsg = messages[messages.length - 1];
-      db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'user', lastMsg.content, 0);
-      db.prepare('INSERT INTO messages (conversation_id, user_id, role, content, tokens) VALUES (?, ?, ?, ?, ?)').run(convId, userId, 'assistant', cachedReply, 0);
-      return res.json({ reply: cachedReply, tokens: 0, conversation_id: convId, suggestions: [], cached: true });
-    }
-  }
+  const requestId = `${req.user.id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
   const systemPrompt = db.prepare("SELECT value FROM settings WHERE key = 'system_prompt'").get()?.value || '';
   
@@ -2428,7 +2366,9 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
           model: 'gpt-4.1',
           messages: [{ role: 'system', content: fullSystemPrompt }, ...messages.slice(-20)],
           temperature: 0.75,
-          max_tokens: maxTok
+          max_tokens: maxTok,
+          store: false,
+          user: 'capi_user_' + req.user.id
         }),
         signal: controller.signal
       });
@@ -2523,7 +2463,9 @@ Retorne APENAS um JSON array de 4 strings.` },
             { role: 'user', content: 'Pergunta do advogado: "' + (messages[messages.length-1]?.content||'').substring(0,300) + '" / Resposta da Capi: "' + reply.substring(0,500) + '"' }
           ],
           temperature: 0.6,
-          max_tokens: 200
+          max_tokens: 200,
+          store: false,
+          user: 'capi_user_' + userId
         })
       });
       if (sugResponse.ok) {
@@ -2534,11 +2476,6 @@ Retorne APENAS um JSON array de 4 strings.` },
       }
     } catch (e) {
       console.error('Erro ao gerar sugestões:', e.message);
-    }
-
-    // Cache response for cacheable queries
-    if (cacheKey && reply) {
-      setCachedResponse(cacheKey, reply);
     }
 
     res.json({ reply, tokens, conversation_id: convId, suggestions });
@@ -2594,10 +2531,12 @@ Advogado: "${memUserMsg.substring(0, 800)}"
 CAPI: "${memReply.substring(0, 800)}"` }
             ],
             temperature: 0.2,
-            max_tokens: 500
+            max_tokens: 500,
+            store: false,
+            user: 'capi_user_' + memUserId
           })
         });
-        
+
         if (memResponse.ok) {
           const memData = await memResponse.json();
           const memText = memData.choices[0]?.message?.content || '[]';
@@ -2645,10 +2584,12 @@ Se não houver caso concreto: {"found": false}` },
                 { role: 'user', content: `Advogado: "${memUserMsg.substring(0, 500)}"\nCAPI: "${memReply.substring(0, 300)}"` }
               ],
               temperature: 0.1,
-              max_tokens: 200
+              max_tokens: 200,
+              store: false,
+              user: 'capi_user_' + memUserId
             })
           });
-          
+
           if (caseResponse.ok) {
             const caseData = await caseResponse.json();
             const caseText = caseData.choices[0]?.message?.content || '{}';
@@ -2680,7 +2621,7 @@ Se não houver caso concreto: {"found": false}` },
           if (msgCount >= 6 && !existingSummary) {
             const convMsgs = db.prepare('SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 30').all(convId);
             const convText = convMsgs.map(m => `${m.role === 'user' ? 'Advogado' : 'CAPI'}: ${m.content.substring(0, 200)}`).join('\n');
-            
+
             const sumResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
@@ -2691,7 +2632,9 @@ Se não houver caso concreto: {"found": false}` },
                   { role: 'user', content: convText.substring(0, 2000) }
                 ],
                 temperature: 0.2,
-                max_tokens: 300
+                max_tokens: 300,
+                store: false,
+                user: 'capi_user_' + memUserId
               })
             });
             
@@ -2711,7 +2654,7 @@ Se não houver caso concreto: {"found": false}` },
             // Atualiza resumo a cada 6 mensagens adicionais
             const convMsgs = db.prepare('SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 40').all(convId);
             const convText = convMsgs.map(m => `${m.role === 'user' ? 'Advogado' : 'CAPI'}: ${m.content.substring(0, 200)}`).join('\n');
-            
+
             const sumResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
@@ -2722,7 +2665,9 @@ Se não houver caso concreto: {"found": false}` },
                   { role: 'user', content: convText.substring(0, 2000) }
                 ],
                 temperature: 0.2,
-                max_tokens: 300
+                max_tokens: 300,
+                store: false,
+                user: 'capi_user_' + memUserId
               })
             });
             
@@ -2811,10 +2756,7 @@ app.post('/api/admin/backup-now', adminMiddleware, async (req, res) => {
 });
 
 app.get('/api/admin/cache-stats', adminMiddleware, (req, res) => {
-  const entries = [...responseCache.entries()].map(([key, val]) => ({
-    key, hits: val.hits, age_min: Math.round((Date.now() - val.timestamp) / 60000)
-  }));
-  res.json({ size: responseCache.size, max: CACHE_MAX_SIZE, entries });
+  res.json({ disabled: true, reason: 'Cache removed for data privacy' });
 });
 
 app.get('/api/admin/stats', adminMiddleware, (req, res) => {
@@ -2988,48 +2930,6 @@ app.delete('/api/admin/knowledge/:id', adminMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
-// ─── DEBUG: buscar texto nos knowledge chunks (TEMPORÁRIO) ──────
-app.get('/api/admin/knowledge/search-chunks', adminMiddleware, (req, res) => {
-  const q = (req.query.q || '').toLowerCase();
-  if (!q) return res.json([]);
-  const chunks = db.prepare('SELECT kc.id, kc.content, kf.original_name, kf.id as file_id FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id').all();
-  const matches = chunks.filter(c => c.content.toLowerCase().includes(q));
-  res.json(matches.map(m => ({ id: m.id, file_id: m.file_id, file: m.original_name, snippet: m.content.substring(0, 800) })));
-});
-
-// ─── DEBUG: buscar texto em TODAS as mensagens (TEMPORÁRIO) ──────
-app.get('/api/admin/debug/search-messages', adminMiddleware, (req, res) => {
-  const q = (req.query.q || '').toLowerCase();
-  if (!q) return res.json([]);
-  const msgs = db.prepare(`
-    SELECT m.id, m.conversation_id, m.user_id, m.role, m.content, m.created_at,
-           u.name as user_name, u.email as user_email
-    FROM messages m
-    JOIN users u ON u.id = m.user_id
-    WHERE LOWER(m.content) LIKE ?
-    ORDER BY m.created_at DESC
-    LIMIT 50
-  `).all(`%${q}%`);
-  res.json(msgs.map(m => ({
-    id: m.id, conv_id: m.conversation_id, user_id: m.user_id,
-    role: m.role, user_name: m.user_name, user_email: m.user_email,
-    created_at: m.created_at,
-    snippet: m.content.substring(0, 500)
-  })));
-});
-
-// ─── DEBUG: deletar chunks contaminados por IDs (TEMPORÁRIO) ──────
-app.post('/api/admin/knowledge/delete-chunks', adminMiddleware, (req, res) => {
-  const { chunk_ids } = req.body;
-  if (!chunk_ids || !Array.isArray(chunk_ids) || chunk_ids.length === 0) {
-    return res.status(400).json({ error: 'chunk_ids obrigatório (array de IDs)' });
-  }
-  const placeholders = chunk_ids.map(() => '?').join(',');
-  const result = db.prepare(`DELETE FROM knowledge_chunks WHERE id IN (${placeholders})`).run(...chunk_ids);
-  // Atualiza chunk_count nos arquivos afetados
-  const fileIds = db.prepare(`SELECT DISTINCT file_id FROM knowledge_chunks WHERE file_id IN (SELECT DISTINCT file_id FROM knowledge_files)`).all().map(r => r.file_id);
-  res.json({ success: true, deleted: result.changes });
-});
 
 // ─── INGESTÃO DOS ARQUIVOS EXISTENTES ─────────────────────────
 // Endpoint especial para processar arquivos que já estão no servidor
@@ -3341,7 +3241,8 @@ async function extractPdfText(filePath) {
             { type: 'text', text: 'Transcreva integralmente todo o texto deste documento jurídico. Mantenha a estrutura original, incluindo cabeçalhos, parágrafos, numerações e dados. Não omita nenhuma parte.' },
             { type: 'image_url', image_url: { url: `data:image/png;base64,${imageBase64}` } }
           ]}],
-          max_tokens: 8000
+          max_tokens: 8000,
+          store: false
         })
       });
       const vd = await visionResp.json();
@@ -3388,7 +3289,8 @@ async function processUploadedFile(file) {
             { type: 'text', text: 'Transcreva INTEGRALMENTE todo o texto desta imagem, sem omitir nenhuma parte. Se for um documento jurídico (petição, sentença, contrato, decisão, despacho), transcreva PALAVRA POR PALAVRA mantendo a estrutura original, cabeçalhos, numerações, parágrafos e dados. NÃO resuma. NÃO omita seções. Transcreva TUDO.' },
             { type: 'image_url', image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' } }
           ]}],
-          max_tokens: 8000
+          max_tokens: 8000,
+          store: false
         })
       });
       const visionData = await visionResp.json();
@@ -3600,7 +3502,9 @@ Regras:
         model: 'gpt-4.1',
         messages: [{ role: 'system', content: gameSystemPrompt }, ...messages.slice(-20)],
         temperature: 0.8,
-        max_tokens: 600
+        max_tokens: 600,
+        store: false,
+        user: 'capi_user_' + req.user.id
       })
     });
     const data = await response.json();
@@ -4510,7 +4414,9 @@ IMPORTANTE: Escreva a peça COMPLETA usando os fatos acima. Não use placeholder
             ],
             max_tokens: 16000,
             temperature: 0.4,
-            response_format: { type: 'json_object' }
+            response_format: { type: 'json_object' },
+            store: false,
+            user: 'capi_user_' + req.user.id
           }),
           signal: ctrl2.signal
         });
@@ -4621,7 +4527,9 @@ app.post('/api/peca/regenerar-secao', authMiddleware, async (req, res) => {
           body: JSON.stringify({
             model: 'gpt-4.1',
             messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }],
-            max_tokens: 8000, temperature: 0.4
+            max_tokens: 8000, temperature: 0.4,
+            store: false,
+            user: 'capi_user_' + req.user.id
           }),
           signal: ctrl2.signal
         });
@@ -5956,7 +5864,9 @@ async function callAudienciaAI(systemPrompt, conversationHistory, userId, featur
           model: 'gpt-4.1',
           messages: oaiMessages,
           temperature: 0.85,
-          max_tokens: 1500
+          max_tokens: 1500,
+          store: false,
+          user: 'capi_user_' + userId
         }),
         signal: ctrl2.signal
       });
@@ -6481,7 +6391,9 @@ Gere a peça jurídica COMPLETA agora.`;
               { role: 'user', content: userMessage }
             ],
             max_tokens: 32000,
-            temperature: 0.4
+            temperature: 0.4,
+            store: false,
+            user: 'capi_user_' + req.user.id
           }),
           signal: oaiCtrl.signal
         });
@@ -6544,8 +6456,6 @@ Gere a peça jurídica COMPLETA agora.`;
     return res.status(500).json({ error: 'Erro interno ao gerar peça. Tente novamente.' });
   }
 });
-
-// (endpoint search-chunks movido para antes do catch-all)
 
 // ─── GLOBAL ERROR HANDLER ────────────────────────────────────────
 app.use((err, req, res, next) => {
