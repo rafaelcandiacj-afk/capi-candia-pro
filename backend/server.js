@@ -643,7 +643,123 @@ db.exec(`
     desbloqueado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, badge_id)
   );
+
+  CREATE TABLE IF NOT EXISTS security_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    ip TEXT,
+    email TEXT,
+    details TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
 `);
+
+// ─── SECURITY: RATE LIMITING & BRUTE FORCE PROTECTION ───────────
+
+// In-memory store for login attempts
+const loginAttempts = new Map();
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_BLOCK_DURATION_MS = 15 * 60 * 1000;
+
+function loginRateLimiter(req, res, next) {
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (record && record.blockedUntil && now < record.blockedUntil) {
+    const remainingSec = Math.ceil((record.blockedUntil - now) / 1000);
+    console.log(`🚫 Login blocked for IP ${ip} — ${remainingSec}s remaining`);
+    try { db.prepare("INSERT INTO security_logs (event_type, ip, details) VALUES (?, ?, ?)").run('blocked_ip', ip, `Blocked login attempt, ${remainingSec}s remaining`); } catch(e) {}
+    return res.status(429).json({
+      error: `Muitas tentativas. Tente novamente em ${Math.ceil(remainingSec / 60)} minutos.`
+    });
+  }
+
+  if (record && (now - record.firstAttempt > LOGIN_WINDOW_MS)) {
+    loginAttempts.delete(ip);
+  }
+
+  next();
+}
+
+function recordFailedLogin(ip, email) {
+  const now = Date.now();
+  const record = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
+  record.count++;
+
+  if (record.count >= LOGIN_MAX_ATTEMPTS) {
+    record.blockedUntil = now + LOGIN_BLOCK_DURATION_MS;
+    console.log(`🔒 IP ${ip} blocked after ${record.count} failed attempts`);
+    try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('blocked_ip', ip, email || '', `Blocked after ${record.count} failed attempts`); } catch(e) {}
+  }
+
+  loginAttempts.set(ip, record);
+  try { db.prepare("INSERT INTO security_logs (event_type, ip, email, details) VALUES (?, ?, ?, ?)").run('failed_login', ip, email || '', `Attempt ${record.count}/${LOGIN_MAX_ATTEMPTS}`); } catch(e) {}
+}
+
+function clearLoginAttempts(ip) {
+  loginAttempts.delete(ip);
+}
+
+// Cleanup login attempts every 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of loginAttempts) {
+    if (now - record.firstAttempt > LOGIN_WINDOW_MS * 2) {
+      loginAttempts.delete(ip);
+    }
+  }
+}, 30 * 60 * 1000);
+
+// General API rate limiter
+const apiRateLimit = new Map();
+const API_MAX_REQUESTS = 200;
+const API_WINDOW_MS = 60 * 1000;
+
+function apiRateLimiter(req, res, next) {
+  const key = req.user?.id ? `user:${req.user.id}` : `ip:${req.ip}`;
+  const now = Date.now();
+  const record = apiRateLimit.get(key);
+
+  if (record && (now - record.windowStart < API_WINDOW_MS)) {
+    record.count++;
+    if (record.count > API_MAX_REQUESTS) {
+      try { db.prepare("INSERT INTO security_logs (event_type, ip, details) VALUES (?, ?, ?)").run('rate_limited', req.ip, `Key: ${key}, count: ${record.count}`); } catch(e) {}
+      return res.status(429).json({ error: 'Muitas requisições. Aguarde um momento.' });
+    }
+  } else {
+    apiRateLimit.set(key, { count: 1, windowStart: now });
+  }
+
+  next();
+}
+
+// Cleanup API rate limit every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of apiRateLimit) {
+    if (now - record.windowStart > API_WINDOW_MS * 2) {
+      apiRateLimit.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
+// Cleanup old security logs (keep 7 days)
+setInterval(() => {
+  try { db.prepare("DELETE FROM security_logs WHERE created_at < datetime('now', '-7 days')").run(); } catch(e) {}
+}, 24 * 60 * 1000);
+
+// Input sanitization (XSS prevention for user-generated content)
+function sanitizeInput(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .trim();
+}
 
 // ─── CAPITREINO: CONSTANTES ─────────────────────────────────────
 const CT_NIVEIS = [
@@ -1070,7 +1186,22 @@ Seu lema: "Capivara que anda em bando não vira comida de onça."`;
   }
 })();
 
-app.use(cors());
+// ─── CORS (hardened) ────────────────────────────────────────────
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowed = ['https://capicand-ia.com', 'https://www.capicand-ia.com'];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true);
+      console.log(`⚠️ CORS request from unexpected origin: ${origin}`);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // NOTA: express.static movido para após as rotas de API (ver final do arquivo)
@@ -1084,6 +1215,21 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+// ─── SECURITY HEADERS ───────────────────────────────────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com; media-src 'self' blob:;");
+  next();
+});
+
+// ─── API RATE LIMITER (200 req/min per user) ────────────────────
+app.use('/api', apiRateLimiter);
 
 // ─── MIDDLEWARE ───────────────────────────────────────────────
 function authMiddleware(req, res, next) {
@@ -1300,29 +1446,39 @@ app.get('/api/admin/online', adminMiddleware, (req, res) => {
 });
 
 // ─── AUTH ─────────────────────────────────────────────────────
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', loginRateLimiter, async (req, res) => {
   const { name, email, password, accepted_terms } = req.body;
   if (!name || !email || !password) return res.status(400).json({ error: 'Preencha todos os campos' });
   if (!accepted_terms) return res.status(400).json({ error: 'Você deve aceitar os Termos de Uso e a Política de Privacidade' });
+  if (password.length < 6) return res.status(400).json({ error: 'Senha deve ter no mínimo 6 caracteres' });
   try {
+    const safeName = sanitizeInput(name);
     const hash = await bcrypt.hash(password, 10);
-    const result = db.prepare('INSERT INTO users (name, email, password, accepted_terms_at) VALUES (?, ?, ?, datetime(\'now\'))').run(name, email.toLowerCase(), hash);
-    const token = jwt.sign({ id: result.lastInsertRowid, email, name }, JWT_SECRET, { expiresIn: '30d' });
-    res.json({ token, user: { id: result.lastInsertRowid, name, email } });
+    const result = db.prepare('INSERT INTO users (name, email, password, accepted_terms_at) VALUES (?, ?, ?, datetime(\'now\'))').run(safeName, email.toLowerCase(), hash);
+    const token = jwt.sign({ id: result.lastInsertRowid, email, name: safeName }, JWT_SECRET, { expiresIn: '30d' });
+    res.json({ token, user: { id: result.lastInsertRowid, name: safeName, email } });
   } catch (e) {
     if (e.message.includes('UNIQUE')) return res.status(400).json({ error: 'Email já cadastrado' });
     res.status(500).json({ error: 'Erro ao criar conta' });
   }
 });
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Preencha todos os campos' });
+  const ip = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
-  if (!user) return res.status(401).json({ error: 'Email ou senha incorretos' });
+  if (!user) {
+    recordFailedLogin(ip, email);
+    return res.status(401).json({ error: 'Email ou senha incorretos' });
+  }
   if (!user.active) return res.status(403).json({ error: 'Conta desativada. Entre em contato com o suporte.' });
   const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return res.status(401).json({ error: 'Email ou senha incorretos' });
+  if (!valid) {
+    recordFailedLogin(ip, email);
+    return res.status(401).json({ error: 'Email ou senha incorretos' });
+  }
+  clearLoginAttempts(ip);
   db.prepare("UPDATE users SET last_login = datetime('now') WHERE id = ?").run(user.id);
   const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
@@ -1570,7 +1726,7 @@ setTimeout(async () => {
   } catch(e) { console.error('⚠️ Erro job renovação inicial:', e.message); }
 }, 30000);
 
-app.post('/api/auth/forgot-password', async (req, res) => {
+app.post('/api/auth/forgot-password', loginRateLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email obrigatório' });
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
@@ -1629,8 +1785,9 @@ app.get('/api/conversations', authMiddleware, (req, res) => {
 
 app.post('/api/conversations', authMiddleware, (req, res) => {
   const { title } = req.body;
-  const result = db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(req.user.id, title || 'Nova conversa');
-  res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa' });
+  const safeTitle = title ? sanitizeInput(title) : 'Nova conversa';
+  const result = db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(req.user.id, safeTitle);
+  res.json({ id: result.lastInsertRowid, title: safeTitle });
 });
 
 app.get('/api/conversations/:id/messages', authMiddleware, (req, res) => {
@@ -1653,8 +1810,9 @@ app.patch('/api/conversations/:id/title', authMiddleware, (req, res) => {
   if (!title || !title.trim()) return res.status(400).json({ error: 'Título inválido' });
   const conv = db.prepare('SELECT * FROM conversations WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!conv) return res.status(404).json({ error: 'Conversa não encontrada' });
-  db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(title.trim().substring(0, 80), req.params.id);
-  res.json({ success: true, title: title.trim().substring(0, 80) });
+  const safeTitle = sanitizeInput(title).substring(0, 80);
+  db.prepare('UPDATE conversations SET title = ? WHERE id = ?').run(safeTitle, req.params.id);
+  res.json({ success: true, title: safeTitle });
 });
 
 // ─── PROJETOS ─────────────────────────────────────────────────
@@ -1672,20 +1830,23 @@ app.get('/api/projects', authMiddleware, (req, res) => {
 app.post('/api/projects', authMiddleware, (req, res) => {
   const { name, description, icon, context_note } = req.body;
   if (!name || !name.trim()) return res.status(400).json({ error: 'Nome do projeto é obrigatório' });
+  const safeName = sanitizeInput(name);
+  const safeDesc = description ? sanitizeInput(description) : '';
+  const safeNote = context_note ? sanitizeInput(context_note) : '';
   const result = db.prepare(
     'INSERT INTO projects (user_id, name, description, icon, context_note) VALUES (?, ?, ?, ?, ?)'
-  ).run(req.user.id, name.trim(), description || '', icon || '📁', context_note || '');
-  res.json({ id: result.lastInsertRowid, name: name.trim(), description: description || '', icon: icon || '📁', context_note: context_note || '' });
+  ).run(req.user.id, safeName, safeDesc, icon || '📁', safeNote);
+  res.json({ id: result.lastInsertRowid, name: safeName, description: safeDesc, icon: icon || '📁', context_note: safeNote });
 });
 
 app.patch('/api/projects/:id', authMiddleware, (req, res) => {
   const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
   const { name, description, icon, context_note } = req.body;
-  if (name !== undefined) db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(name.trim().substring(0, 80), req.params.id);
-  if (description !== undefined) db.prepare('UPDATE projects SET description = ? WHERE id = ?').run(description.substring(0, 500), req.params.id);
+  if (name !== undefined) db.prepare('UPDATE projects SET name = ? WHERE id = ?').run(sanitizeInput(name).substring(0, 80), req.params.id);
+  if (description !== undefined) db.prepare('UPDATE projects SET description = ? WHERE id = ?').run(sanitizeInput(description).substring(0, 500), req.params.id);
   if (icon !== undefined) db.prepare('UPDATE projects SET icon = ? WHERE id = ?').run(icon, req.params.id);
-  if (context_note !== undefined) db.prepare('UPDATE projects SET context_note = ? WHERE id = ?').run(context_note.substring(0, 2000), req.params.id);
+  if (context_note !== undefined) db.prepare('UPDATE projects SET context_note = ? WHERE id = ?').run(sanitizeInput(context_note).substring(0, 2000), req.params.id);
   db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE id = ?").run(req.params.id);
   res.json({ success: true });
 });
@@ -1720,9 +1881,10 @@ app.post('/api/projects/:id/conversations', authMiddleware, (req, res) => {
     const project = db.prepare('SELECT * FROM projects WHERE id = ? AND user_id = ?').get(pid, req.user.id);
     if (!project) return res.status(404).json({ error: 'Projeto não encontrado' });
     const { title } = req.body;
-    const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, title || 'Nova conversa', pid);
+    const safeTitle = title ? sanitizeInput(title) : 'Nova conversa';
+    const result = db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(req.user.id, safeTitle, pid);
     db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE id = ?").run(pid);
-    res.json({ id: result.lastInsertRowid, title: title || 'Nova conversa', project_id: pid });
+    res.json({ id: result.lastInsertRowid, title: safeTitle, project_id: pid });
   } catch(e) {
     console.error('Erro ao criar conversa no projeto:', e.message);
     res.status(500).json({ error: 'Erro ao criar conversa: ' + e.message });
@@ -2082,7 +2244,7 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
     let convId = conversation_id;
     if (!convId) {
       const firstUserMsg = messages.find(m => m.role === 'user');
-      const title = firstUserMsg ? firstUserMsg.content.substring(0, 60) : 'Nova conversa';
+      const title = sanitizeInput(firstUserMsg ? firstUserMsg.content.substring(0, 60) : 'Nova conversa');
       const conv = project_id
         ? db.prepare('INSERT INTO conversations (user_id, title, project_id) VALUES (?, ?, ?)').run(userId, title, project_id)
         : db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
@@ -2371,6 +2533,11 @@ Se não houver caso concreto: {"found": false}` },
 });
 
 // ─── ADMIN ────────────────────────────────────────────────────
+
+app.get('/api/admin/security-logs', adminMiddleware, (req, res) => {
+  const logs = db.prepare('SELECT * FROM security_logs ORDER BY created_at DESC LIMIT 100').all();
+  res.json({ logs });
+});
 
 app.get('/api/admin/stats', adminMiddleware, (req, res) => {
   const totalUsers = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
@@ -3050,8 +3217,10 @@ app.post('/api/transcribe', authMiddleware, uploadAudio.single('audio'), async (
 app.post('/api/favorites', authMiddleware, (req, res) => {
   const { title, content } = req.body;
   if (!title || !content) return res.status(400).json({ error: 'Título e conteúdo obrigatórios' });
-  const result = db.prepare('INSERT INTO favorites (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, title, content);
-  res.json({ id: result.lastInsertRowid, title, content });
+  const safeTitle = sanitizeInput(title);
+  const safeContent = sanitizeInput(content);
+  const result = db.prepare('INSERT INTO favorites (user_id, title, content) VALUES (?, ?, ?)').run(req.user.id, safeTitle, safeContent);
+  res.json({ id: result.lastInsertRowid, title: safeTitle, content: safeContent });
 });
 
 app.get('/api/favorites', authMiddleware, (req, res) => {
@@ -6048,6 +6217,12 @@ Gere a peça jurídica COMPLETA agora.`;
     console.error('❌ Wizard erro:', err.message);
     return res.status(500).json({ error: 'Erro interno ao gerar peça. Tente novamente.' });
   }
+});
+
+// ─── GLOBAL ERROR HANDLER ────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Erro interno do servidor' });
 });
 
 const server = app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando na porta ${PORT}`));
