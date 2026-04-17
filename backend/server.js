@@ -5429,19 +5429,34 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     },
   ];
 
+  // ── Subscription (do users table) ─────────────────────────────
+  const subUser = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, subscription_tier FROM users WHERE id = ?').get(userId);
+  const subscription = {
+    plan_type: subUser?.plan_type || 'free',
+    subscription_tier: subUser?.subscription_tier || 'standard',
+    plan_expires_at: subUser?.plan_expires_at || null,
+    plan_activated_at: subUser?.plan_activated_at || null,
+  };
+
   // ── Resposta final ──────────────────────────────────────────────
   res.json({
     profile,
     memories: grouped,
     cases,
     summaries,
+    subscription,
     stats: {
-      // Existentes
+      // Existentes (snake_case)
       total_conversas: totalConversas,
       total_mensagens: totalMensagens,
       mensagens_mes: mensagensMes,
       pecas_salvas: pecasSalvas,
       favoritos: favoritosSalvos,
+      // Aliases camelCase (usados pelo frontend meu-dashboard.html)
+      totalMensagens,
+      mensagensMes,
+      pecasSalvas,
+      favoritosSalvos,
       dias_ativos_mes: diasAtivos,
       streak,
       total_memorias: totalMemorias,

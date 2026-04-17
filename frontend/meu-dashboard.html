@@ -373,10 +373,21 @@ h1,h2,h3,h4{font-family:'Rajdhani',sans-serif;font-weight:700}
     // Subscription
     var subEl = document.getElementById('subSection');
     subEl.className = 'sub-section';
-    var plan = sub.plan_type || 'free';
+    var planRaw = sub.plan_type || 'free';
+    var tier = sub.subscription_tier || 'standard';
+    var planLabel = 'Free';
+    if (planRaw === 'paid' || planRaw === 'gift') {
+      var tierSuffix = tier === 'pro' ? ' PRO' : '';
+      if (sub.plan_activated_at && sub.plan_expires_at) {
+        var diffDays = Math.round((new Date(sub.plan_expires_at) - new Date(sub.plan_activated_at)) / (1000*60*60*24));
+        planLabel = (diffDays > 60 ? 'ANUAL' : 'PRO MENSAL') + tierSuffix;
+      } else {
+        planLabel = (planRaw === 'gift' ? 'PRESENTE' : 'PRO MENSAL') + tierSuffix;
+      }
+    }
     var expires = sub.plan_expires_at;
     subEl.innerHTML = '<h3>\uD83D\uDCB3 Minha Assinatura</h3>' +
-      '<div class="sub-plan">' + esc(plan) + '</div>' +
+      '<div class="sub-plan">' + esc(planLabel) + '</div>' +
       (expires ? '<div class="sub-expires">V\u00E1lida at\u00E9 ' + formatDate(expires) + '</div>' : '');
   }
 
