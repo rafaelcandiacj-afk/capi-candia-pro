@@ -382,6 +382,12 @@
     .upload-btn svg{width:16px;height:16px}
     .conv-rename{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px;font-size:.75rem;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1}
     .conv-item:hover .conv-rename{opacity:1}
+    .conv-move{background:none;border:none;color:var(--text-muted);cursor:pointer;padding:2px 4px;font-size:.75rem;opacity:0;transition:opacity .15s;flex-shrink:0;line-height:1}
+    .conv-item:hover .conv-move{opacity:1}
+    .conv-move-dropdown{position:absolute;right:0;top:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);z-index:999;min-width:160px;max-width:220px;padding:4px 0;font-size:.78rem}
+    .conv-move-dropdown .cmd-item{display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;color:var(--text2);transition:var(--trans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .conv-move-dropdown .cmd-item:hover{background:var(--bg3);color:var(--text)}
+    .conv-move-dropdown .cmd-sep{height:1px;background:var(--border);margin:3px 0}
     .mic-btn{width:38px;height:38px;border-radius:var(--radius-sm);background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--trans);flex-shrink:0}
     .mic-btn:hover{border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,.1)}
     .mic-btn.recording{background:rgba(231,76,60,.15);border-color:#e74c3c;color:#e74c3c;animation:micPulse 1s infinite}
@@ -576,8 +582,12 @@
     .project-conv-item .pci-dot{width:4px;height:4px;border-radius:50%;background:var(--border2);flex-shrink:0}
     .project-conv-item.active .pci-dot{background:var(--gold)}
     .project-conv-item .pci-title{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .project-conv-item .pci-rename{display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.7rem;padding:0 2px}
+    .project-conv-item:hover .pci-rename{display:inline-block}
+    .project-conv-item .pci-remove{display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.7rem;padding:0 2px}
+    .project-conv-item:hover .pci-remove{display:inline-block}
     .project-conv-item .pci-del{display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:.7rem;padding:0 2px}
-    .project-conv-item:hover .pci-del{display:block}
+    .project-conv-item:hover .pci-del{display:inline-block}
     .project-back-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:.78rem;color:var(--gold);cursor:pointer;border:none;background:none;font-weight:600;transition:var(--trans);width:100%}
     .project-back-btn:hover{background:rgba(184,134,11,.08);border-radius:6px}
     body.dark-mode .project-item:hover{background:#1a1a1a}
@@ -2015,6 +2025,7 @@ function buildConvItem(c,pinned){
         <div class="conv-item-date">${formatDate(c.updated_at)}</div>
       </div>
       <button class="conv-pin ${isPinned?'pinned':''}" onclick="togglePinConv(event,${c.id})" title="${isPinned?'Desafixar':'Fixar no topo'}">📌</button>
+      <button class="conv-move" onclick="showMoveToProject(event,${c.id})" title="Mover para projeto">📁</button>
       <button class="conv-rename" onclick="renameConversation(event,${c.id})" title="Renomear">✏️</button>
       <button class="conv-delete" onclick="deleteConversation(event,${c.id})" title="Apagar">✕</button>
     </div>
@@ -2062,6 +2073,107 @@ async function renameConversation(e, id){
     if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); }
     if (ev.key === 'Escape') { saved=true; inp.value=currentTitle; const r=document.createElement('div'); r.className='conv-item-title'; r.id='conv-title-'+id; r.textContent=currentTitle; inp.replaceWith(r); }
   });
+}
+
+// Renomear conversa dentro de projeto (FIX 1)
+async function renameProjectConversation(e, convId, projectId){
+  e.stopPropagation();
+  const titleEl = document.getElementById('pconv-title-'+convId);
+  if (!titleEl) return;
+  const currentTitle = titleEl.textContent.trim();
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.value = currentTitle;
+  inp.maxLength = 80;
+  inp.style.cssText = 'width:100%;font-size:.78rem;background:var(--bg3);border:1px solid var(--green);border-radius:4px;padding:2px 6px;color:var(--text);outline:none;';
+  titleEl.replaceWith(inp);
+  inp.focus();
+  inp.select();
+  let saved = false;
+  const save = async () => {
+    if (saved) return;
+    saved = true;
+    const newTitle = inp.value.trim() || currentTitle;
+    const token = localStorage.getItem('capi_token');
+    try {
+      await fetch('/api/conversations/'+convId+'/title', {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+      });
+    } catch(err) { console.error(err); }
+    const newEl = document.createElement('span');
+    newEl.className = 'pci-title';
+    newEl.id = 'pconv-title-'+convId;
+    newEl.textContent = newTitle;
+    inp.replaceWith(newEl);
+  };
+  inp.addEventListener('blur', save);
+  inp.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); }
+    if (ev.key === 'Escape') { saved=true; const r=document.createElement('span'); r.className='pci-title'; r.id='pconv-title-'+convId; r.textContent=currentTitle; inp.replaceWith(r); }
+  });
+}
+
+// Mover conversa para projeto (FIX 2)
+function showMoveToProject(e, convId){
+  e.stopPropagation();
+  // Remove dropdown existente
+  const old = document.querySelector('.conv-move-dropdown');
+  if (old) { old.remove(); return; }
+  const btn = e.currentTarget;
+  const convItem = btn.closest('.conv-item');
+  convItem.style.position = 'relative';
+  const dd = document.createElement('div');
+  dd.className = 'conv-move-dropdown';
+  if (_projects.length) {
+    _projects.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'cmd-item';
+      item.textContent = (p.icon||'📁') + ' ' + p.name;
+      item.onclick = (ev) => { ev.stopPropagation(); dd.remove(); moveConvToProject(convId, p.id); };
+      dd.appendChild(item);
+    });
+  } else {
+    const empty = document.createElement('div');
+    empty.className = 'cmd-item';
+    empty.style.color = 'var(--text-muted)';
+    empty.textContent = 'Nenhum projeto';
+    dd.appendChild(empty);
+  }
+  convItem.appendChild(dd);
+  setTimeout(() => {
+    const close = (ev) => { if (!dd.contains(ev.target)) { dd.remove(); document.removeEventListener('click', close); } };
+    document.addEventListener('click', close);
+  }, 10);
+}
+
+async function moveConvToProject(convId, projectId){
+  const token = localStorage.getItem('capi_token');
+  try {
+    await fetch('/api/conversations/'+convId+'/project', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId })
+    });
+    loadConversations();
+    loadProjects();
+  } catch(err) { console.error(err); }
+}
+
+// Remover conversa de projeto (FIX 2)
+async function removeFromProject(e, convId, projectId){
+  e.stopPropagation();
+  const token = localStorage.getItem('capi_token');
+  try {
+    await fetch('/api/conversations/'+convId+'/project', {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer '+token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: null })
+    });
+    loadConversations();
+    loadProjects();
+  } catch(err) { console.error(err); }
 }
 
 async function loadConversation(id){
@@ -2586,9 +2698,11 @@ async function loadProjectConvs(projectId){
       <span style="font-size:.8rem">+</span> <span class="pci-title">Nova conversa</span>
     </button>`;
     html += convs.map(c => `
-      <div class="project-conv-item ${c.id===currentConvId?'active':''}" onclick="event.stopPropagation();loadConversation(${c.id})">
+      <div class="project-conv-item ${c.id===currentConvId?'active':''}" onclick="event.stopPropagation();loadConversation(${c.id})" id="pconv-${c.id}">
         <span class="pci-dot"></span>
-        <span class="pci-title">${escapeHtml(c.title)}</span>
+        <span class="pci-title" id="pconv-title-${c.id}">${escapeHtml(c.title)}</span>
+        <button class="pci-rename" onclick="event.stopPropagation();renameProjectConversation(event,${c.id},${projectId})" title="Renomear">✏️</button>
+        <button class="pci-remove" onclick="event.stopPropagation();removeFromProject(event,${c.id},${projectId})" title="Remover do projeto">📤</button>
         <button class="pci-del" onclick="event.stopPropagation();deleteConversation(event,${c.id})" title="Apagar">✕</button>
       </div>
     `).join('');

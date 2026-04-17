@@ -1376,11 +1376,12 @@ async function extractText(filePath, originalName) {
   
   if (ext === '.pdf') {
     try {
-      const pdfMod = require('pdf-parse');
-      const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+      const { PDFParse } = require('pdf-parse');
       const buffer = fs.readFileSync(filePath);
-      const data = await pdfParse(buffer);
-      if (data.text && data.text.trim().length > 50) return data.text;
+      const parser = new PDFParse(new Uint8Array(buffer));
+      const data = await parser.getText();
+      const text = (data.text || '').trim();
+      if (text.length > 50) return text;
       throw new Error('Texto vazio');
     } catch (e) {
       console.error('Erro ao parsear PDF:', e.message);
@@ -3322,10 +3323,10 @@ const uploadConv = multer({
 async function extractPdfText(filePath) {
   // Tenta extração de texto nativo primeiro
   try {
-    const pdfMod = require('pdf-parse');
-    const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+    const { PDFParse } = require('pdf-parse');
     const buf = fs.readFileSync(filePath);
-    const data = await pdfParse(buf);
+    const parser = new PDFParse(new Uint8Array(buf));
+    const data = await parser.getText();
     const text = (data.text || '').trim();
     // Se extraiu texto suficiente, retorna
     if (text.length > 100) return { text, method: 'native' };
@@ -3435,11 +3436,11 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
       let pageCount = null;
       if (ext === '.pdf') {
         try {
-          const pdfMod = require('pdf-parse');
-          const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+          const { PDFParse } = require('pdf-parse');
           const buf = fs.readFileSync(file.path);
-          const info = await pdfParse(buf);
-          pageCount = info.numpages || null;
+          const parser = new PDFParse(new Uint8Array(buf));
+          const info = await parser.getText();
+          pageCount = info.total || null;
         } catch(e) {}
       }
       const result = db.prepare(
@@ -3478,11 +3479,11 @@ app.post('/api/upload-document', authMiddleware, uploadConv.single('file'), asyn
     let pageCount = null;
     if (ext === '.pdf') {
       try {
-        const pdfMod = require('pdf-parse');
-        const pdfParse = typeof pdfMod === 'function' ? pdfMod : (pdfMod.default || pdfMod.PDFParse || Object.values(pdfMod).find(v => typeof v === 'function'));
+        const { PDFParse } = require('pdf-parse');
         const buf = fs.readFileSync(file.path);
-        const info = await pdfParse(buf);
-        pageCount = info.numpages || null;
+        const parser = new PDFParse(new Uint8Array(buf));
+        const info = await parser.getText();
+        pageCount = info.total || null;
       } catch(e) {}
     }
     const result = db.prepare(
