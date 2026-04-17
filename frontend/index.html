@@ -263,8 +263,8 @@
     .sidebar-backdrop.visible{display:block;opacity:1}
     @media(max-width:768px){
       /* ── SIDEBAR OVERLAY ── */
-      .sidebar{position:fixed;top:0;left:0;bottom:0;width:85vw;max-width:320px;z-index:9999;transform:translateX(-100%);transition:transform .3s ease;will-change:transform}
-      .sidebar.open{transform:translateX(0)}
+      .sidebar{position:fixed!important;top:0!important;left:0!important;bottom:0!important;width:85vw!important;max-width:320px!important;z-index:9999!important;transform:translateX(-100%)!important;transition:transform .3s cubic-bezier(.4,0,.2,1)!important;will-change:transform;overflow-y:auto!important;-webkit-overflow-scrolling:touch;background:var(--bg2)!important;border-right:1px solid #e8e4de!important}
+      .sidebar.open{transform:translateX(0)!important}
       .sidebar-toggle{display:flex}
       /* Body scroll lock when sidebar open */
       body.sidebar-open{overflow:hidden!important}
@@ -317,6 +317,11 @@
       /* ── WELCOME SCREEN MOBILE ── */
       .chat-welcome{padding:24px 16px}
       .suggestion-chips{gap:6px}
+      /* ── PWA INSTALL BANNER MOBILE ── */
+      #pwaInstallBanner{max-height:120px;overflow:hidden;font-size:.75rem;padding:10px 12px!important}
+      #pwaInstallBanner button{min-width:44px;min-height:44px}
+      /* ── SIDEBAR TOGGLE ABOVE MODALS ── */
+      .sidebar-toggle{z-index:10001!important;position:relative}
     }
 
     /* ── TOOLBAR ── */
@@ -1862,18 +1867,19 @@ function logout(){
   convHistory=[];currentConvId=null;showAuth();
 }
 function openSidebar(){
-  var sb=$('sidebar'),bd=$('sidebarBackdrop');
-  if(sb){sb.classList.add('open');document.body.classList.add('sidebar-open');}
-  if(bd)bd.classList.add('visible');
+  var sb=document.getElementById('sidebar'),bd=document.getElementById('sidebarBackdrop');
+  if(sb){sb.classList.add('open');sb.style.transform='translateX(0)';document.body.classList.add('sidebar-open');}
+  if(bd){bd.style.display='block';requestAnimationFrame(function(){bd.classList.add('visible');});}
 }
 function closeSidebar(){
-  var sb=$('sidebar'),bd=$('sidebarBackdrop');
-  if(sb){sb.classList.remove('open');document.body.classList.remove('sidebar-open');}
-  if(bd)bd.classList.remove('visible');
+  var sb=document.getElementById('sidebar'),bd=document.getElementById('sidebarBackdrop');
+  if(sb){sb.classList.remove('open');sb.style.transform='';document.body.classList.remove('sidebar-open');}
+  if(bd){bd.classList.remove('visible');setTimeout(function(){if(!bd.classList.contains('visible'))bd.style.display='none';},350);}
 }
 function toggleSidebar(){
-  var sb=$('sidebar');
-  if(sb&&sb.classList.contains('open'))closeSidebar();else openSidebar();
+  var sb=document.getElementById('sidebar');
+  if(!sb)return;
+  if(sb.classList.contains('open'))closeSidebar();else openSidebar();
 }
 /* ── SWIPE GESTURES FOR SIDEBAR ── */
 (function(){
@@ -4231,6 +4237,10 @@ function showOnboarding(user) {
     return;
   }
   onboardingUser = user;
+  // Hide distracting banners during onboarding
+  var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='none';
+  var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='none';
+  var pwab = document.getElementById('pwaInstallBanner'); if(pwab) pwab.style.display='none';
   $('authScreen').classList.add('hidden');
   $('chatScreen').classList.add('hidden');
   $('onboardingScreen').classList.remove('hidden');
@@ -4314,6 +4324,9 @@ async function finishOnboarding() {
   // Marca localmente independente (servidor é a fonte de verdade)
   localStorage.setItem('capi_onboarded', '1');
   $('onboardingScreen').classList.add('hidden');
+  // Restore banners after onboarding (PWA banner stays hidden)
+  var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='';
+  var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='';
   showChat(onboardingUser);
   loadConversations();
   // Auto welcome message
