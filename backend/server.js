@@ -1430,13 +1430,13 @@ function cosineSimilarity(a, b) {
 }
 
 // Busca os chunks mais relevantes para uma query
-async function searchKnowledge(query, topK = 8) {
+async function searchKnowledge(query, topK = 8, userId = null) {
   const chunks = db.prepare('SELECT kc.id, kc.content, kc.embedding, kf.original_name FROM knowledge_chunks kc JOIN knowledge_files kf ON kf.id = kc.file_id WHERE kf.status = ? AND kc.embedding IS NOT NULL').all('ready');
   
   if (chunks.length === 0) return [];
   
   try {
-    const queryEmbedding = await getEmbedding(query, null, 'embedding_search');
+    const queryEmbedding = await getEmbedding(query, userId, 'embedding_search');
     
     const scored = chunks.map(chunk => {
       const emb = JSON.parse(chunk.embedding);
@@ -1481,7 +1481,7 @@ async function processFile(fileId) {
       const batch = allChunks.slice(i, i + 5);
       await Promise.all(batch.map(async (chunk) => {
         try {
-          const emb = await getEmbedding(chunk.content, null, 'embedding_ingest');
+          const emb = await getEmbedding(chunk.content, 0, 'embedding_ingest');
           db.prepare('UPDATE knowledge_chunks SET embedding = ? WHERE id = ?').run(JSON.stringify(emb), chunk.id);
           processed++;
         } catch (e) {
@@ -2161,7 +2161,7 @@ REGRA ABSOLUTA: NUNCA pergunte o nome ou área do usuário. Você JÁ SABE quem 
       // Constrói query enriquecida: última msg + contexto das 3 msgs anteriores
       const recentMsgs = messages.slice(-6);
       const contextQuery = recentMsgs.map(m => m.content).join(' ') + ' ' + lastUserMsg.content;
-      const relevantChunks = await searchKnowledge(contextQuery, 10);
+      const relevantChunks = await searchKnowledge(contextQuery, 10, req.user.id);
       if (relevantChunks.length > 0) {
         ragContext = '\n\n━━━ BASE DE CONHECIMENTO DO RAFAEL CÂNDIA (PRIORIDADE MÁXIMA) ━━━\n';
         ragContext += 'REGRA: Estes trechos são da base real do Rafael Cândia. PRIORIZE este conteúdo acima de qualquer conhecimento genérico. Cite explicitamente: "Na base do Rafael...", "Como o Rafael ensina...", "A base mostra que...". Use as palavras e conceitos DELE, não parafraseie com linguagem genérica.\n';
