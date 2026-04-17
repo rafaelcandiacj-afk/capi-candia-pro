@@ -1396,7 +1396,7 @@ async function extractText(filePath, originalName) {
 }
 
 // Gera embedding via OpenAI
-async function getEmbedding(text) {
+async function getEmbedding(text, userId = null, feature = 'embedding') {
   const response = await fetch('https://api.openai.com/v1/embeddings', {
     method: 'POST',
     headers: {
@@ -1410,6 +1410,11 @@ async function getEmbedding(text) {
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error?.message || 'Erro ao gerar embedding');
+  try {
+    const embInTok = data.usage?.prompt_tokens || data.usage?.total_tokens || 0;
+    const embCost = (embInTok / 1e6) * 0.02;
+    if (typeof logAiUsage === 'function') logAiUsage(userId, feature, 'text-embedding-3-small', embInTok, 0, 0, embCost);
+  } catch(e) {}
   return data.data[0].embedding;
 }
 
@@ -1431,7 +1436,7 @@ async function searchKnowledge(query, topK = 8) {
   if (chunks.length === 0) return [];
   
   try {
-    const queryEmbedding = await getEmbedding(query);
+    const queryEmbedding = await getEmbedding(query, null, 'embedding_search');
     
     const scored = chunks.map(chunk => {
       const emb = JSON.parse(chunk.embedding);
@@ -1476,7 +1481,7 @@ async function processFile(fileId) {
       const batch = allChunks.slice(i, i + 5);
       await Promise.all(batch.map(async (chunk) => {
         try {
-          const emb = await getEmbedding(chunk.content);
+          const emb = await getEmbedding(chunk.content, null, 'embedding_ingest');
           db.prepare('UPDATE knowledge_chunks SET embedding = ? WHERE id = ?').run(JSON.stringify(emb), chunk.id);
           processed++;
         } catch (e) {
@@ -2473,6 +2478,12 @@ Retorne APENAS um JSON array de 4 strings.` },
         const sugText = sugData.choices[0]?.message?.content || '[]';
         const parsed = JSON.parse(sugText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
         if (Array.isArray(parsed)) suggestions = parsed.slice(0, 4);
+        try {
+          const sugInTok = sugData.usage?.prompt_tokens || 0;
+          const sugOutTok = sugData.usage?.completion_tokens || 0;
+          const sugCost = (sugInTok/1e6)*0.15 + (sugOutTok/1e6)*0.60;
+          logAiUsage(userId, 'suggestions', 'gpt-4o-mini', sugInTok, sugOutTok, 0, sugCost);
+        } catch(e) {}
       }
     } catch (e) {
       console.error('Erro ao gerar sugestões:', e.message);
@@ -2594,6 +2605,12 @@ Se não houver caso concreto: {"found": false}` },
             const caseData = await caseResponse.json();
             const caseText = caseData.choices[0]?.message?.content || '{}';
             try {
+              const caseInTok = caseData.usage?.prompt_tokens || 0;
+              const caseOutTok = caseData.usage?.completion_tokens || 0;
+              const caseCost = (caseInTok/1e6)*0.10 + (caseOutTok/1e6)*0.40;
+              logAiUsage(memUserId, 'case_detection', 'gpt-4.1-nano', caseInTok, caseOutTok, 0, caseCost);
+            } catch(e) {}
+            try {
               const caseInfo = JSON.parse(caseText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
               if (caseInfo.found && caseInfo.titulo) {
                 // Verifica se caso similar já existe
@@ -2642,6 +2659,12 @@ Se não houver caso concreto: {"found": false}` },
               const sumData = await sumResponse.json();
               const sumText = sumData.choices[0]?.message?.content || '{}';
               try {
+                const sumInTok = sumData.usage?.prompt_tokens || 0;
+                const sumOutTok = sumData.usage?.completion_tokens || 0;
+                const sumCost = (sumInTok/1e6)*0.10 + (sumOutTok/1e6)*0.40;
+                logAiUsage(memUserId, 'conversation_summary', 'gpt-4.1-nano', sumInTok, sumOutTok, 0, sumCost);
+              } catch(e) {}
+              try {
                 const sumInfo = JSON.parse(sumText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
                 if (sumInfo.summary) {
                   db.prepare('INSERT INTO conversation_summaries (user_id, conversation_id, summary, key_topics, action_items, emotional_tone) VALUES (?, ?, ?, ?, ?, ?)').run(
@@ -2674,6 +2697,12 @@ Se não houver caso concreto: {"found": false}` },
             if (sumResponse.ok) {
               const sumData = await sumResponse.json();
               const sumText = sumData.choices[0]?.message?.content || '{}';
+              try {
+                const sumInTok = sumData.usage?.prompt_tokens || 0;
+                const sumOutTok = sumData.usage?.completion_tokens || 0;
+                const sumCost = (sumInTok/1e6)*0.10 + (sumOutTok/1e6)*0.40;
+                logAiUsage(memUserId, 'conversation_summary', 'gpt-4.1-nano', sumInTok, sumOutTok, 0, sumCost);
+              } catch(e) {}
               try {
                 const sumInfo = JSON.parse(sumText.replace(/```json?\n?/g, '').replace(/```/g, '').trim());
                 if (sumInfo.summary) {
@@ -3415,6 +3444,7 @@ app.post('/api/transcribe', authMiddleware, uploadAudio.single('audio'), async (
     form.append('language', 'pt');
     form.append('response_format', 'json');
     const axios = require('axios');
+    const fileSizeBytes = req.file.size || 0;
     const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', form, {
       headers: { ...form.getHeaders(), 'Authorization': 'Bearer ' + OPENAI_API_KEY },
       maxBodyLength: Infinity,
@@ -3422,6 +3452,15 @@ app.post('/api/transcribe', authMiddleware, uploadAudio.single('audio'), async (
     });
     // Limpar arquivo temporário
     fs.unlink(req.file.path, () => {});
+    // Log uso Whisper — estimativa de duração a partir do tamanho do arquivo (~16KB/s para webm/opus)
+    try {
+      const estSeconds = Math.max(1, Math.round(fileSizeBytes / 16000));
+      const estMinutes = estSeconds / 60;
+      const whisperCost = estMinutes * 0.006;
+      const transcribedText = response.data.text || '';
+      const outTokens = Math.round(transcribedText.length / 3.5);
+      logAiUsage(req.user.id, 'whisper_transcription', 'whisper-1', estSeconds, outTokens, 0, whisperCost);
+    } catch(e) {}
     res.json({ text: response.data.text || '' });
   } catch (e) {
     console.error('Erro Whisper:', e.response?.data || e.message);
@@ -6503,6 +6542,12 @@ app.post('/api/tts', authMiddleware, async (req, res) => {
     }
 
     const audioBuffer = await response.arrayBuffer();
+    // Log uso TTS — custo estimado por caractere (ElevenLabs ~$0.30/1k chars no plano padrão)
+    try {
+      const charCount = cleanText.length;
+      const ttsCost = (charCount / 1000) * 0.30;
+      logAiUsage(req.user.id, 'tts', 'elevenlabs-multilingual-v2', charCount, 0, 0, ttsCost);
+    } catch(e) {}
     res.set('Content-Type', 'audio/mpeg');
     res.set('Content-Length', audioBuffer.byteLength);
     res.send(Buffer.from(audioBuffer));
