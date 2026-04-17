@@ -4222,6 +4222,17 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
     }
 
     if (CANCEL_STATUSES.includes(status)) {
+      // Guard: don't downgrade a user who just upgraded to annual PRO.
+      // When we cancel the old monthly via Guru API, Guru sends a cancel webhook
+      // back for that monthly. Without this guard, it would reset the user to free.
+      const cancelTarget = db.prepare('SELECT plan_type, subscription_tier, plan_expires_at FROM users WHERE email = ?').get(email);
+      if (cancelTarget && cancelTarget.subscription_tier === 'pro' && cancelTarget.plan_expires_at) {
+        const expiresDate = new Date(cancelTarget.plan_expires_at);
+        if (expiresDate > new Date()) {
+          console.log(`⚠️ Guru cancel webhook for ${email} IGNORED — user is PRO with valid annual plan (expires ${cancelTarget.plan_expires_at}). This cancel is likely from the old monthly being cancelled during upgrade.`);
+          return res.status(200).json({ ok: true, skipped_cancel: true });
+        }
+      }
       db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE email = ?`).run(email);
       console.log(`❌ Guru: plano cancelado para ${email}`);
     }
@@ -4278,6 +4289,20 @@ app.post('/api/subscription/upgrade-to-annual', authMiddleware, (req, res) => {
   } catch (e) {
     console.error('[upgrade-to-annual] Error:', e.message);
     res.status(500).json({ error: 'Erro interno' });
+  }
+});
+
+// ─── ADMIN: Backfill subscription_tier + fix Anderson ────────
+app.post('/api/admin/backfill-tier', adminMiddleware, async (req, res) => {
+  try {
+    console.log('[backfill-tier] Starting backfill via admin endpoint');
+    const { run } = require('./scripts/backfill_subscription_tier');
+    const results = await run(db);
+    console.log('[backfill-tier] Results:', JSON.stringify(results));
+    res.json({ ok: true, results });
+  } catch (e) {
+    console.error('[backfill-tier] Error:', e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 
