@@ -3080,7 +3080,7 @@ app.get('/api/user/relatorio-mensal', authMiddleware, (req, res) => {
   `).all(userId, mesAtual);
   const diasAtivos = diasAtivosRows.length;
 
-  // Streak: dias consecutivos até hoje
+  // Streak (mesma lógica do CapiTreino: conta hoje OU ontem como início)
   const todosDias = db.prepare(`
     SELECT DISTINCT date(m.created_at) as dia FROM messages m
     JOIN conversations c ON c.id = m.conversation_id
@@ -3089,12 +3089,22 @@ app.get('/api/user/relatorio-mensal', authMiddleware, (req, res) => {
   `).all(userId).map(r => r.dia);
   let streak = 0;
   const hoje = new Date();
-  for (let i = 0; i < todosDias.length; i++) {
-    const esperado = new Date(hoje);
-    esperado.setDate(hoje.getDate() - i);
-    const esperadoStr = esperado.toISOString().substring(0,10);
-    if (todosDias[i] === esperadoStr) streak++;
-    else break;
+  const hojeStr = hoje.toISOString().substring(0,10);
+  if (todosDias.length > 0) {
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const ontemStr = ontem.toISOString().substring(0,10);
+    const inicio = (todosDias[0] === hojeStr || todosDias[0] === ontemStr)
+      ? new Date(todosDias[0]) : null;
+    if (inicio) {
+      for (let i = 0; i < todosDias.length; i++) {
+        const esperado = new Date(inicio);
+        esperado.setDate(inicio.getDate() - i);
+        const esperadoStr = esperado.toISOString().substring(0,10);
+        if (todosDias[i] === esperadoStr) streak++;
+        else break;
+      }
+    }
   }
 
   // Áreas mais usadas: analisa títulos das conversas do mês
@@ -5066,7 +5076,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     AND strftime('%Y-%m', m.created_at) = ?
   `).get(userId, mesAtual)?.c || 0;
 
-  // Streak
+  // Streak (mesma lógica do CapiTreino: conta hoje OU ontem como início)
   const todosDias = db.prepare(`
     SELECT DISTINCT date(m.created_at) as dia FROM messages m
     JOIN conversations c ON c.id = m.conversation_id
@@ -5075,12 +5085,24 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
   `).all(userId).map(r => r.dia);
   let streak = 0;
   const hoje = new Date();
-  for (let i = 0; i < todosDias.length; i++) {
-    const esperado = new Date(hoje);
-    esperado.setDate(hoje.getDate() - i);
-    const esperadoStr = esperado.toISOString().substring(0,10);
-    if (todosDias[i] === esperadoStr) streak++;
-    else break;
+  const hojeStr = hoje.toISOString().substring(0,10);
+  // Se o dia mais recente é hoje, conta a partir de hoje;
+  // se é ontem, conta a partir de ontem (streak ainda ativo).
+  if (todosDias.length > 0) {
+    const ontem = new Date(hoje);
+    ontem.setDate(hoje.getDate() - 1);
+    const ontemStr = ontem.toISOString().substring(0,10);
+    const inicio = (todosDias[0] === hojeStr || todosDias[0] === ontemStr)
+      ? new Date(todosDias[0]) : null;
+    if (inicio) {
+      for (let i = 0; i < todosDias.length; i++) {
+        const esperado = new Date(inicio);
+        esperado.setDate(inicio.getDate() - i);
+        const esperadoStr = esperado.toISOString().substring(0,10);
+        if (todosDias[i] === esperadoStr) streak++;
+        else break;
+      }
+    }
   }
 
   // ── Dias como membro / primeiro uso ────────────────────────────
@@ -5429,6 +5451,9 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     },
   ];
 
+  // ── Streak do CapiTreino (fonte canônica) ────────────────────
+  const ctProg = db.prepare('SELECT streak_atual, streak_max, xp_total, nivel FROM ct_user_progress WHERE user_id = ?').get(userId);
+
   // ── Subscription (do users table) ─────────────────────────────
   const subUser = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, subscription_tier FROM users WHERE id = ?').get(userId);
   const subscription = {
@@ -5459,6 +5484,10 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
       favoritosSalvos,
       dias_ativos_mes: diasAtivos,
       streak,
+      streak_atual: ctProg?.streak_atual || 0,
+      streak_max: ctProg?.streak_max || 0,
+      xp_total: ctProg?.xp_total || 0,
+      nivel: ctProg?.nivel || 1,
       total_memorias: totalMemorias,
       total_casos_ativos: totalCasosAtivos,
       // Tempo economizado
