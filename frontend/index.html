@@ -259,7 +259,7 @@
     /* Mobile */
     .sidebar-toggle{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:8px;font-size:1.4rem;min-width:44px;min-height:44px;align-items:center;justify-content:center;touch-action:manipulation}
     /* Sidebar backdrop overlay */
-    .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;opacity:0;transition:opacity .3s ease;-webkit-tap-highlight-color:transparent}
+    .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9998;opacity:0;transition:opacity .3s ease;-webkit-tap-highlight-color:transparent}
     .sidebar-backdrop.visible{display:block;opacity:1}
     @media(max-width:768px){
       /* ── SIDEBAR OVERLAY ── */
@@ -318,8 +318,14 @@
       .chat-welcome{padding:24px 16px}
       .suggestion-chips{gap:6px}
       /* ── PWA INSTALL BANNER MOBILE ── */
-      #pwaInstallBanner{max-height:120px;overflow:hidden;font-size:.75rem;padding:10px 12px!important}
+      #pwaInstallBanner{max-height:100px;overflow:hidden;font-size:.75rem;padding:8px 12px!important;z-index:5000!important}
       #pwaInstallBanner button{min-width:44px;min-height:44px}
+      /* Banners mais compactos no mobile */
+      #bannerFundadores{padding:6px 12px!important;font-size:.75rem!important}
+      #bannerFundadores span{font-size:.72rem!important}
+      #bannerFundadores a{padding:4px 12px!important;font-size:.7rem!important}
+      #bannerCapiTreino{padding:6px 12px!important;font-size:.72rem!important}
+      #bannerCapiTreino a,#bannerCapiTreino button{padding:4px 10px!important;font-size:.7rem!important}
       /* ── SIDEBAR TOGGLE ABOVE MODALS ── */
       .sidebar-toggle{z-index:10001!important;position:relative}
     }
@@ -4241,6 +4247,7 @@ function showOnboarding(user) {
   var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='none';
   var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='none';
   var pwab = document.getElementById('pwaInstallBanner'); if(pwab) pwab.style.display='none';
+  var nb = document.getElementById('notifBanner'); if(nb) nb.style.display='none';
   $('authScreen').classList.add('hidden');
   $('chatScreen').classList.add('hidden');
   $('onboardingScreen').classList.remove('hidden');
@@ -4327,6 +4334,7 @@ async function finishOnboarding() {
   // Restore banners after onboarding (PWA banner stays hidden)
   var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='';
   var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='';
+  var nb = document.getElementById('notifBanner'); if(nb) nb.style.display='';
   showChat(onboardingUser);
   loadConversations();
   // Auto welcome message
@@ -5923,7 +5931,7 @@ init();
 </div>
 
 <!-- Banner PWA -->
-<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;padding:14px 16px;background:#fff;border-top:2px solid #d4a017;box-shadow:0 -4px 20px rgba(0,0,0,.12);animation:fadeUp .3s ease">
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:5000;padding:14px 16px;background:#fff;border-top:2px solid #d4a017;box-shadow:0 -4px 20px rgba(0,0,0,.12);animation:fadeUp .3s ease">
   <div style="position:relative">
     <button onclick="document.getElementById('pwaInstallBanner').style.display='none';localStorage.setItem('pwa_banner_dismissed','1')" style="position:absolute;top:-6px;right:-4px;background:none;border:none;font-size:1.3rem;color:#999;cursor:pointer;padding:4px 8px;line-height:1" aria-label="Fechar">&times;</button>
     <div id="pwaBannerContent"></div>
