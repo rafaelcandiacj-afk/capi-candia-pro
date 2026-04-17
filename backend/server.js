@@ -11,11 +11,11 @@ const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Borde
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const JWT_SECRET = process.env.JWT_SECRET || 'capi-candia-secret-2026';
+const JWT_SECRET = process.env.JWT_SECRET || (() => { console.error('⚠️ SEGURANÇA: JWT_SECRET não configurado, usando fallback temporário — CONFIGURAR EM PRODUÇÃO'); return 'capi-candia-secret-2026'; })();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'capiAdmin2026';
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || 'sk_ef7c32daa249f0825ec017f69aa8721b2ca641739c552e8d';
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyB0dw7uiZYobpmH4euewn4M4u0Nfp5EQk0';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || (() => { console.error('⚠️ SEGURANÇA: ADMIN_PASSWORD não configurado, usando fallback temporário — CONFIGURAR EM PRODUÇÃO'); return 'capiAdmin2026'; })();
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || (() => { console.error('⚠️ SEGURANÇA: ELEVENLABS_API_KEY não configurado, usando fallback temporário'); return 'sk_ef7c32daa249f0825ec017f69aa8721b2ca641739c552e8d'; })();
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || (() => { console.error('⚠️ SEGURANÇA: GEMINI_API_KEY não configurado, usando fallback temporário'); return 'AIzaSyB0dw7uiZYobpmH4euewn4M4u0Nfp5EQk0'; })();
 const CAPI_FINETUNED_MODEL = process.env.CAPI_FINETUNED_MODEL || 'ft:gpt-4.1-mini-2025-04-14:personal:capi-juridico:DTj8Jwm2';
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '60fiathVaK4HCn08Syd6';
 
@@ -1258,8 +1258,8 @@ app.use(cors({
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, true);
       console.log(`⚠️ CORS request from unexpected origin: ${origin}`);
+      callback(new Error('Origin not allowed by CORS'), false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
@@ -1267,8 +1267,8 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 // NOTA: express.static movido para após as rotas de API (ver final do arquivo)
 
 // ─── FORÇA HTTPS ─────────────────────────────────────────────
@@ -1299,16 +1299,14 @@ app.use('/api', apiRateLimiter);
 // ─── HEALTH CHECK (public, no auth) ────────────────────────────
 app.get('/api/health', (req, res) => {
   try {
-    const dbCheck = db.prepare('SELECT COUNT(*) as c FROM users').get();
+    db.prepare('SELECT 1').get();
     res.json({
       status: 'ok',
-      uptime: process.uptime(),
-      users: dbCheck.c,
-      memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-      timestamp: new Date().toISOString()
+      uptime: process.uptime()
     });
   } catch(e) {
-    res.status(503).json({ status: 'error', error: e.message });
+    console.error('Health check error:', e);
+    res.status(503).json({ status: 'error' });
   }
 });
 
@@ -1324,9 +1322,24 @@ function authMiddleware(req, res, next) {
   }
 }
 
+const adminAttempts = new Map();
 function adminMiddleware(req, res, next) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const record = adminAttempts.get(ip);
+  if (record && record.blockedUntil && now < record.blockedUntil) {
+    return res.status(429).json({ error: 'Muitas tentativas. Tente novamente mais tarde.' });
+  }
   const adminPass = req.headers['x-admin-password'];
-  if (adminPass !== ADMIN_PASSWORD) return res.status(403).json({ error: 'Acesso negado' });
+  if (!adminPass || !require('crypto').timingSafeEqual(Buffer.from(adminPass), Buffer.from(ADMIN_PASSWORD))) {
+    const rec = adminAttempts.get(ip) || { count: 0, firstAttempt: now };
+    if (now - rec.firstAttempt > 15 * 60 * 1000) { rec.count = 0; rec.firstAttempt = now; }
+    rec.count++;
+    if (rec.count >= 5) { rec.blockedUntil = now + 15 * 60 * 1000; }
+    adminAttempts.set(ip, rec);
+    return res.status(403).json({ error: 'Acesso negado' });
+  }
+  adminAttempts.delete(ip);
   next();
 }
 
@@ -1902,9 +1915,10 @@ app.post('/api/auth/forgot-password', loginRateLimiter, async (req, res) => {
   });
 });
 
-app.post('/api/auth/reset-password', async (req, res) => {
+app.post('/api/auth/reset-password', loginRateLimiter, async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) return res.status(400).json({ error: 'Dados inválidos' });
+  if (password.length < 6) return res.status(400).json({ error: 'Senha deve ter no mínimo 6 caracteres' });
   // Busca token no banco (não na RAM)
   const data = db.prepare('SELECT * FROM reset_tokens WHERE token = ?').get(token);
   if (!data || data.expires_at < Date.now()) return res.status(400).json({ error: 'Link expirado ou inválido. Solicite um novo.' });
@@ -2035,8 +2049,8 @@ app.post('/api/projects/:id/conversations', authMiddleware, (req, res) => {
     db.prepare("UPDATE projects SET updated_at = datetime('now') WHERE id = ?").run(pid);
     res.json({ id: result.lastInsertRowid, title: safeTitle, project_id: pid });
   } catch(e) {
-    console.error('Erro ao criar conversa no projeto:', e.message);
-    res.status(500).json({ error: 'Erro ao criar conversa: ' + e.message });
+    console.error('Erro ao criar conversa no projeto:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -2411,6 +2425,11 @@ INDEPENDENTE do tom configurado, teses jurídicas SEMPRE usam linguagem técnica
         : db.prepare('INSERT INTO conversations (user_id, title) VALUES (?, ?)').run(userId, title);
       convId = conv.lastInsertRowid;
     } else {
+      // Verificar ownership da conversa (proteção IDOR)
+      const convOwner = db.prepare('SELECT id FROM conversations WHERE id = ? AND user_id = ?').get(convId, userId);
+      if (!convOwner) {
+        return res.status(403).json({ error: 'Acesso negado a esta conversa' });
+      }
       db.prepare("UPDATE conversations SET updated_at = datetime('now') WHERE id = ?").run(convId);
     }
 
@@ -2723,7 +2742,7 @@ Se não houver caso concreto: {"found": false}` },
 
   } catch (e) {
     console.error('Erro chat endpoint:', e.message, e.stack?.split('\n')[1]);
-    res.status(500).json({ error: 'Erro interno: ' + (e.message || 'desconhecido') });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -2771,7 +2790,8 @@ app.get('/api/admin/backups', adminMiddleware, (req, res) => {
       }));
     res.json({ backups: files, backup_dir: BACKUP_DIR });
   } catch(e) {
-    res.json({ backups: [], error: e.message });
+    console.error('Erro ao listar backups:', e);
+    res.json({ backups: [], error: 'Erro interno do servidor' });
   }
 });
 
@@ -2780,7 +2800,8 @@ app.post('/api/admin/backup-now', adminMiddleware, async (req, res) => {
     await performBackup();
     res.json({ ok: true, message: 'Backup realizado com sucesso!' });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    console.error('Erro ao realizar backup:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -3389,7 +3410,8 @@ app.post('/api/conversation/upload', authMiddleware, uploadConv.array('file', 5)
     // Retorna array de resultados (ou objeto único se foi 1 arquivo — compatibilidade)
     res.json(results.length === 1 ? results[0] : results);
   } catch (e) {
-    res.status(500).json({ error: 'Erro ao processar arquivo: ' + e.message });
+    console.error('Erro ao processar arquivo:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -3420,7 +3442,8 @@ app.post('/api/upload-document', authMiddleware, uploadConv.single('file'), asyn
       text_preview: extractedText.substring(0, 500)
     });
   } catch (e) {
-    res.status(500).json({ error: 'Erro ao processar documento: ' + e.message });
+    console.error('Erro ao processar documento:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -3476,7 +3499,7 @@ app.post('/api/transcribe', authMiddleware, uploadAudio.single('audio'), async (
     console.error('Erro Whisper:', e.response?.data || e.message);
     // Tentar limpar arquivo mesmo em erro
     if (req.file) require('fs').unlink(req.file.path, () => {});
-    res.status(500).json({ error: 'Erro ao transcrever áudio: ' + (e.response?.data?.error?.message || e.message) });
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -3685,7 +3708,7 @@ function planMiddleware(req, res, next) {
 }
 
 // ─── EMAIL BOAS-VINDAS ───────────────────────────────────────
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_6piw17L9_MAqNLdJkgAYKaXK5BzGn1QmG';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || (() => { console.error('⚠️ SEGURANÇA: RESEND_API_KEY não configurado, usando fallback temporário'); return 're_6piw17L9_MAqNLdJkgAYKaXK5BzGn1QmG'; })();
 
 async function sendEmail(to, subject, html) {
   const { Resend } = require('resend');
@@ -3750,12 +3773,23 @@ async function sendWelcomeEmail(toEmail, toName) {
 }
 
 // ─── WEBHOOK PAGARME ─────────────────────────────────────────
-const PAGARME_WEBHOOK_SECRET = process.env.PAGARME_WEBHOOK_SECRET || 'capi-pagarme-webhook-secret-2026';
+const PAGARME_WEBHOOK_SECRET = process.env.PAGARME_WEBHOOK_SECRET || (() => { console.error('⚠️ SEGURANÇA: PAGARME_WEBHOOK_SECRET não configurado, usando fallback temporário'); return 'capi-pagarme-webhook-secret-2026'; })();
 
 app.post('/api/webhook/pagarme', express.raw({ type: 'application/json' }), (req, res) => {
   try {
-    // Verificar assinatura (se configurada)
+    // Verificar assinatura HMAC (se secret configurado)
     const sig = req.headers['x-hub-signature'] || req.headers['x-pagarme-signature'];
+    if (PAGARME_WEBHOOK_SECRET && PAGARME_WEBHOOK_SECRET !== 'capi-pagarme-webhook-secret-2026') {
+      const crypto = require('crypto');
+      const rawBody = typeof req.body === 'string' ? req.body : (Buffer.isBuffer(req.body) ? req.body : JSON.stringify(req.body));
+      const expectedSig = 'sha256=' + crypto.createHmac('sha256', PAGARME_WEBHOOK_SECRET).update(rawBody).digest('hex');
+      if (!sig || !crypto.timingSafeEqual(Buffer.from(expectedSig), Buffer.from(sig))) {
+        console.log('⚠️ Webhook PagarMe: assinatura inválida');
+        return res.status(401).json({ error: 'Assinatura inválida' });
+      }
+    } else {
+      console.warn('⚠️ PAGARME_WEBHOOK_SECRET não configurado — webhook NÃO verificado (CONFIGURAR EM PRODUÇÃO)');
+    }
     let body;
     try { body = JSON.parse(req.body); } catch { body = req.body; }
 
@@ -3983,8 +4017,20 @@ const GURU_PRO_ANNUAL_CODE = process.env.GURU_PRODUCT_ID_ANNUAL_97 || '';
 const GURU_PRO_PRODUCT_CODES = [GURU_PRO_MONTHLY_CODE, GURU_PRO_ANNUAL_CODE].filter(Boolean);
 const ALL_GURU_IA_PRODUCT_CODES = [...GURU_IA_PRODUCT_CODES, ...GURU_PRO_PRODUCT_CODES].filter(Boolean);
 
+const GURU_WEBHOOK_TOKEN = process.env.GURU_WEBHOOK_TOKEN;
+
 app.post('/api/webhook/guru', express.json(), async (req, res) => {
   try {
+    // Verificar token de autenticação (se configurado)
+    if (GURU_WEBHOOK_TOKEN) {
+      const token = req.headers['x-guru-token'] || req.query.token;
+      if (token !== GURU_WEBHOOK_TOKEN) {
+        console.log('⚠️ Webhook Guru: token inválido');
+        return res.status(401).json({ error: 'Token inválido' });
+      }
+    } else {
+      console.warn('⚠️ GURU_WEBHOOK_TOKEN não configurado — webhook NÃO verificado (CONFIGURAR EM PRODUÇÃO)');
+    }
     const body = req.body;
     console.log('📨 Webhook Guru:', body?.last_status, body?.subscriber?.email, '| produto:', body?.product?.code);
 
@@ -4263,15 +4309,6 @@ app.post('/api/admin/grant-access', adminMiddleware, (req, res) => {
   res.json({ ok: true, user });
 });
 
-// Debug: pegar token de reset de um usuário (apenas para testes internos)
-app.get('/api/admin/user-reset-token', adminMiddleware, (req, res) => {
-  const { email } = req.query;
-  if (!email) return res.status(400).json({ error: 'Email obrigatório' });
-  const row = db.prepare('SELECT token, expires_at FROM reset_tokens WHERE email = ? ORDER BY rowid DESC LIMIT 1').get(email.toLowerCase());
-  if (!row) return res.status(404).json({ error: 'Nenhum token encontrado' });
-  res.json({ token: row.token, expires_at: row.expires_at, link: `https://capicand-ia.com/app?reset=${row.token}` });
-});
-
 // Reenviar email de boas-vindas
 // Envia email customizado para um destinatário específico
 app.post('/api/admin/send-email', adminMiddleware, async (req, res) => {
@@ -4281,7 +4318,8 @@ app.post('/api/admin/send-email', adminMiddleware, async (req, res) => {
     await sendEmail(email, subject, html);
     res.json({ ok: true, email });
   } catch(e) {
-    res.status(500).json({ error: e.message });
+    console.error('Erro ao enviar email:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -4975,12 +5013,8 @@ app.post('/api/peca/exportar', authMiddleware, async (req, res) => {
 
 // ─── ADMIN: AI USAGE ─────────────────────────────────────────
 // GET /api/admin/ai-usage
-app.get('/api/admin/ai-usage', (req, res) => {
+app.get('/api/admin/ai-usage', adminMiddleware, (req, res) => {
   try {
-    const adminPass = req.headers['x-admin-password'];
-    if (!adminPass || adminPass !== ADMIN_PASSWORD) {
-      return res.status(403).json({ error: 'Acesso negado' });
-    }
     const days = parseInt(req.query.days) || 30;
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
@@ -5521,7 +5555,7 @@ app.get('/api/dashboard', authMiddleware, (req, res) => {
     tarefas_breakdown: tarefasConcluidas.breakdown,
     calendario,
   });
-  } catch(e) { console.error('Dashboard error:', e.message); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('Dashboard error:', e); res.status(500).json({ error: 'Erro interno do servidor' }); }
 });
 
 // Gerenciar memórias do usuário
@@ -5542,7 +5576,7 @@ app.get('/api/cases', authMiddleware, (req, res) => {
   try {
     const cases = db.prepare('SELECT * FROM user_cases WHERE user_id = ? ORDER BY CASE WHEN status = ? THEN 0 ELSE 1 END, updated_at DESC').all(req.user.id, 'ativo');
     res.json(cases);
-  } catch(e) { console.error('Cases error:', e.message); res.status(500).json({ error: e.message }); }
+  } catch(e) { console.error('Cases error:', e); res.status(500).json({ error: 'Erro interno do servidor' }); }
 });
 
 app.post('/api/cases', authMiddleware, (req, res) => {
@@ -6289,8 +6323,8 @@ app.post('/api/audiencia/iniciar', authMiddleware, async (req, res) => {
       fases: AUDIENCIA_FASES
     });
   } catch (e) {
-    console.error('Audiência iniciar erro:', e.message);
-    res.status(500).json({ error: e.message });
+    console.error('Audiência iniciar erro:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -6388,8 +6422,8 @@ app.post('/api/audiencia/responder', authMiddleware, async (req, res) => {
       ...(dica_rapida ? { dica_rapida } : {})
     });
   } catch (e) {
-    console.error('Audiência responder erro:', e.message);
-    res.status(500).json({ error: e.message });
+    console.error('Audiência responder erro:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -6482,8 +6516,8 @@ Avalie em JSON EXATO neste formato (sem markdown, apenas JSON puro):
 
     res.json({ feedback, nota_geral: notaGeral });
   } catch (e) {
-    console.error('Audiência encerrar erro:', e.message);
-    res.status(500).json({ error: e.message });
+    console.error('Audiência encerrar erro:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -6510,8 +6544,8 @@ app.get('/api/audiencia/historico', authMiddleware, (req, res) => {
       }))
     });
   } catch (e) {
-    console.error('Audiência histórico erro:', e.message);
-    res.status(500).json({ error: e.message });
+    console.error('Audiência histórico erro:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
@@ -6548,8 +6582,8 @@ app.get('/api/audiencia/sessao/:id', authMiddleware, (req, res) => {
       updated_at: session.updated_at
     });
   } catch (e) {
-    console.error('Audiência sessão erro:', e.message);
-    res.status(500).json({ error: e.message });
+    console.error('Audiência sessão erro:', e);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 

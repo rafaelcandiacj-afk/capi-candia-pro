@@ -1783,10 +1783,10 @@ async function openMinhasPecas(){
       const preview = f.content.replace(/[#*`]/g,'').substring(0,200);
       card.innerHTML = `
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px">
-          <div style="font-weight:700;font-size:.9rem;color:var(--text);flex:1">${f.title||'Sem título'}</div>
+          <div style="font-weight:700;font-size:.9rem;color:var(--text);flex:1">${escapeHtml(f.title||'Sem título')}</div>
           <div style="font-size:.72rem;color:var(--text2);white-space:nowrap">${date}</div>
         </div>
-        <div style="font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px">${preview}${f.content.length>200?'...':''}</div>
+        <div style="font-size:.8rem;color:var(--text2);line-height:1.6;margin-bottom:12px">${escapeHtml(preview)}${f.content.length>200?'...':''}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button onclick="copyFav(${f.id},'${btoa(encodeURIComponent(f.content))}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">Copiar</button>
           <button onclick="expandFav(this,'${btoa(encodeURIComponent(f.content))}')" style="padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:.78rem;cursor:pointer;font-weight:600">👁 Ver completo</button>
@@ -2717,7 +2717,7 @@ async function loadNotifications(){
       if(seen.includes(n.id)) return;
       const card=document.createElement('div');
       card.className='notif-card';
-      card.innerHTML=`<div class="notif-card-title">🔔 ${n.title}</div><div class="notif-card-body">${n.body}</div><button class="notif-dismiss" onclick="dismissNotif(${n.id},this)">✕</button>`;
+      card.innerHTML=`<div class="notif-card-title">🔔 ${escapeHtml(n.title)}</div><div class="notif-card-body">${escapeHtml(n.body)}</div><button class="notif-dismiss" onclick="dismissNotif(${n.id},this)">✕</button>`;
       banner.appendChild(card);
       // Auto-dismiss após 12s
       setTimeout(()=>{if(card.parentNode)card.remove();},12000);
@@ -3201,7 +3201,16 @@ async function confirmSaveTemplate(){
 function showToast(msg,duration){
   const t=document.createElement('div');
   t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--green);border-radius:20px;padding:10px 20px;color:var(--green);font-size:.83rem;z-index:400;animation:fadeUp .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.3);max-width:90vw;text-align:center';
-  if(msg.includes('<a ')) t.innerHTML=msg; else t.textContent=msg;
+  const linkMatch=msg.match(/<a\s+href="([^"]+)"[^>]*>([^<]+)<\/a>/);
+  if(linkMatch){
+    const textBefore=msg.substring(0,msg.indexOf('<a '));
+    t.textContent=textBefore;
+    const a=document.createElement('a');
+    a.href=linkMatch[1];
+    a.textContent=linkMatch[2];
+    a.style.cssText='color:inherit;text-decoration:underline;';
+    t.appendChild(a);
+  } else { t.textContent=msg; }
   document.body.appendChild(t);
   const ms=duration||( msg.includes('pronto') ? 5000 : 3000);
   setTimeout(()=>t.remove(),ms);
@@ -3885,7 +3894,7 @@ async function loadFavorites(){
     section.style.display='block';
     list.innerHTML=favs.map(f=>`
       <div class="fav-item" style="display:flex;justify-content:space-between;align-items:center">
-        <span onclick="showFavDetail(${f.id})" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">⭐ ${f.title}</span>
+        <span onclick="showFavDetail(${f.id})" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer">⭐ ${escapeHtml(f.title)}</span>
         <button class="fav-delete" onclick="deleteFavorite(event,${f.id})" title="Remover">✕</button>
       </div>
     `).join('');

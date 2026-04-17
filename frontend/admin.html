@@ -466,7 +466,7 @@ async function loadAnalytics() {
   if (d.topChips.length === 0) chipsEl.innerHTML = '<span style="color:var(--text-muted)">Nenhum dado ainda</span>';
   else chipsEl.innerHTML = d.topChips.map((c,i) => 
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span>${i+1}. ${c.chip_used.substring(0,50)}</span>
+      <span>${i+1}. ${esc(c.chip_used.substring(0,50))}</span>
       <span style="color:var(--green);font-weight:700">${c.count}x</span>
     </div>`
   ).join('');
@@ -476,7 +476,7 @@ async function loadAnalytics() {
   if (d.topAreas.length === 0) areasEl.innerHTML = '<span style="color:var(--text-muted)">Nenhum dado ainda</span>';
   else areasEl.innerHTML = d.topAreas.map((a,i) =>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
-      <span>${i+1}. ${a.area}</span>
+      <span>${i+1}. ${esc(a.area)}</span>
       <span style="color:var(--green);font-weight:700">${a.count}</span>
     </div>`
   ).join('');
@@ -487,7 +487,7 @@ async function loadAnalytics() {
   if (multiQ.length === 0) qEl.innerHTML = '<span style="color:var(--text-muted)">Nenhuma pergunta repetida ainda</span>';
   else qEl.innerHTML = multiQ.map((q,i) =>
     `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
-      <span style="color:var(--green);font-weight:700;margin-right:8px">${q.count}x</span>${q.content}
+      <span style="color:var(--green);font-weight:700;margin-right:8px">${q.count}x</span>${esc(q.content)}
     </div>`
   ).join('');
 
@@ -519,8 +519,8 @@ async function loadNotifications() {
     <div style="background:var(--bg2);border:1px solid var(--border${n.active?'2':''});border-radius:12px;padding:16px;margin-bottom:12px;opacity:${n.active?'1':'0.5'}">
       <div style="display:flex;justify-content:space-between;align-items:start">
         <div>
-          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:${n.active?'var(--green)':'var(--text-muted)'};margin-bottom:4px">${n.active?'🟢':'🔴'} ${n.title}</div>
-          <div style="font-size:.83rem;color:var(--text2)">${n.body}</div>
+          <div style="font-family:'Rajdhani',sans-serif;font-weight:700;color:${n.active?'var(--green)':'var(--text-muted)'};margin-bottom:4px">${n.active?'🟢':'🔴'} ${esc(n.title)}</div>
+          <div style="font-size:.83rem;color:var(--text2)">${esc(n.body)}</div>
           <div style="font-size:.7rem;color:var(--text-muted);margin-top:6px">${n.created_at}</div>
         </div>
         ${n.active ? `<button onclick="deleteNotif(${n.id})" style="background:rgba(244,67,54,.1);border:1px solid rgba(244,67,54,.3);border-radius:6px;color:#ef9a9a;padding:6px 12px;cursor:pointer;font-size:.75rem;white-space:nowrap;margin-left:12px">Desativar</button>` : ''}
