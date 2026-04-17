@@ -1707,14 +1707,19 @@ try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_3d TEXT').run();
 try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_0d TEXT').run(); } catch(e) {}
 try { db.prepare('ALTER TABLE users ADD COLUMN renewal_reminder_expired TEXT').run(); } catch(e) {}
 
-const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
-const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
+// Fundador mantém R$47 enquanto pagar no prazo
+const CHECKOUT_MONTHLY_FUNDADOR = 'https://clkdmg.site/subscribe/mensal-capi-candia-pro'; // R$47
+// Cliente novo paga R$97
+const CHECKOUT_MONTHLY_NOVO = 'https://clkdmg.site/subscribe/mensal-capi-candia-pro-97';
+// Anual: SEMPRE o novo R$804 (R$397 antigo foi descontinuado)
+const CHECKOUT_ANNUAL_NOVO = 'https://clkdmg.site/subscribe/anual-capi-candia-pro-804';
 
-function renewalEmailTemplate(nome, diasRestantes, tipo) {
+function renewalEmailTemplate(nome, diasRestantes, tipo, isFundador) {
   const firstName = nome ? nome.split(' ')[0] : 'Advogado';
-  
+  const checkoutMonthly = isFundador ? CHECKOUT_MONTHLY_FUNDADOR : CHECKOUT_MONTHLY_NOVO;
+
   let titulo, subtitulo, corpo, ctaText, urgencyColor, urgencyBg;
-  
+
   if (tipo === '7dias') {
     titulo = `${firstName}, sua assinatura vence em 7 dias`;
     subtitulo = 'Renove agora e continue com acesso completo';
@@ -1758,6 +1763,16 @@ function renewalEmailTemplate(nome, diasRestantes, tipo) {
     urgencyBg = '#fdf8ee';
   }
 
+  const founderAlert = isFundador ? `
+      <div style="background:#fff8e1;border:1px solid #ffd54f;border-radius:8px;padding:14px;margin:16px 0">
+        <strong style="color:#8B6914">⚠️ Atenção, fundador:</strong>
+        <p style="color:#555;font-size:14px;margin:6px 0 0;line-height:1.6">
+          Se sua assinatura expirar e você precisar voltar, <strong>o valor de fundador (R$47) não estará mais disponível</strong> —
+          você terá que pagar o preço atual (R$97/mês) e sua memória das conversas será perdida.
+          Renove a tempo pra manter seu desconto e histórico completo.
+        </p>
+      </div>` : '';
+
   return `
   <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#faf9f7;padding:0;border-radius:12px;overflow:hidden">
     <div style="background:linear-gradient(135deg,#8B6914,#d4a017);padding:30px;text-align:center">
@@ -1769,11 +1784,11 @@ function renewalEmailTemplate(nome, diasRestantes, tipo) {
         <h2 style="color:${urgencyColor};font-size:18px;margin:0 0 4px">${titulo}</h2>
         <p style="color:#666;font-size:14px;margin:0">${subtitulo}</p>
       </div>
-      ${corpo}
+      ${corpo}${founderAlert}
       <div style="text-align:center;margin:32px 0">
-        <a href="${CHECKOUT_MONTHLY}" style="background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;box-shadow:0 4px 14px rgba(184,134,11,0.3)">${ctaText}</a>
+        <a href="${checkoutMonthly}" style="background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;padding:16px 40px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;box-shadow:0 4px 14px rgba(184,134,11,0.3)">${ctaText}</a>
       </div>
-      <p style="text-align:center;color:#888;font-size:13px">Ou assine o <a href="${CHECKOUT_ANNUAL}" style="color:#8B6914;font-weight:600">plano anual com desconto</a></p>
+      <p style="text-align:center;color:#888;font-size:13px">Ou assine o <a href="${CHECKOUT_ANNUAL_NOVO}" style="color:#8B6914;font-weight:600">plano anual com desconto</a></p>
     </div>
     <div style="background:#f3f1ee;padding:20px;text-align:center;border-top:1px solid #e8e4de">
       <p style="color:#999;font-size:12px;margin:0">Comunidade Capi Candia — A maior IA jurídica para o advogado brasileiro</p>
@@ -1790,10 +1805,10 @@ setInterval(async () => {
     
     // Buscar todos os usuários pagos com data de expiração
     const usuarios = db.prepare(`
-      SELECT id, name, email, plan_type, plan_expires_at, 
+      SELECT id, name, email, plan_type, plan_expires_at, is_founder,
              renewal_reminder_7d, renewal_reminder_3d, renewal_reminder_0d, renewal_reminder_expired
-      FROM users 
-      WHERE plan_type IN ('paid', 'gift') 
+      FROM users
+      WHERE plan_type IN ('paid', 'gift')
         AND plan_expires_at IS NOT NULL
         AND email != 'rafaelcandia.cj@gmail.com'
         AND email NOT LIKE '%teste%'
@@ -1804,34 +1819,35 @@ setInterval(async () => {
       const expDate = new Date(user.plan_expires_at);
       const diffMs = expDate.getTime() - agora.getTime();
       const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const isFundador = !!user.is_founder;
 
       try {
         // 7 dias antes
         if (diffDias === 7 && user.renewal_reminder_7d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_7d = ? WHERE id = ?').run(hoje, user.id);
-          console.log(`📧 Aviso 7 dias enviado para: ${user.email}`);
+          console.log(`📧 Aviso 7 dias enviado para: ${user.email} (fundador: ${isFundador})`);
         }
         // 3 dias antes
         else if (diffDias === 3 && user.renewal_reminder_3d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_3d = ? WHERE id = ?').run(hoje, user.id);
-          console.log(`📧 Aviso 3 dias enviado para: ${user.email}`);
+          console.log(`📧 Aviso 3 dias enviado para: ${user.email} (fundador: ${isFundador})`);
         }
         // No dia do vencimento
         else if (diffDias === 0 && user.renewal_reminder_0d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_0d = ? WHERE id = ?').run(hoje, user.id);
-          console.log(`📧 Aviso dia do vencimento enviado para: ${user.email}`);
+          console.log(`📧 Aviso dia do vencimento enviado para: ${user.email} (fundador: ${isFundador})`);
         }
         // 1 dia após expiração
         else if (diffDias === -1 && user.renewal_reminder_expired !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_expired = ? WHERE id = ?').run(hoje, user.id);
-          console.log(`📧 Aviso expiração enviado para: ${user.email}`);
+          console.log(`📧 Aviso expiração enviado para: ${user.email} (fundador: ${isFundador})`);
           // Notificar o Rafael também
-          await sendEmail('rafaelcandia.cj@gmail.com', `⚠️ Assinatura expirada: ${nome} (${user.email})`, 
-            `<div style="font-family:Arial;padding:20px"><h3 style="color:#d32f2f">Assinatura expirada</h3><p><strong>${nome}</strong> (${user.email}) teve a assinatura expirada hoje.</p><p>Tipo: ${user.plan_type} | Expirava em: ${user.plan_expires_at}</p></div>`);
+          await sendEmail('rafaelcandia.cj@gmail.com', `⚠️ Assinatura expirada: ${nome} (${user.email})`,
+            `<div style="font-family:Arial;padding:20px"><h3 style="color:#d32f2f">Assinatura expirada</h3><p><strong>${nome}</strong> (${user.email}) teve a assinatura expirada hoje.</p><p>Tipo: ${user.plan_type} | Expirava em: ${user.plan_expires_at} | Fundador: ${isFundador ? 'Sim' : 'Não'}</p></div>`);
         }
       } catch(emailErr) {
         console.error(`⚠️ Erro ao enviar aviso renovação para ${user.email}:`, emailErr.message);
@@ -1850,10 +1866,10 @@ setTimeout(async () => {
     const agora = new Date();
     const hoje = agora.toISOString().split('T')[0];
     const usuarios = db.prepare(`
-      SELECT id, name, email, plan_type, plan_expires_at,
+      SELECT id, name, email, plan_type, plan_expires_at, is_founder,
              renewal_reminder_7d, renewal_reminder_3d, renewal_reminder_0d, renewal_reminder_expired
-      FROM users 
-      WHERE plan_type IN ('paid', 'gift') 
+      FROM users
+      WHERE plan_type IN ('paid', 'gift')
         AND plan_expires_at IS NOT NULL
         AND email != 'rafaelcandia.cj@gmail.com'
         AND email NOT LIKE '%teste%'
@@ -1864,21 +1880,22 @@ setTimeout(async () => {
       const expDate = new Date(user.plan_expires_at);
       const diffMs = expDate.getTime() - agora.getTime();
       const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const isFundador = !!user.is_founder;
       try {
         if (diffDias === 7 && user.renewal_reminder_7d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence em 7 dias`, renewalEmailTemplate(nome, 7, '7dias', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_7d = ? WHERE id = ?').run(hoje, user.id);
           enviados++;
         } else if (diffDias === 3 && user.renewal_reminder_3d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, faltam 3 dias para sua assinatura expirar!`, renewalEmailTemplate(nome, 3, '3dias', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_3d = ? WHERE id = ?').run(hoje, user.id);
           enviados++;
         } else if (diffDias === 0 && user.renewal_reminder_0d !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura vence HOJE!`, renewalEmailTemplate(nome, 0, 'hoje', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_0d = ? WHERE id = ?').run(hoje, user.id);
           enviados++;
         } else if (diffDias <= -1 && diffDias >= -3 && user.renewal_reminder_expired !== hoje) {
-          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado'));
+          await sendEmail(user.email, `${nome.split(' ')[0]}, sua assinatura expirou — reative agora`, renewalEmailTemplate(nome, -1, 'expirado', isFundador));
           db.prepare('UPDATE users SET renewal_reminder_expired = ? WHERE id = ?').run(hoje, user.id);
           enviados++;
         }
@@ -1887,6 +1904,42 @@ setTimeout(async () => {
     console.log(`✅ Job renovação inicial: ${enviados} emails enviados de ${usuarios.length} assinaturas`);
   } catch(e) { console.error('⚠️ Erro job renovação inicial:', e.message); }
 }, 30000);
+
+// ─── CRON: REMOVER STATUS FUNDADOR APÓS 3 DIAS DE ATRASO ─────
+// Roda 1x por dia (junto com o ciclo de 24h). Fundador que não renovou
+// em até 3 dias depois de plan_expires_at perde is_founder.
+setInterval(() => {
+  try {
+    const result = db.prepare(`
+      UPDATE users
+      SET is_founder = 0
+      WHERE is_founder = 1
+        AND plan_expires_at < datetime('now', '-3 days')
+    `).run();
+    if (result.changes > 0) {
+      console.log(`🚫 Fundador expirado: ${result.changes} user(s) perderam status de fundador (3+ dias sem renovar)`);
+    }
+  } catch(e) {
+    console.error('⚠️ Erro no job de expiração fundador:', e.message);
+  }
+}, 24 * 60 * 60 * 1000); // Roda 1x por dia
+
+// Rodar expiração de fundador também no startup (após 35s)
+setTimeout(() => {
+  try {
+    const result = db.prepare(`
+      UPDATE users
+      SET is_founder = 0
+      WHERE is_founder = 1
+        AND plan_expires_at < datetime('now', '-3 days')
+    `).run();
+    if (result.changes > 0) {
+      console.log(`🚫 Startup: ${result.changes} fundador(es) perderam status (3+ dias sem renovar)`);
+    }
+  } catch(e) {
+    console.error('⚠️ Erro expiração fundador startup:', e.message);
+  }
+}, 35000);
 
 app.post('/api/auth/forgot-password', loginRateLimiter, async (req, res) => {
   const { email } = req.body;
@@ -3643,6 +3696,21 @@ try { db.exec(`ALTER TABLE users ADD COLUMN cancel_at_period_end INTEGER DEFAULT
 try { db.exec(`ALTER TABLE users ADD COLUMN accepted_terms_at TEXT`); } catch(e) {}
 // subscription_tier: 'standard' (R$47) ou 'pro' (R$97) — null = standard (legado)
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT NULL`); } catch(e) {}
+// is_founder: 1 = fundador (pagou R$47 antes de 17/04/2026), 0 = cliente novo
+try { db.exec(`ALTER TABLE users ADD COLUMN is_founder INTEGER DEFAULT 0`); } catch(e) {}
+// Backfill is_founder: todo paid+standard criado antes de 17/04/2026
+try {
+  const founderCutoff = '2026-04-17';
+  const backfillResult = db.prepare(`
+    UPDATE users
+    SET is_founder = 1
+    WHERE plan_type = 'paid'
+      AND (subscription_tier = 'standard' OR subscription_tier IS NULL)
+      AND created_at < ?
+      AND is_founder = 0
+  `).run(founderCutoff);
+  if (backfillResult.changes > 0) console.log(`🏷️ Backfill is_founder: ${backfillResult.changes} users marcados como fundador`);
+} catch(e) { console.error('Backfill is_founder:', e.message); }
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
@@ -4246,7 +4314,7 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
 
 // ─── ROTA: Status do plano do usuário ───────────────────────
 app.get('/api/subscription/status', authMiddleware, (req, res) => {
-  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, subscription_tier FROM users WHERE id = ?').get(req.user.id);
+  const user = db.prepare('SELECT plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, subscription_tier, is_founder FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
   const access = hasActiveAccess({ ...user, email: req.user.email });
   // Calcular days_remaining
@@ -4258,8 +4326,7 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
   }
   const isAdmin = req.user.email === 'rafaelcandia.cj@gmail.com';
   const hasAutoRenewal = !!(user.pagarme_subscription_id && user.pagarme_subscription_id.startsWith('sub_'));
-  const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
-  const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
+  const userCheckoutMonthly = user.is_founder ? CHECKOUT_MONTHLY_FUNDADOR : CHECKOUT_MONTHLY_NOVO;
   res.json({
     plan_type: user.plan_type || 'free',
     subscription_tier: user.subscription_tier || 'standard',
@@ -4268,10 +4335,11 @@ app.get('/api/subscription/status', authMiddleware, (req, res) => {
     has_access: access !== false,
     is_active: access === true || access === 'free',
     is_admin: isAdmin,
+    is_founder: !!user.is_founder,
     has_auto_renewal: hasAutoRenewal,
     days_remaining: days_remaining,
-    checkout_url: CHECKOUT_MONTHLY,
-    checkout_annual_url: CHECKOUT_ANNUAL,
+    checkout_url: userCheckoutMonthly,
+    checkout_annual_url: CHECKOUT_ANNUAL_NOVO,
     redirect_url: access === false ? 'https://capicand-ia.com#planos' : null
   });
 });
@@ -4302,6 +4370,59 @@ app.post('/api/admin/backfill-tier', adminMiddleware, async (req, res) => {
     res.json({ ok: true, results });
   } catch (e) {
     console.error('[backfill-tier] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── ADMIN: Backfill is_founder (idempotente) ────────────────
+app.post('/api/admin/backfill-founders', adminMiddleware, (req, res) => {
+  try {
+    const founderCutoff = '2026-04-17';
+
+    // 1. Marcar fundadores: paid + standard + criado antes do cutoff
+    const marked = db.prepare(`
+      UPDATE users
+      SET is_founder = 1
+      WHERE plan_type = 'paid'
+        AND (subscription_tier = 'standard' OR subscription_tier IS NULL)
+        AND created_at < ?
+        AND is_founder = 0
+    `).run(founderCutoff);
+
+    // 2. Garantir Anderson = is_founder 0 (virou PRO hoje, não é fundador)
+    const anderson = db.prepare(`
+      UPDATE users SET is_founder = 0
+      WHERE email = 'andersontabosa.adv@gmail.com' AND is_founder != 0
+    `).run();
+
+    // 3. Remover status de quem já expirou há 3+ dias
+    const expired = db.prepare(`
+      UPDATE users
+      SET is_founder = 0
+      WHERE is_founder = 1
+        AND plan_expires_at < datetime('now', '-3 days')
+    `).run();
+
+    // 4. Buscar stats
+    const founders = db.prepare(`SELECT COUNT(*) as count FROM users WHERE is_founder = 1`).get();
+    const andersonCheck = db.prepare(`SELECT id, email, is_founder, subscription_tier FROM users WHERE email = 'andersontabosa.adv@gmail.com'`).get();
+    const allUsers = db.prepare(`SELECT id, name, email, is_founder, subscription_tier, plan_type, plan_expires_at, created_at FROM users WHERE plan_type = 'paid' ORDER BY is_founder DESC, created_at ASC`).all();
+
+    console.log(`🏷️ Backfill founders: ${marked.changes} marcados, ${expired.changes} expirados removidos, total fundadores: ${founders.count}`);
+
+    res.json({
+      ok: true,
+      results: {
+        newly_marked_founders: marked.changes,
+        expired_founders_removed: expired.changes,
+        anderson_fixed: anderson.changes > 0,
+        total_founders: founders.count,
+        anderson: andersonCheck,
+        users: allUsers
+      }
+    });
+  } catch(e) {
+    console.error('[backfill-founders] Error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
@@ -4369,7 +4490,7 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
 // ─── PREMIUM UPGRADE: SUBSCRIPTION DETAILS ──────────────────
 app.get('/api/subscription/details', authMiddleware, (req, res) => {
   try {
-    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, cancel_at_period_end, created_at, subscription_tier FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, name, email, plan_type, plan_expires_at, plan_activated_at, pagarme_subscription_id, cancel_at_period_end, created_at, subscription_tier, is_founder FROM users WHERE id = ?').get(req.user.id);
     if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
     const planType = user.plan_type || 'free';
@@ -4394,14 +4515,12 @@ app.get('/api/subscription/details', authMiddleware, (req, res) => {
     }
 
     const hasAutoRenewal = !!(user.pagarme_subscription_id && user.pagarme_subscription_id.startsWith('sub_'));
+    const detailsCheckoutMonthly = user.is_founder ? CHECKOUT_MONTHLY_FUNDADOR : CHECKOUT_MONTHLY_NOVO;
 
     // Contadores de uso
     const totalMessages = db.prepare("SELECT COUNT(*) as c FROM messages WHERE user_id = ? AND role = 'user'").get(user.id)?.c || 0;
     const totalConversations = db.prepare("SELECT COUNT(*) as c FROM conversations WHERE user_id = ?").get(user.id)?.c || 0;
     const totalPecas = db.prepare("SELECT COUNT(*) as c FROM pecas_salvas WHERE user_id = ?").get(user.id)?.c || 0;
-
-    const CHECKOUT_MONTHLY = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
-    const CHECKOUT_ANNUAL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
 
     res.json({
       plan_type: planType,
@@ -4412,12 +4531,13 @@ app.get('/api/subscription/details', authMiddleware, (req, res) => {
       days_remaining: daysRemaining,
       has_auto_renewal: hasAutoRenewal,
       cancel_at_period_end: !!user.cancel_at_period_end,
+      is_founder: !!user.is_founder,
       total_messages: totalMessages,
       total_conversations: totalConversations,
       total_pecas: totalPecas,
       member_since: user.created_at,
-      checkout_url: CHECKOUT_MONTHLY,
-      checkout_annual_url: CHECKOUT_ANNUAL
+      checkout_url: detailsCheckoutMonthly,
+      checkout_annual_url: CHECKOUT_ANNUAL_NOVO
     });
   } catch (e) {
     console.error('Erro subscription/details:', e.message);
@@ -4548,10 +4668,8 @@ app.delete('/api/account', authMiddleware, async (req, res) => {
 // Redireciona para PagarMe quando tiver a integração configurada
 app.get('/checkout', (req, res) => {
   const plan = req.query.plan || 'monthly';
-  // URLs do PagarMe serão configuradas via env vars
-  const PAGARME_MONTHLY_URL = process.env.PAGARME_MONTHLY_URL || 'https://clkdmg.site/subscribe/mensal-capi-candia-pro';
-  const PAGARME_ANNUAL_URL = process.env.PAGARME_ANNUAL_URL || 'https://clkdmg.site/subscribe/anual-capi-candia-pro';
-  const url = plan === 'annual' ? PAGARME_ANNUAL_URL : PAGARME_MONTHLY_URL;
+  // URLs atualizadas: R$97 mensal (novo) e R$804 anual (novo)
+  const url = plan === 'annual' ? CHECKOUT_ANNUAL_NOVO : CHECKOUT_MONTHLY_NOVO;
   res.redirect(302, url);
 });
 
