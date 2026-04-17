@@ -422,6 +422,14 @@
     audio::-webkit-media-controls-panel{background:var(--bg3);}
     audio{filter:invert(0) hue-rotate(90deg) brightness(0.9);}
 
+    /* ── HIDE distractions during onboarding/tour ── */
+    body.onboarding-active .notif-banner{display:none!important}
+    body.onboarding-active #pwaInstallBanner{display:none!important}
+    body.onboarding-active #bannerFundadores{display:none!important}
+    body.onboarding-active #bannerCapiTreino{display:none!important}
+    body.onboarding-active #renewalBanner{display:none!important}
+    body.onboarding-active #upgradeBanner{display:none!important}
+
     /* ── NOTIFICAÇÃO BANNER ── */
     .notif-banner{position:fixed;top:16px;right:16px;z-index:300;display:flex;flex-direction:column;gap:8px;max-width:360px;pointer-events:none}
     .notif-banner:empty{display:none}
@@ -4243,11 +4251,8 @@ function showOnboarding(user) {
     return;
   }
   onboardingUser = user;
-  // Hide distracting banners during onboarding
-  var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='none';
-  var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='none';
-  var pwab = document.getElementById('pwaInstallBanner'); if(pwab) pwab.style.display='none';
-  var nb = document.getElementById('notifBanner'); if(nb) nb.style.display='none';
+  // Hide ALL distracting elements during onboarding (CSS class approach — catches async-loaded elements too)
+  document.body.classList.add('onboarding-active');
   $('authScreen').classList.add('hidden');
   $('chatScreen').classList.add('hidden');
   $('onboardingScreen').classList.remove('hidden');
@@ -4331,10 +4336,8 @@ async function finishOnboarding() {
   // Marca localmente independente (servidor é a fonte de verdade)
   localStorage.setItem('capi_onboarded', '1');
   $('onboardingScreen').classList.add('hidden');
-  // Restore banners after onboarding (PWA banner stays hidden)
-  var bf = document.getElementById('bannerFundadores'); if(bf) bf.style.display='';
-  var bct = document.getElementById('bannerCapiTreino'); if(bct) bct.style.display='';
-  var nb = document.getElementById('notifBanner'); if(nb) nb.style.display='';
+  // Restore banners after onboarding
+  document.body.classList.remove('onboarding-active');
   showChat(onboardingUser);
   loadConversations();
   // Auto welcome message
@@ -6040,6 +6043,7 @@ init();
 
   function endTour(){
     overlay.classList.remove('active');
+    document.body.classList.remove('onboarding-active');
     localStorage.setItem('capi_onboarding_done','true');
     setTimeout(function(){
       var sl=overlay.querySelector('.tour-spotlight');
@@ -6122,6 +6126,7 @@ init();
 
   window.startOnboardingTour=function(){
     if(localStorage.getItem('capi_onboarding_done')) return;
+    document.body.classList.add('onboarding-active');
     overlay.classList.add('active');
     showStep(0);
   };
