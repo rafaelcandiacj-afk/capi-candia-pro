@@ -3711,6 +3711,9 @@ try {
   `).run(founderCutoff);
   if (backfillResult.changes > 0) console.log(`🏷️ Backfill is_founder: ${backfillResult.changes} users marcados como fundador`);
 } catch(e) { console.error('Backfill is_founder:', e.message); }
+// refund_on_upgrade: auditoria de estorno automático no upgrade mensal→anual
+try { db.exec(`ALTER TABLE users ADD COLUMN refund_on_upgrade_cents INTEGER`); } catch(e) {}
+try { db.exec(`ALTER TABLE users ADD COLUMN refund_on_upgrade_at TEXT`); } catch(e) {}
 
 // ─── MIGRATION: campo tags em conversations ─────
 try { db.prepare("ALTER TABLE conversations ADD COLUMN tags TEXT").run(); } catch(e) {}
@@ -3993,6 +3996,101 @@ async function cancelGuruSubscription(subscriptionId, reason = 'Upgrade para Anu
   }
 }
 
+/**
+ * Tenta estornar o último pagamento mensal se foi confirmado dentro de 7 dias.
+ * Best-effort: nunca lança exceção, só loga e retorna resultado.
+ * @param {string} oldMonthlySubId - UUID da assinatura mensal cancelada
+ * @param {number} userId - ID do usuário no DB local (pra auditoria)
+ * @returns {Promise<{refunded: boolean, reason: string}>}
+ */
+async function attemptRefundRecentMonthly(oldMonthlySubId, userId) {
+  const GURU_API_TOKEN = process.env.GURU_API_TOKEN;
+  try {
+    // 1. Pegar a assinatura mensal pra extrair current_invoice
+    const subResp = await fetch(
+      `https://digitalmanager.guru/api/v2/subscriptions/${oldMonthlySubId}`,
+      { headers: { Authorization: `Bearer ${GURU_API_TOKEN}`, Accept: 'application/json' } }
+    );
+    const sub = await subResp.json();
+
+    const invoiceId = sub?.current_invoice?.id;
+    if (!invoiceId) {
+      console.log('[refund] sem current_invoice, pulando');
+      return { refunded: false, reason: 'no_current_invoice' };
+    }
+
+    // 2. Buscar transação paga dessa invoice
+    const txResp = await fetch(
+      `https://digitalmanager.guru/api/v2/transactions?invoice_id=${invoiceId}`,
+      { headers: { Authorization: `Bearer ${GURU_API_TOKEN}`, Accept: 'application/json' } }
+    );
+    const txData = await txResp.json();
+    const paidTx = (txData?.data || []).find(t => t?.invoice?.status === 'paid');
+
+    if (!paidTx) {
+      console.log('[refund] nenhuma transação paga, pulando');
+      return { refunded: false, reason: 'no_paid_transaction' };
+    }
+
+    // 3. Checar is_refundable (Guru marca false após refund — idempotência)
+    if (paidTx.is_refundable === false) {
+      console.log(`[refund] tx=${paidTx.id} já não é refundable, pulando`);
+      return { refunded: false, reason: 'not_refundable' };
+    }
+
+    // 4. Checar janela de 7 dias via confirmed_at (unix seconds)
+    const confirmedAt = paidTx.dates?.confirmed_at;
+    if (!confirmedAt) {
+      console.log('[refund] sem confirmed_at na transação, pulando');
+      return { refunded: false, reason: 'no_confirmed_at' };
+    }
+    const nowSec = Math.floor(Date.now() / 1000);
+    const daysSince = (nowSec - confirmedAt) / 86400;
+
+    if (daysSince > 7) {
+      console.log(`[refund] fora da janela (${daysSince.toFixed(1)}d), pulando`);
+      return { refunded: false, reason: 'outside_7day_window' };
+    }
+
+    // 5. Emitir refund
+    const refundResp = await fetch(
+      `https://digitalmanager.guru/api/v2/transactions/${paidTx.id}/refund`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${GURU_API_TOKEN}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comment: 'Upgrade automático mensal→anual dentro de 7 dias — garantia de satisfação'
+        }),
+      }
+    );
+    const refundResult = await refundResp.json();
+    console.log(`[refund] tx=${paidTx.id} status=${refundResp.status} result=`, refundResult);
+
+    if (refundResp.ok) {
+      // 6. Registrar auditoria no DB
+      const valueCents = paidTx.value || paidTx.last_transaction?.value || 0;
+      try {
+        db.prepare(`UPDATE users SET refund_on_upgrade_cents = ?, refund_on_upgrade_at = datetime('now') WHERE id = ?`)
+          .run(valueCents, userId);
+        console.log(`[refund] auditoria salva: user=${userId} cents=${valueCents}`);
+      } catch (dbErr) {
+        console.error('[refund] erro ao salvar auditoria no DB:', dbErr.message);
+      }
+      return { refunded: true, reason: 'success', transactionId: paidTx.id, valueCents };
+    }
+
+    console.log(`[refund] API retornou ${refundResp.status}, não estornado`);
+    return { refunded: false, reason: `api_error_${refundResp.status}` };
+  } catch (err) {
+    console.error('[refund] erro ao tentar estornar mensal antiga:', err);
+    return { refunded: false, reason: 'exception' };
+  }
+}
+
 async function findActiveMonthlySubscription(email) {
   try {
     const token = process.env.GURU_API_TOKEN;
@@ -4190,9 +4288,14 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
           // 1) Cancelar mensal antiga via API Guru
           const monthlyToCancel = await findActiveMonthlySubscription(email);
           let cancelResult = { ok: false, error: 'no monthly found' };
+          let refundResult = { refunded: false, reason: 'no_monthly_found' };
           if (monthlyToCancel) {
             cancelResult = await cancelGuruSubscription(monthlyToCancel.id, `Upgrade para Anual PRO (user ${email})`);
             console.log(`[webhook] Cancel monthly result:`, JSON.stringify(cancelResult));
+
+            // 1.5) Refund automático se pagamento mensal foi ≤7 dias atrás
+            refundResult = await attemptRefundRecentMonthly(monthlyToCancel.id, user.id);
+            console.log(`[refund] upgrade refund result for ${email}:`, JSON.stringify(refundResult));
           }
 
           // 2) Atualizar tier pra pro no DB (mesmo se cancelamento falhou)
@@ -4219,6 +4322,9 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
               ? `<strong>Mensal cancelada:</strong> ${cancelResult.ok ? '✅ OK' : '❌ FALHOU — cancelar manual!'} (sub: ${monthlyToCancel.id})`
               : '<strong>⚠️ Mensal não encontrada na Guru</strong> — pode já estar cancelada, verificar.'}</p>
             ${!cancelResult.ok ? '<p style="color:#ff4444;font-weight:bold">⚠️ AÇÃO NECESSÁRIA: Cancelar a mensal manualmente no painel Guru!</p>' : ''}
+            <p><strong>Refund automático:</strong> ${refundResult.refunded
+              ? `✅ Estornado (tx: ${refundResult.transactionId}, R$${((refundResult.valueCents || 0) / 100).toFixed(2)})`
+              : `⏭️ Não estornado (${refundResult.reason})`}</p>
             <p><strong>Hora:</strong> ${new Date().toLocaleString('pt-BR',{timeZone:'America/Campo_Grande'})}</p>
           </div>`;
           await notifyRafael(
@@ -6989,4 +7095,5 @@ const server = app.listen(PORT, () => console.log(`✅ Capi Când-IA Pro rodando
 server.keepAliveTimeout = 120000; // 120s (Railway default é 60s)
 server.headersTimeout = 125000;   // deve ser > keepAliveTimeout
 server.timeout = 0;               // sem timeout no server (timeout é controlado por AbortController no fetch)
+
 
