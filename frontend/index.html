@@ -222,7 +222,7 @@
     .message-user .message-avatar{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border-color:var(--gold)}
     .message-assistant .message-avatar{background:#f3f0eb;padding:0;border-color:#e0dbd4}
     .message-assistant .message-avatar img{width:100%;height:100%;object-fit:cover}
-    .message-bubble{padding:14px 18px;border-radius:12px;line-height:1.75;font-size:1rem;word-wrap:break-word;overflow-wrap:break-word;word-break:break-word;max-width:100%;overflow-x:hidden}
+    .message-bubble{padding:14px 18px;border-radius:12px;line-height:1.75;font-size:1rem;word-wrap:break-word;overflow-wrap:break-word;word-break:break-word;max-width:100%;overflow-x:hidden;-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
     .message-user .message-bubble{background:linear-gradient(135deg,#b8860b,#d4a017);color:#fff;border:none;border-top-right-radius:4px}
     .message-assistant .message-bubble{background:#F7F6F3;border:none;box-shadow:none;padding:16px 20px;border-radius:12px}
 
@@ -1531,6 +1531,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Fix Android text selection in scrollable chat
+(function(){
+  const chatMsgs = document.getElementById('chatMessages');
+  if(!chatMsgs) return;
+  let isSelecting = false;
+  document.addEventListener('selectionchange', function(){
+    const sel = window.getSelection();
+    if(sel && sel.toString().length > 0){
+      if(!isSelecting){
+        isSelecting = true;
+        chatMsgs.style.overscrollBehaviorY = 'auto';
+      }
+    } else {
+      if(isSelecting){
+        isSelecting = false;
+        chatMsgs.style.overscrollBehaviorY = 'contain';
+      }
+    }
+  });
+})();
 
 // ── AUTH ──
 function showErr(msg){$('authError').textContent=msg;$('authError').style.display='block';}
