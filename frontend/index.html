@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Capi Când-IA Pro</title>
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
@@ -257,39 +257,66 @@
     .btn-send svg{width:17px;height:17px}
 
     /* Mobile */
-    .sidebar-toggle{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;font-size:1.2rem}
+    .sidebar-toggle{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:8px;font-size:1.4rem;min-width:44px;min-height:44px;align-items:center;justify-content:center;touch-action:manipulation}
+    /* Sidebar backdrop overlay */
+    .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;opacity:0;transition:opacity .3s ease;-webkit-tap-highlight-color:transparent}
+    .sidebar-backdrop.visible{display:block;opacity:1}
     @media(max-width:768px){
-      .sidebar{position:fixed;left:-100%;top:0;bottom:0;z-index:100;transition:.3s ease}
-      .sidebar.open{left:0}
-      .sidebar-toggle{display:block}
+      /* ── SIDEBAR OVERLAY ── */
+      .sidebar{position:fixed;top:0;left:0;bottom:0;width:85vw;max-width:320px;z-index:9999;transform:translateX(-100%);transition:transform .3s ease;will-change:transform}
+      .sidebar.open{transform:translateX(0)}
+      .sidebar-toggle{display:flex}
+      /* Body scroll lock when sidebar open */
+      body.sidebar-open{overflow:hidden!important}
+      /* ── CHAT MAIN MOBILE LAYOUT ── */
+      .chat-main{display:flex;flex-direction:column;height:100dvh;height:100vh;height:var(--app-height,100vh);overflow:hidden;margin-left:0!important;width:100%!important}
+      .chat-messages{flex:1 1 0%;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 12px}
       .message{max-width:92%;overflow-x:hidden}
-      /* Keyboard open: esconde elementos que roubam espaço */
+      /* ── KEYBOARD OPEN ── */
       body.keyboard-open #bannerFundadores{display:none!important}
+      body.keyboard-open #bannerCapiTreino{display:none!important}
+      body.keyboard-open #renewalBanner{display:none!important}
+      body.keyboard-open #upgradeBanner{display:none!important}
       body.keyboard-open .mobile-toolbar{display:none!important}
       body.keyboard-open .chat-header{padding:4px 12px!important}
       body.keyboard-open .ctx-suggestions{display:none!important}
-      /* Input mobile */
-      .chat-input-area{padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px))}
-      .chat-input{font-size:.88rem;padding:10px 12px}
-      /* Header mobile: linha única */
+      /* ── INPUT AREA MOBILE ── */
+      .chat-input-area{padding:10px 12px;padding-bottom:max(10px,env(safe-area-inset-bottom,10px));flex-shrink:0;position:relative;z-index:10}
+      .chat-input{font-size:16px;padding:10px 12px;min-height:44px}
+      .btn-send{min-width:44px;min-height:44px}
+      .upload-btn{min-width:44px;min-height:44px}
+      .mic-btn{min-width:44px;min-height:44px}
+      /* ── HEADER MOBILE ── */
       .chat-header{flex-wrap:nowrap;padding:8px 12px;align-items:center;gap:8px}
       .chat-header-left{flex:1;min-width:0}
-      /* Esconde toolbar desktop no mobile */
+      /* Hide desktop toolbar on mobile */
       .desktop-toolbar{display:none!important}
-      /* Mobile toolbar: faixa separada com scroll */
-      .mobile-toolbar{display:flex;gap:6px;overflow-x:auto;padding:7px 12px;background:var(--bg2);border-bottom:1px solid var(--border);scrollbar-width:none;-webkit-overflow-scrolling:touch;flex-shrink:0}
+      /* ── MOBILE TOOLBAR: horizontal scroll chips ── */
+      .mobile-toolbar{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;scroll-snap-type:x mandatory}
       .mobile-toolbar::-webkit-scrollbar{display:none}
-      .mobile-toolbar .teses-btn{white-space:nowrap;flex-shrink:0;font-size:.73rem;padding:6px 12px}
-      /* Botão menu mobile */
-      .mobile-menu-btn{display:flex!important;align-items:center;justify-content:center;width:36px;height:36px;border:none;background:transparent;cursor:pointer;font-size:1.4rem;color:#555;border-radius:8px;flex-shrink:0;padding:0;line-height:1}
-      /* Dropdown mobile */
+      .mobile-toolbar .teses-btn{white-space:nowrap;flex-shrink:0;font-size:.73rem;padding:8px 16px;min-height:40px;scroll-snap-align:start;touch-action:manipulation}
+      /* ── MOBILE MENU BUTTON ── */
+      .mobile-menu-btn{display:flex!important;align-items:center;justify-content:center;width:44px;height:44px;border:none;background:transparent;cursor:pointer;font-size:1.4rem;color:#555;border-radius:8px;flex-shrink:0;padding:0;line-height:1;touch-action:manipulation}
+      /* ── DROPDOWN MOBILE ── */
       .mobile-menu-dropdown{position:fixed;top:56px;right:12px;background:#fff;border:1px solid #e0dbd4;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:9999;min-width:170px;overflow:hidden;display:none}
       .mobile-menu-dropdown.open{display:block}
-      .mobile-menu-item{display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:.87rem;font-weight:500;color:#333;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans','Inter',sans-serif;transition:background .15s}
+      .mobile-menu-item{display:flex;align-items:center;gap:10px;padding:13px 16px;font-size:.87rem;font-weight:500;color:#333;cursor:pointer;border:none;background:transparent;width:100%;text-align:left;font-family:'DM Sans','Inter',sans-serif;transition:background .15s;min-height:48px;touch-action:manipulation}
       .mobile-menu-item:hover{background:#f3f0eb}
       .mobile-menu-item.danger{color:#e53935}
       .mobile-menu-item.danger:hover{background:#fef2f2}
       .mobile-menu-divider{height:1px;background:#f0ece6;margin:4px 0}
+      /* ── TOUCH TARGETS ── */
+      .conv-item{min-height:48px;padding:12px 16px;touch-action:manipulation}
+      .conv-delete{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center}
+      .btn-new-chat{min-height:44px;touch-action:manipulation}
+      .btn-criar-peca{min-height:44px;touch-action:manipulation}
+      .suggestion-chip{min-height:44px;padding:10px 18px;touch-action:manipulation}
+      .ctx-chip{min-height:36px;padding:8px 14px;touch-action:manipulation}
+      .btn-logout{min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+      .header-status{padding:6px 10px}
+      /* ── WELCOME SCREEN MOBILE ── */
+      .chat-welcome{padding:24px 16px}
+      .suggestion-chips{gap:6px}
     }
 
     /* ── TOOLBAR ── */
@@ -305,6 +332,7 @@
       .mobile-menu-btn{display:none!important}
       .mobile-toolbar{display:none!important}
       .mobile-menu-dropdown{display:none!important}
+      .sidebar-backdrop{display:none!important}
     }
     .header-action-btn{padding:7px 14px;background:transparent;border:1px solid transparent;border-radius:8px;color:#888;font-family:'DM Sans','Inter',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;transition:var(--trans);display:flex;align-items:center;gap:5px}
     .header-action-btn:hover{background:#f3f0eb;color:var(--text);border-color:#e0dbd4}
@@ -928,6 +956,7 @@ function setAppHeight(){
   const vv = window.visualViewport;
   const h = vv ? vv.height : window.innerHeight;
   document.documentElement.style.setProperty('--app-height', h + 'px');
+  document.documentElement.style.setProperty('--vh', h + 'px');
   /* Corrige offset quando iOS faz pan/scroll ao abrir teclado */
   if(vv){
     const offsetTop = vv.offsetTop;
@@ -1164,6 +1193,8 @@ document.addEventListener('touchmove', function(e){
       </div>
     </div>
   </aside>
+  <!-- Sidebar backdrop (mobile overlay) -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
 
   <!-- Main -->
   <div class="chat-main" style="position:relative">
@@ -1830,7 +1861,51 @@ function logout(){
   localStorage.removeItem('capi_token');localStorage.removeItem('capi_user');
   convHistory=[];currentConvId=null;showAuth();
 }
-function toggleSidebar(){$('sidebar').classList.toggle('open');}
+function openSidebar(){
+  var sb=$('sidebar'),bd=$('sidebarBackdrop');
+  if(sb){sb.classList.add('open');document.body.classList.add('sidebar-open');}
+  if(bd)bd.classList.add('visible');
+}
+function closeSidebar(){
+  var sb=$('sidebar'),bd=$('sidebarBackdrop');
+  if(sb){sb.classList.remove('open');document.body.classList.remove('sidebar-open');}
+  if(bd)bd.classList.remove('visible');
+}
+function toggleSidebar(){
+  var sb=$('sidebar');
+  if(sb&&sb.classList.contains('open'))closeSidebar();else openSidebar();
+}
+/* ── SWIPE GESTURES FOR SIDEBAR ── */
+(function(){
+  var touchStartX=0,touchStartY=0,touchMoveX=0,isSwiping=false,sidebarDragging=false;
+  var EDGE_ZONE=25,SWIPE_THRESHOLD=60;
+  document.addEventListener('touchstart',function(e){
+    var t=e.touches[0];touchStartX=t.clientX;touchStartY=t.clientY;isSwiping=false;sidebarDragging=false;
+    var sb=$('sidebar');
+    // Swipe from left edge to open
+    if(touchStartX<EDGE_ZONE&&sb&&!sb.classList.contains('open')){
+      isSwiping=true;
+    }
+    // Swipe on sidebar or backdrop to close
+    if(sb&&sb.classList.contains('open')){
+      sidebarDragging=true;
+    }
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!isSwiping&&!sidebarDragging)return;
+    touchMoveX=e.touches[0].clientX;
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    var deltaX=touchMoveX-touchStartX;
+    var deltaY=e.changedTouches[0].clientY-touchStartY;
+    // Only count horizontal swipes
+    if(Math.abs(deltaX)>Math.abs(deltaY)){
+      if(isSwiping&&deltaX>SWIPE_THRESHOLD){openSidebar();}
+      if(sidebarDragging&&deltaX<-SWIPE_THRESHOLD){closeSidebar();}
+    }
+    isSwiping=false;sidebarDragging=false;touchMoveX=0;
+  },{passive:true});
+})();
 function toggleMobileMenu(e){if(e)e.stopPropagation();var d=$('mobileMenuDropdown');d.classList.toggle('open');}
 function closeMobileMenu(){var d=$('mobileMenuDropdown');if(d)d.classList.remove('open');}
 document.addEventListener('click',function(e){var d=$('mobileMenuDropdown');if(d&&d.classList.contains('open')&&!d.contains(e.target)&&!e.target.closest('.mobile-menu-btn')){d.classList.remove('open');}});
@@ -1970,6 +2045,7 @@ async function renameConversation(e, id){
 }
 
 async function loadConversation(id){
+  if(window.innerWidth<=768) closeSidebar();
   const token=localStorage.getItem('capi_token');
   // Limpa uploads pendentes ao trocar de conversa
   pendingUploadIds=[];pendingUploadNames=[];document.getElementById('fileBadgeArea').innerHTML='';
