@@ -206,6 +206,37 @@ function assert(condition, testName) {
     console.log('  ⚠️ Could not fetch user — skipping post-upgrade checks');
   }
 
+  // ── STEP 5.5: BUG 1 regression — cancel webhook after upgrade must NOT downgrade ──
+  console.log('\n📋 Step 5.5: Cancel webhook after upgrade (BUG 1 regression test)');
+  const cancelPayload = {
+    id: `sub_cancel_${Date.now()}`,
+    subscription_code: `SUB-CANCEL-${Date.now()}`,
+    last_status: 'cancelled',
+    charged_every_days: 30,
+    subscriber: { email: UPGRADE_EMAIL, name: 'QA Upgrade Test' },
+    product: {
+      id: PRODUCT_MENSAL, code: PRODUCT_MENSAL,
+      name: 'Capi Când-IA Pro — Mensal',
+      offer: { id: 'legacy-47-offer', name: 'Mensal', plan: { interval: 1, interval_type: 'month' } },
+    },
+    last_transaction: { value: 4700, contact: { email: UPGRADE_EMAIL, name: 'QA Upgrade Test' } },
+  };
+  const r55 = await sendWebhook(cancelPayload);
+  console.log(`  HTTP ${r55.status}`, JSON.stringify(r55.body));
+  assert(r55.status === 200, 'Cancel webhook returns 200');
+  assert(r55.body.skipped_cancel === true, 'Cancel was skipped (user is PRO with valid annual)');
+
+  await new Promise(r => setTimeout(r, 500));
+
+  const userAfterCancel = await getUser(UPGRADE_EMAIL);
+  if (userAfterCancel) {
+    assert(userAfterCancel.plan_type === 'paid', `After cancel webhook: plan_type STILL paid (got: ${userAfterCancel.plan_type})`);
+    assert(userAfterCancel.subscription_tier === 'pro', `After cancel webhook: tier STILL pro (got: ${userAfterCancel.subscription_tier})`);
+    assert(!!userAfterCancel.plan_expires_at, `After cancel webhook: plan_expires_at NOT null`);
+  } else {
+    console.log('  ⚠️ Could not fetch user — skipping post-cancel checks');
+  }
+
   // ── STEP 6: Idempotency — send same R$804 again ──
   console.log('\n📋 Step 6: Idempotency — duplicate R$804 webhook');
   const r6 = await sendWebhook(guruPayload({
