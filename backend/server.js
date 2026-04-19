@@ -1942,6 +1942,33 @@ setTimeout(() => {
   }
 }, 35000);
 
+// ─── CRON: RECONCILE DUPLICATAS MENSAL+ANUAL (4h UTC = 1h BRT) ─────
+// Roda 1x por dia. Detecta users pro com mensal ativa e cancela/estorna.
+setInterval(async () => {
+  const now = new Date();
+  // Só roda se estiver entre 4:00 e 4:59 UTC (evita rodar várias vezes)
+  if (now.getUTCHours() === 4) {
+    try {
+      await reconcileDuplicateSubscriptions();
+    } catch (e) {
+      console.error('[reconcile-cron] Error:', e.message);
+    }
+  }
+}, 60 * 60 * 1000); // Checa a cada hora, mas só executa às 4h UTC
+
+// Rodar reconcile também no startup (após 60s) para pegar pendentes imediatos
+setTimeout(async () => {
+  try {
+    const pending = db.prepare(`SELECT COUNT(*) as cnt FROM users WHERE upgrade_cancel_pending = 1`).get();
+    if (pending && pending.cnt > 0) {
+      console.log(`[reconcile-startup] ${pending.cnt} user(s) with pending cancel — running reconcile now`);
+      await reconcileDuplicateSubscriptions();
+    }
+  } catch (e) {
+    console.error('[reconcile-startup] Error:', e.message);
+  }
+}, 60000);
+
 app.post('/api/auth/forgot-password', loginRateLimiter, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: 'Email obrigatório' });
@@ -3699,6 +3726,8 @@ try { db.exec(`ALTER TABLE users ADD COLUMN accepted_terms_at TEXT`); } catch(e)
 try { db.exec(`ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT NULL`); } catch(e) {}
 // is_founder: 1 = fundador (pagou R$47 antes de 17/04/2026), 0 = cliente novo
 try { db.exec(`ALTER TABLE users ADD COLUMN is_founder INTEGER DEFAULT 0`); } catch(e) {}
+// upgrade_cancel_pending: 1 = webhook não conseguiu cancelar mensal no upgrade, cron de reconcile deve pegar
+try { db.exec(`ALTER TABLE users ADD COLUMN upgrade_cancel_pending INTEGER DEFAULT 0`); } catch(e) {}
 // Backfill is_founder: todo paid+standard criado antes de 17/04/2026
 try {
   const founderCutoff = '2026-04-17';
@@ -4093,37 +4122,96 @@ async function attemptRefundRecentMonthly(oldMonthlySubId, userId) {
 }
 
 async function findActiveMonthlySubscription(email) {
+  const lowerEmail = (email || '').toLowerCase().trim();
+  if (!lowerEmail) return null;
+
   try {
     const token = process.env.GURU_API_TOKEN;
     if (!token) {
       console.error('[findActiveMonthlySubscription] GURU_API_TOKEN não configurado');
       return null;
     }
-    const r = await fetch(`https://digitalmanager.guru/api/v2/subscriptions?contact_email=${encodeURIComponent(email)}&last_status=active&limit=20`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!r.ok) {
-      console.error(`[findActiveMonthlySubscription] HTTP ${r.status} for ${email}`);
-      return null;
+
+    // Paginar TODAS as subs via cursor — API Guru não filtra email/status de forma confiável
+    let cursor = null;
+    const allSubs = [];
+    for (let page = 0; page < 50; page++) {
+      const url = new URL('https://digitalmanager.guru/api/v2/subscriptions');
+      url.searchParams.set('limit', '100');
+      if (cursor) url.searchParams.set('cursor', cursor);
+
+      const r = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+      });
+      if (!r.ok) {
+        console.error(`[findActiveMonthlySubscription] HTTP ${r.status} on page ${page} for ${email}`);
+        break;
+      }
+      const d = await r.json();
+      const data = d.data || [];
+      if (!Array.isArray(data) || !data.length) break;
+      allSubs.push(...data);
+      cursor = d.next_cursor;
+      if (!cursor) break;
     }
-    const data = await r.json();
-    const subs = data.data || data || [];
-    const monthly = (Array.isArray(subs) ? subs : []).find(s =>
-      s.last_status === 'active' &&
-      s.charged_every_days && parseInt(s.charged_every_days) <= 60 &&
-      String(s.product?.marketplace_id || s.product?.code || '') === '1773774908' &&
-      (s.contact?.email || s.subscriber?.email || '').toLowerCase() === email.toLowerCase()
-    );
+
+    console.log(`[findActiveMonthlySubscription] Fetched ${allSubs.length} total subs, filtering for ${lowerEmail}`);
+
+    // Filtrar CLIENTE-SIDE: email match + active + produto mensal (R$47 ou R$97)
+    const monthly = allSubs.find(s => {
+      const contactEmail = (s.contact?.email || s.subscriber?.email || '').toLowerCase().trim();
+      if (contactEmail !== lowerEmail) return false;
+      if (s.last_status !== 'active') return false;
+      // Deve ser mensal (charged_every_days <= 60)
+      if (!s.charged_every_days || parseInt(s.charged_every_days) > 60) return false;
+      // Aceita por nome do produto (contém "mensal") OU marketplace_id do produto mensal
+      const pname = (s.product?.name || '').toLowerCase();
+      const mid = String(s.product?.marketplace_id || s.product?.code || '');
+      return pname.includes('mensal') || mid === '1773774908';
+    });
+
     if (monthly) {
-      console.log(`[findActiveMonthlySubscription] Found monthly sub ${monthly.id} for ${email}`);
+      console.log(`[findActiveMonthlySubscription] Found monthly sub ${monthly.id} for ${lowerEmail}`);
     } else {
-      console.log(`[findActiveMonthlySubscription] No active monthly sub found for ${email} (checked ${(Array.isArray(subs) ? subs : []).length} subs)`);
+      console.log(`[findActiveMonthlySubscription] No active monthly sub found for ${lowerEmail} (checked ${allSubs.length} subs)`);
     }
     return monthly || null;
   } catch (e) {
     console.error('[findActiveMonthlySubscription] error', e);
     return null;
   }
+}
+
+// Retry com backoff: tenta cancelar mensal 3x (0s, 3s, 6s)
+async function cancelMonthlyWithRetry(email, userId) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const monthly = await findActiveMonthlySubscription(email);
+      if (monthly) {
+        const result = await cancelGuruSubscription(monthly.id, `Upgrade para anual - cancelamento automático (tentativa ${attempt})`);
+        if (result.ok) {
+          console.log(`[upgrade-cancel] user=${userId} sub=${monthly.id} cancelled on attempt ${attempt}`);
+          return { cancelled: true, sub: monthly };
+        }
+        console.warn(`[upgrade-cancel] user=${userId} sub=${monthly.id} cancel API failed on attempt ${attempt}`);
+      } else {
+        console.log(`[upgrade-cancel] user=${userId} email=${email} no active monthly found on attempt ${attempt}`);
+      }
+    } catch (e) {
+      console.error(`[upgrade-cancel] user=${userId} attempt ${attempt} exception:`, e.message);
+    }
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, attempt * 3000)); // 3s, 6s
+    }
+  }
+  console.error(`[upgrade-cancel] user=${userId} email=${email} FAILED after 3 attempts — marking for reconcile`);
+  // Gravar flag no DB para cron de reconciliação pegar depois
+  try {
+    db.prepare(`UPDATE users SET upgrade_cancel_pending = 1 WHERE id = ?`).run(userId);
+  } catch (e) {
+    console.error(`[upgrade-cancel] failed to set upgrade_cancel_pending for user=${userId}:`, e.message);
+  }
+  return { cancelled: false };
 }
 
 async function notifyRafael(subject, htmlBody) {
@@ -4133,6 +4221,71 @@ async function notifyRafael(subject, htmlBody) {
   } catch (e) {
     console.error(`[notifyRafael] Failed to send: ${subject}`, e.message);
   }
+}
+
+// ─── RECONCILE: Detecta e cancela mensais duplicadas para usuários pro ───
+async function reconcileDuplicateSubscriptions() {
+  console.log('[reconcile] Starting daily reconciliation...');
+  const stats = { users_checked: 0, duplicates_found: 0, cancelled: 0, refunded: 0, errors: 0 };
+
+  try {
+    // Buscar TODOS os users com plan anual pro (subscription_tier=pro)
+    // OU com flag upgrade_cancel_pending=1
+    const proUsers = db.prepare(`
+      SELECT id, email, name FROM users
+      WHERE plan_type = 'paid'
+        AND (subscription_tier = 'pro' OR upgrade_cancel_pending = 1)
+    `).all();
+
+    stats.users_checked = proUsers.length;
+    console.log(`[reconcile] Checking ${proUsers.length} pro/pending users`);
+
+    for (const user of proUsers) {
+      try {
+        const monthly = await findActiveMonthlySubscription(user.email);
+        if (monthly) {
+          stats.duplicates_found++;
+          console.warn(`[reconcile] DUPLICATE: user=${user.id} (${user.email}) has active monthly sub ${monthly.id}`);
+
+          // Cancelar a mensal
+          const cancelResult = await cancelGuruSubscription(monthly.id, 'Reconcile: usuario ja tem anual ativo');
+          if (cancelResult.ok) {
+            stats.cancelled++;
+            console.log(`[reconcile] Cancelled monthly ${monthly.id} for user=${user.id}`);
+
+            // Tentar refund se ≤7 dias
+            try {
+              const refundResult = await attemptRefundRecentMonthly(monthly.id, user.id);
+              if (refundResult.refunded) {
+                stats.refunded++;
+                console.log(`[reconcile] Refunded for user=${user.id}: tx=${refundResult.transactionId}`);
+              }
+            } catch (refErr) {
+              console.error(`[reconcile] Refund error for user=${user.id}:`, refErr.message);
+            }
+
+            // Limpar flag de pending
+            db.prepare(`UPDATE users SET upgrade_cancel_pending = 0 WHERE id = ?`).run(user.id);
+          } else {
+            stats.errors++;
+            console.error(`[reconcile] Failed to cancel monthly ${monthly.id} for user=${user.id}`);
+          }
+        } else {
+          // Sem mensal ativa — limpar flag se estava pendente
+          db.prepare(`UPDATE users SET upgrade_cancel_pending = 0 WHERE id = ?`).run(user.id);
+        }
+      } catch (userErr) {
+        stats.errors++;
+        console.error(`[reconcile] Error processing user=${user.id}:`, userErr.message);
+      }
+    }
+  } catch (e) {
+    stats.errors++;
+    console.error('[reconcile] Fatal error:', e.message);
+  }
+
+  console.log(`[reconcile] Done: checked=${stats.users_checked} duplicates=${stats.duplicates_found} cancelled=${stats.cancelled} refunded=${stats.refunded} errors=${stats.errors}`);
+  return stats;
 }
 
 async function sendUpgradeWelcomeEmail(toEmail, toName) {
@@ -4286,20 +4439,19 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
         // Idempotência: se já é pro, não processar de novo
         const alreadyPro = user.subscription_tier === 'pro';
         if (!alreadyPro) {
-          // 1) Cancelar mensal antiga via API Guru
-          const monthlyToCancel = await findActiveMonthlySubscription(email);
-          let cancelResult = { ok: false, error: 'no monthly found' };
-          let refundResult = { refunded: false, reason: 'no_monthly_found' };
-          if (monthlyToCancel) {
-            cancelResult = await cancelGuruSubscription(monthlyToCancel.id, `Upgrade para Anual PRO (user ${email})`);
-            console.log(`[webhook] Cancel monthly result:`, JSON.stringify(cancelResult));
+          // 1) Cancelar mensal antiga via API Guru COM RETRY (3 tentativas: 0s, 3s, 6s)
+          const retryResult = await cancelMonthlyWithRetry(email, user.id);
+          const monthlyToCancel = retryResult.sub || null;
+          const cancelledOk = retryResult.cancelled;
 
-            // 1.5) Refund automático se pagamento mensal foi ≤7 dias atrás
+          // 1.5) Refund automático se pagamento mensal foi ≤7 dias atrás
+          let refundResult = { refunded: false, reason: 'no_monthly_found' };
+          if (monthlyToCancel && cancelledOk) {
             refundResult = await attemptRefundRecentMonthly(monthlyToCancel.id, user.id);
             console.log(`[refund] upgrade refund result for ${email}:`, JSON.stringify(refundResult));
           }
 
-          // 2) Atualizar tier pra pro no DB (mesmo se cancelamento falhou)
+          // 2) Atualizar tier pra pro no DB — usa subscriptionId do WEBHOOK (= anual)
           const expiresAt = new Date();
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
           db.prepare(`
@@ -4309,10 +4461,11 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
               plan_activated_at = datetime('now'),
               pagarme_subscription_id = ?,
               subscription_tier = 'pro',
+              upgrade_cancel_pending = ?,
               active = 1
             WHERE id = ?
-          `).run(expiresAt.toISOString(), subscriptionId || null, user.id);
-          console.log(`[webhook] Upgrade complete: ${email} → pro, expires ${expiresAt.toISOString()}`);
+          `).run(expiresAt.toISOString(), subscriptionId || null, cancelledOk ? 0 : 1, user.id);
+          console.log(`[webhook] Upgrade complete: ${email} → pro, sub_id=${subscriptionId}, expires ${expiresAt.toISOString()}, cancel_pending=${!cancelledOk}`);
 
           // 3) Notificar Rafael sobre o upgrade
           const upgradeNotifHtml = `<div style="font-family:Arial,sans-serif;padding:24px;background:#0a0a0a;color:#eee;border-radius:8px;max-width:500px">
@@ -4320,16 +4473,16 @@ app.post('/api/webhook/guru', express.json(), async (req, res) => {
             <p><strong>Aluno:</strong> ${customerName} (${email})</p>
             <p><strong>De:</strong> Mensal → <strong style="color:#ffd700">Anual PRO</strong></p>
             <p>${monthlyToCancel
-              ? `<strong>Mensal cancelada:</strong> ${cancelResult.ok ? '✅ OK' : '❌ FALHOU — cancelar manual!'} (sub: ${monthlyToCancel.id})`
+              ? `<strong>Mensal cancelada:</strong> ${cancelledOk ? '✅ OK (com retry)' : '❌ FALHOU após 3 tentativas!'} (sub: ${monthlyToCancel.id})`
               : '<strong>⚠️ Mensal não encontrada na Guru</strong> — pode já estar cancelada, verificar.'}</p>
-            ${!cancelResult.ok ? '<p style="color:#ff4444;font-weight:bold">⚠️ AÇÃO NECESSÁRIA: Cancelar a mensal manualmente no painel Guru!</p>' : ''}
+            ${!cancelledOk ? '<p style="color:#ff4444;font-weight:bold">⚠️ AÇÃO NECESSÁRIA: Cancelar a mensal manualmente ou aguardar cron de reconciliação (4h UTC)!</p>' : ''}
             <p><strong>Refund automático:</strong> ${refundResult.refunded
               ? `✅ Estornado (tx: ${refundResult.transactionId}, R$${((refundResult.valueCents || 0) / 100).toFixed(2)})`
               : `⏭️ Não estornado (${refundResult.reason})`}</p>
             <p><strong>Hora:</strong> ${new Date().toLocaleString('pt-BR',{timeZone:'America/Campo_Grande'})}</p>
           </div>`;
           await notifyRafael(
-            monthlyToCancel && cancelResult.ok
+            monthlyToCancel && cancelledOk
               ? `🎉 Upgrade automático: ${email}`
               : `⚠️ Upgrade ${email} — verificar cancelamento mensal`,
             upgradeNotifHtml
@@ -4592,6 +4745,23 @@ app.post('/api/admin/revoke-access', adminMiddleware, (req, res) => {
   if (!user_id) return res.status(400).json({ error: 'user_id obrigatório' });
   db.prepare(`UPDATE users SET plan_type = 'free', plan_expires_at = NULL WHERE id = ?`).run(user_id);
   res.json({ ok: true });
+});
+
+// ─── ADMIN: RECONCILE MANUAL DE DUPLICATAS ──────────────────
+// POST /api/admin/reconcile-duplicates com x-admin-password: capiAdmin2026
+app.post('/api/admin/reconcile-duplicates', async (req, res) => {
+  const adminPass = req.headers['x-admin-password'];
+  if (adminPass !== 'capiAdmin2026') {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  try {
+    console.log('[reconcile-admin] Manual reconcile triggered');
+    const stats = await reconcileDuplicateSubscriptions();
+    res.json({ ok: true, ...stats });
+  } catch (e) {
+    console.error('[reconcile-admin] Error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ─── PREMIUM UPGRADE: SUBSCRIPTION DETAILS ──────────────────
